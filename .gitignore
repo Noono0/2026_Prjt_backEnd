@@ -1,0 +1,87 @@
+# =========================
+# Gradle
+# =========================
+.gradle/
+build/
+out/
+
+# Gradle wrapper jar는 보통 커밋 유지
+!gradle/wrapper/gradle-wrapper.jar
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Spring Boot / temp
+# =========================
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# application local override
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# =========================
+# Generated files
+# =========================
+bin/
+target/
+
+# =========================
+# Java
+# =========================
+*.class
+
+# =========================
+# Coverage / test reports
+# =========================
+coverage/
+jacoco/
+*.exec
+
+# =========================
+# Upload / local storage
+# 필요하면 사용
+# =========================
+uploads/
+files/
+
+# =========================
+# Node leftovers (프론트 혼용 작업 대비)
+# =========================
+node_modules/
+.next/
+dist/
