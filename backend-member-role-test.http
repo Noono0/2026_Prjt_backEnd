@@ -1,0 +1,86 @@
+### 백엔드 Role / Member API 테스트 파일
+### 사용법
+### 1) IntelliJ IDEA 또는 VS Code REST Client 확장에서 열기
+### 2) 아래 @baseUrl 값을 네 백엔드 주소로 맞추기
+### 3) 각 요청 위의 'Send Request' 실행
+
+@baseUrl = http://localhost:8080
+@json = application/json
+
+### 0. 헬스체크(있으면 확인용, 없으면 무시)
+GET {{baseUrl}}/actuator/health
+Accept: {{json}}
+
+### 1. ROLE 목록 조회
+### 프론트 MemberFormModal.tsx 가 기대하는 형태 예시
+### { "items": [ { "id": 1, "role_name": "ADMIN" } ] }
+GET {{baseUrl}}/api/roles
+Accept: {{json}}
+
+### 2. 회원 목록 조회
+### 프론트 members 화면이 기대하는 형태 예시
+### { "items": [ { "id": "000001", "name": "홍길동", ... } ], "total": 1 }
+GET {{baseUrl}}/api/members
+Accept: {{json}}
+
+### 3. 회원 목록 조회 - 검색어 포함
+GET {{baseUrl}}/api/members?q=hong
+Accept: {{json}}
+
+### 4. 회원 등록
+POST {{baseUrl}}/api/members
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "id": "000777",
+  "name": "테스트회원",
+  "birthYmd": "1997-02-03",
+  "gender": "M",
+  "phone": "010-1234-5678",
+  "email": "test777@naver.com",
+  "region": "서울",
+  "status": "ACTIVE",
+  "role": "ADMIN"
+}
+
+### 5. 회원 등록 후 재조회
+GET {{baseUrl}}/api/members?q=000777
+Accept: {{json}}
+
+### 6. 회원 수정
+PUT {{baseUrl}}/api/members
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "id": "000777",
+  "name": "테스트회원수정",
+  "birthYmd": "1997-02-03",
+  "gender": "F",
+  "phone": "010-9999-8888",
+  "email": "test777-updated@naver.com",
+  "region": "경기",
+  "status": "SUSPENDED",
+  "role": "CS"
+}
+
+### 7. 수정 후 재조회
+GET {{baseUrl}}/api/members?q=000777
+Accept: {{json}}
+
+### 8. 회원 삭제
+DELETE {{baseUrl}}/api/members?ids=000777
+Accept: {{json}}
+
+### 9. 삭제 후 재조회
+GET {{baseUrl}}/api/members?q=000777
+Accept: {{json}}
+
+### 10. ROLE 응답 형식 검증용 주석
+### 정상이라면 items 배열 안 객체에 id, role_name 필드가 있어야 함
+### 프론트 MemberFormModal.tsx 는 option key/value 렌더링에 이 필드를 사용함
+
+### 11. members 응답 형식 검증용 주석
+### 정상이라면 items 배열 안 객체에 아래 필드가 있으면 프론트에서 바로 표시 가능
+### id, name, birthYmd, gender, phone, email, region, status, role, lastLoginAt

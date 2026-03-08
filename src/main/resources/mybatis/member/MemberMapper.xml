@@ -2,8 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberMapper">
 
-    <select id="findMembers" parameterType="com.noonoo.prjtbackend.member.bean.MemberSearchCondition"
-            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <select id="findMembers" parameterType="com.noonoo.prjtbackend.member.bean.MemberSearchCondition" resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT
             member_id,
             login_id,
@@ -24,8 +23,7 @@
         ORDER BY member_id DESC
     </select>
 
-    <select id="findMemberById" parameterType="long"
-            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <select id="findMemberById" parameterType="long" resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT
             member_id,
             login_id,

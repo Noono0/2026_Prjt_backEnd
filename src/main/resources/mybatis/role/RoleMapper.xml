@@ -16,4 +16,53 @@
         ORDER BY ROLE_ID ASC
     </select>
 
+
+    <select id="findPermissionsByRoleId" parameterType="string" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        SELECT
+            R.ROLE_CODE    AS roleCode
+             , M.MENU_CODE    AS menuCode
+             , M.MENU_NAME    AS menuName
+             , M.MENU_PATH    AS menuPath
+             , RM.CAN_READ    AS canRead
+             , RM.CAN_CREATE  AS canCreate
+             , RM.CAN_UPDATE  AS canUpdate
+             , RM.CAN_DELETE  AS canDelete
+             , 'TEST' AS TEST
+        FROM ROLE_MENU RM
+                 INNER JOIN ROLE R
+                            ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN MENU M
+                            ON RM.MENU_ID = M.MENU_ID
+        WHERE R.ROLE_CODE = #{roleCode}
+          AND R.USE_YN = 'Y'
+          AND M.USE_YN = 'Y'
+          AND RM.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+
+
+    <select id="findPermissionsByRoleCode" parameterType="string" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        SELECT
+            R.ROLE_CODE    AS roleCode
+             , M.MENU_CODE    AS menuCode
+             , M.MENU_NAME    AS menuName
+             , M.MENU_PATH    AS menuPath
+             , RM.CAN_READ    AS canRead
+             , RM.CAN_CREATE  AS canCreate
+             , RM.CAN_UPDATE  AS canUpdate
+             , RM.CAN_DELETE  AS canDelete
+        FROM ROLE_MENU RM
+                 INNER JOIN ROLE R
+                            ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN MENU M
+                            ON RM.MENU_ID = M.MENU_ID
+        WHERE R.ROLE_CODE = #{roleCode}
+          AND R.USE_YN = 'Y'
+          AND M.USE_YN = 'Y'
+          AND RM.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+
 </mapper>

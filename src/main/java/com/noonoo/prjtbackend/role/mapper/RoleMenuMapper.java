@@ -1,16 +1,13 @@
 package com.noonoo.prjtbackend.role.mapper;
 
 import java.util.List;
-
-import com.noonoo.prjtbackend.role.dto.RoleDto;
-import com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto;
 
 
 @Mapper
-public interface RoleMapper {
-    List<RoleDto> findAllActiveRoles();
+public interface RoleMenuMapper {
 
     List<RoleMenuPermissionDto> findPermissionsByRoleId(@Param("roleId") Long roleId);
 
