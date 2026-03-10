@@ -21,6 +21,7 @@ public class RoleController {
 
     @GetMapping
     public Map<String, Object> findRoles() {
+        System.out.println("=============> findRoles");
         List<RoleDto> items = roleService.findAllActiveRoles();
 
         Map<String, Object> result = new HashMap<>();

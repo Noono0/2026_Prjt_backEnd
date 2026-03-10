@@ -9,4 +9,5 @@ public class MemberSearchCondition {
     private String loginId;
     private String memberName;
     private String roleCode;
+    private String member_pwd;
 }

@@ -27,6 +27,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.12.1'
+
 }
 
 tasks.named('test') {

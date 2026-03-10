@@ -6,6 +6,7 @@
 <mapper namespace="com.noonoo.prjtbackend.role.mapper.RoleMapper">
 
     <select id="findAllActiveRoles" resultType="com.noonoo.prjtbackend.role.dto.RoleDto">
+        /* RoleMapper.findAllActiveRoles */
         SELECT
             ROLE_ID   AS roleId
              , ROLE_NAME AS roleName
@@ -18,6 +19,7 @@
 
 
     <select id="findPermissionsByRoleId" parameterType="string" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        /* RoleMapper.findPermissionsByRoleId */
         SELECT
             R.ROLE_CODE    AS roleCode
              , M.MENU_CODE    AS menuCode
@@ -43,6 +45,7 @@
 
 
     <select id="findPermissionsByRoleCode" parameterType="string" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        /* RoleMapper.findPermissionsByRoleCode */
         SELECT
             R.ROLE_CODE    AS roleCode
              , M.MENU_CODE    AS menuCode

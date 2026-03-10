@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.noonoo.prjtbackend.order.mapper.OrderMapper">
     <select id="findOrders" resultType="com.noonoo.prjtbackend.order.dto.OrderDto">
+        /* OrderMapper.findOrders */
         SELECT order_id, member_id, order_status
         FROM orders
         ORDER BY order_id DESC

@@ -5,15 +5,18 @@ import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MemberService {
     List<MemberDto> findMembers(MemberSearchCondition condition);
 
     MemberDto findMemberById(Long memberId);
 
-    void createMember(MemberSaveRequest request);
+    MemberDto findIdCheck(MemberSaveRequest condition);
 
-    void updateMember(Long memberId, MemberSaveRequest request);
+    Map<String, Object> createMember(MemberSaveRequest condition);
 
-    void deleteMember(Long memberId);
+    Map<String, Object> updateMember(MemberSaveRequest condition);
+
+    Map<String, Object> deleteMember(MemberSaveRequest condition);
 }

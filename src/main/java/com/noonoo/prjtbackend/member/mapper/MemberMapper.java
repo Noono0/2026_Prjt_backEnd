@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface MemberMapper {
@@ -16,10 +17,12 @@ public interface MemberMapper {
 
     MemberDto findLoginMember(String username);
 
-    void insertMember(MemberSaveRequest request);
+    MemberDto findIdCheck(MemberSaveRequest condition);
 
-    void updateMember(@Param("memberId") Long memberId, @Param("request") MemberSaveRequest request);
+    int insertMember(MemberSaveRequest condition);
 
-    void deleteMember(@Param("memberId") Long memberId);
+    int updateMember(MemberSaveRequest condition);
+
+    int deleteMember(MemberSaveRequest condition);
 
 }

@@ -8,7 +8,6 @@ import com.noonoo.prjtbackend.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
@@ -17,6 +16,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<RoleDto> findAllActiveRoles() {
+        System.out.println("=============> RoleServiceImpl findAllActiveRoles");
         return roleMapper.findAllActiveRoles();
     }
 }

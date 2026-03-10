@@ -21,6 +21,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        System.out.println(">>> SecurityConfig loaded");
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -29,10 +30,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/roles").permitAll()
 
                         // 회원 API 권한 제어
-                        .requestMatchers(HttpMethod.GET, "/api/members/**").hasAuthority("MEMBER_READ")
-                        .requestMatchers(HttpMethod.POST, "/api/members").hasAuthority("MEMBER_CREATE")
-                        .requestMatchers(HttpMethod.PUT, "/api/members/**").hasAuthority("MEMBER_UPDATE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/members/**").hasAuthority("MEMBER_DELETE")
+//                        .requestMatchers(HttpMethod.GET, "/api/members/**").hasAuthority("MEMBER_READ")
+//                        .requestMatchers(HttpMethod.POST, "/api/members").hasAuthority("MEMBER_CREATE")
+//                        .requestMatchers(HttpMethod.PUT, "/api/members/**").hasAuthority("MEMBER_UPDATE")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/members/**").hasAuthority("MEMBER_DELETE")
+                        .requestMatchers(HttpMethod.GET, "/api/members/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/members/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/members/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/members/**").permitAll()
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()

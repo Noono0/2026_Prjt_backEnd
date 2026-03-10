@@ -6,7 +6,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -14,5 +14,17 @@ spring:
 mybatis:
   mapper-locations: classpath:/mybatis/**/*.xml
   type-aliases-package: com.noonoo.prjtbackend
+  configuration:
+    map-underscore-to-camel-case: true
 server:
   port: 8080
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+
+logging:
+  level:
+    p6spy: info
+

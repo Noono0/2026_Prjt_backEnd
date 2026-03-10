@@ -2,35 +2,168 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberMapper">
 
-    <select id="findMembers" parameterType="com.noonoo.prjtbackend.member.bean.MemberSearchCondition" resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <!-- 회원 목록 조회 -->
+    <select id="findMembers"
+            parameterType="com.noonoo.prjtbackend.member.bean.MemberSearchCondition"
+            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT
-            member_id,
-            login_id,
-            member_name,
-            email,
-            role_code
-        FROM admin_member
+        M.MEMBER_SEQ
+        , M.MEMBER_ID
+        , M.MEMBER_NAME
+        , M.BIRTH_YMD
+        , M.EMAIL
+        , M.GENDER
+        , M.PHONE
+        , M.ROLE_CODE
+        , M.STATUS
+        , M.CREATE_DT
+        , M.CREATE_ID
+        , M.CREATE_IP
+        , M.MODIFY_DT
+        , M.MODIFY_ID
+        , M.MODIFY_IP
+        FROM MEMBER M
         WHERE 1 = 1
-        <if test="loginId != null and loginId != ''">
-            AND login_id LIKE CONCAT('%', #{loginId}, '%')
+        <if test="memberId != null and memberId != ''">
+            AND M.MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
         </if>
         <if test="memberName != null and memberName != ''">
-            AND member_name LIKE CONCAT('%', #{memberName}, '%')
+            AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
         </if>
         <if test="roleCode != null and roleCode != ''">
-            AND role_code = #{roleCode}
+            AND M.ROLE_CODE = #{roleCode}
         </if>
-        ORDER BY member_id DESC
+        <if test="status != null and status != ''">
+            AND M.STATUS = #{status}
+        </if>
+        ORDER BY M.MEMBER_SEQ DESC
     </select>
 
-    <select id="findMemberById" parameterType="long" resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <!-- 회원 단건 조회 -->
+    <select id="findMemberById"
+            parameterType="long"
+            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT
-            member_id,
-            login_id,
-            member_name,
-            email,
-            role_code
-        FROM admin_member
-        WHERE member_id = #{memberId}
+            M.MEMBER_SEQ
+             , M.MEMBER_ID
+             , M.MEMBER_NAME
+             , M.BIRTH_YMD
+             , M.EMAIL
+             , M.GENDER
+             , M.PHONE
+             , M.PWD
+             , M.ROLE_CODE
+             , M.STATUS
+             , M.CREATE_DT
+             , M.CREATE_ID
+             , M.CREATE_IP
+             , M.MODIFY_DT
+             , M.MODIFY_ID
+             , M.MODIFY_IP
+        FROM MEMBER M
+        WHERE M.MEMBER_SEQ = #{memberSeq}
     </select>
+
+    <!-- 로그인용 회원 조회 -->
+    <select id="findLoginMember"
+            parameterType="string"
+            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+        SELECT
+            M.MEMBER_SEQ
+             , M.MEMBER_ID
+             , M.MEMBER_NAME
+             , M.BIRTH_YMD
+             , M.EMAIL
+             , M.GENDER
+             , M.PHONE
+             , M.PWD
+             , M.ROLE_CODE
+             , M.STATUS
+             , M.CREATE_DT
+             , M.CREATE_ID
+             , M.CREATE_IP
+             , M.MODIFY_DT
+             , M.MODIFY_ID
+             , M.MODIFY_IP
+        FROM MEMBER M
+        WHERE M.MEMBER_ID = #{memberId}
+    </select>
+
+    <!-- 아이디 중복 체크 -->
+    <select id="findIdCheck"
+            parameterType="string"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM MEMBER
+        WHERE MEMBER_ID = #{memberId}
+    </select>
+
+    <!-- 회원 등록 -->
+    <insert id="insertMember"
+            parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
+            useGeneratedKeys="true"
+            keyProperty="memberSeq"
+            keyColumn="MEMBER_SEQ">
+        INSERT INTO MEMBER (
+                             BIRTH_YMD
+                           , CREATE_DT
+                           , CREATE_ID
+                           , CREATE_IP
+                           , EMAIL
+                           , GENDER
+                           , MEMBER_ID
+                           , MEMBER_NAME
+                           , MODIFY_DT
+                           , MODIFY_ID
+                           , MODIFY_IP
+                           , PHONE
+                           , MEMBER_PWD
+                           , ROLE_CODE
+                           , STATUS
+        )
+        VALUES (
+                 #{birthYmd}
+               , NOW()
+               , #{createId}
+               , #{createIp}
+               , #{email}
+               , #{gender}
+               , #{memberId}
+               , #{memberName}
+               , NOW()
+               , #{modifyId}
+               , #{modifyIp}
+               , #{phone}
+               , #{memberPwd}
+               , #{roleCode}
+               , #{status}
+               )
+    </insert>
+
+    <!-- 회원 수정 -->
+    <update id="updateMember"
+            parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
+        UPDATE MEMBER
+        SET
+            BIRTH_YMD   = #{birthYmd}
+          , EMAIL       = #{email}
+          , GENDER      = #{gender}
+          , MEMBER_NAME = #{memberName}
+          , MODIFY_DT   = NOW()
+          , MODIFY_ID   = #{modifyId}
+          , MODIFY_IP   = #{modifyIp}
+          , PHONE       = #{phone}
+          , PWD         = #{pwd}
+          , ROLE_CODE   = #{roleCode}
+          , STATUS      = #{status}
+        WHERE MEMBER_SEQ = #{memberSeq}
+    </update>
+
+    <!-- 회원 삭제 -->
+    <delete id="deleteMember"
+            parameterType="long">
+        DELETE FROM MEMBER
+        WHERE MEMBER_SEQ = #{memberSeq}
+    </delete>
+
 </mapper>

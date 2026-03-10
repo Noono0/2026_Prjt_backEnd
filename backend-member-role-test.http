@@ -28,20 +28,24 @@ GET {{baseUrl}}/api/members?q=hong
 Accept: {{json}}
 
 ### 4. 회원 등록
-POST {{baseUrl}}/api/members
+POST {{baseUrl}}/api/members/createMember
 Content-Type: {{json}}
 Accept: {{json}}
 
 {
-  "id": "000777",
-  "name": "테스트회원",
-  "birthYmd": "1997-02-03",
-  "gender": "M",
-  "phone": "010-1234-5678",
-  "email": "test777@naver.com",
-  "region": "서울",
-  "status": "ACTIVE",
-  "role": "ADMIN"
+  "birthYmd": "19970203",
+  "createId": "admin",
+  "createIp": "127.0.0.1",
+  "email": "test@example.com",
+  "gender": "F",
+  "memberId": "testuser01",
+  "memberName": "홍길동",
+  "memberPwd": "1234qwer!",
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1",
+  "phone": "01012345678",
+  "roleCode": "USER",
+  "status": "ACTIVE"
 }
 
 ### 5. 회원 등록 후 재조회

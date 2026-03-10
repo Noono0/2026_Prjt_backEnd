@@ -15,10 +15,10 @@ public class CustomUserDetails extends User {
     public CustomUserDetails(
             Long memberId,
             String username,
-            String password,
+            String memberPwd,
             String roleCode,
             Collection<? extends GrantedAuthority> authorities) {
-        super(username, password, authorities);
+        super(username, memberPwd, authorities);
         this.memberId = memberId;
         this.roleCode = roleCode;
     }
