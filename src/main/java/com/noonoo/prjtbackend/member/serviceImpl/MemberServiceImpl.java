@@ -81,9 +81,9 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public Map<String, Object> deleteMember(MemberSaveRequest condition) {
+    public Map<String, Object> deleteMember(Long memberSeq) {
         Map<String, Object> resultMap = new HashMap<>();
-        int cnt = memberMapper.deleteMember(condition);
+        int cnt = memberMapper.deleteMember(memberSeq);
         resultMap.put("status", cnt > 0);
         resultMap.put("msg", cnt > 0 ? "success" : "fail");
         return resultMap;

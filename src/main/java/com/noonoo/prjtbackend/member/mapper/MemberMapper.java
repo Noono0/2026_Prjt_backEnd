@@ -23,6 +23,6 @@ public interface MemberMapper {
 
     int updateMember(MemberSaveRequest condition);
 
-    int deleteMember(MemberSaveRequest condition);
+    int deleteMember(Long memberSeq);
 
 }

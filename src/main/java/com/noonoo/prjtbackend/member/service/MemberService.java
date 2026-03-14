@@ -18,5 +18,5 @@ public interface MemberService {
 
     Map<String, Object> updateMember(MemberSaveRequest condition);
 
-    Map<String, Object> deleteMember(MemberSaveRequest condition);
+    Map<String, Object> deleteMember(Long memberSeq);
 }

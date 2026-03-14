@@ -64,9 +64,9 @@ public class MemberController {
      * 회원 삭제
      */
     @DeleteMapping("/delete/{memberSeq}")
-    public ApiResponse<Void> deleteMember(@RequestBody MemberSaveRequest request) {
-        log.info("=======> /api/members/delete param={}",request);
-        memberService.deleteMember(request);
+    public ApiResponse<Void> deleteMember(@PathVariable Long memberSeq) {
+        log.info("=======> /api/members/delete param={}",memberSeq);
+        memberService.deleteMember(memberSeq);
         return ApiResponse.ok("회원 삭제 완료", null);
     }
 }
