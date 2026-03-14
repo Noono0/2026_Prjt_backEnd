@@ -15,13 +15,46 @@
         , M.GENDER
         , M.PHONE
         , M.ROLE_CODE
+        , R.ROLE_NAME
         , M.STATUS
         , M.CREATE_DT
-        , M.CREATE_ID
-        , M.CREATE_IP
         , M.MODIFY_DT
-        , M.MODIFY_ID
-        , M.MODIFY_IP
+        FROM MEMBER M
+        LEFT JOIN ROLE R
+        ON M.ROLE_CODE = R.ROLE_CODE
+        WHERE 1 = 1
+        <if test="memberId != null and memberId != ''">
+            AND M.MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
+        </if>
+        <if test="memberName != null and memberName != ''">
+            AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
+        </if>
+        <if test="roleCode != null and roleCode != ''">
+            AND M.ROLE_CODE = #{roleCode}
+        </if>
+        <if test="status != null and status != ''">
+            AND M.STATUS = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'memberId'">M.MEMBER_ID</when>
+            <when test="sortBy == 'memberName'">M.MEMBER_NAME</when>
+            <when test="sortBy == 'createDt'">M.CREATE_DT</when>
+            <when test="sortBy == 'modifyDt'">M.MODIFY_DT</when>
+            <otherwise>M.MEMBER_SEQ</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <!-- 회원 목록 조회 -->
+    <select id="findMembersCnt"
+            parameterType="com.noonoo.prjtbackend.member.bean.MemberSearchCondition"
+            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+        SELECT COUNT(*)
         FROM MEMBER M
         WHERE 1 = 1
         <if test="memberId != null and memberId != ''">
@@ -36,8 +69,8 @@
         <if test="status != null and status != ''">
             AND M.STATUS = #{status}
         </if>
-        ORDER BY M.MEMBER_SEQ DESC
     </select>
+
 
     <!-- 회원 단건 조회 -->
     <select id="findMemberById"
@@ -51,7 +84,7 @@
              , M.EMAIL
              , M.GENDER
              , M.PHONE
-             , M.PWD
+             , M.MEMBER_PWD
              , M.ROLE_CODE
              , M.STATUS
              , M.CREATE_DT
@@ -76,7 +109,7 @@
              , M.EMAIL
              , M.GENDER
              , M.PHONE
-             , M.PWD
+             , M.MEMBER_PWD
              , M.ROLE_CODE
              , M.STATUS
              , M.CREATE_DT
@@ -153,7 +186,7 @@
           , MODIFY_ID   = #{modifyId}
           , MODIFY_IP   = #{modifyIp}
           , PHONE       = #{phone}
-          , PWD         = #{pwd}
+          , MEMBER_PWD   = #{memberPwd}
           , ROLE_CODE   = #{roleCode}
           , STATUS      = #{status}
         WHERE MEMBER_SEQ = #{memberSeq}

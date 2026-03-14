@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import com.noonoo.prjtbackend.role.domain.Role;
 import lombok.ToString;
+import org.hibernate.validator.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
@@ -20,12 +21,15 @@ public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_seq")
+
     private Long memberSeq;
 
     @Column(name = "member_id")
+    @NotBlank(message = "아이디는 필수입니다.")
     private String memberId;
 
     @Column(name = "member_pwd")
+    @NotBlank(message = "비밀번호는 필수입니다.")
     private String memberPwd;
 
     @Column(name = "birth_ymd")
@@ -38,6 +42,7 @@ public class Member {
     private String phone;
 
     @Column(name = "member_name")
+    @NotBlank(message = "성명은 필수입니다.")
     private String memberName;
 
     @Column(name = "email")
@@ -65,5 +70,6 @@ public class Member {
     private String status;
 
     @Column(name = "role_code")
+    @NotBlank(message = "권한은 필수입니다.")
     private String roleCode;
 }
