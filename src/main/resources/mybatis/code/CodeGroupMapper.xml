@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.noonoo.prjtbackend.codeGroup.mapper.CodeGroupsMapper">
+
+    <sql id="CodeGroupColumns">
+        cg.code_group_seq
+        , cg.code_group_id
+        , cg.code_group_name
+        , cg.description
+        , cg.sort_order
+        , cg.use_yn
+        , cg.create_dt
+        , cg.create_id
+        , cg.create_ip
+        , cg.modify_dt
+        , cg.modify_id
+        , cg.modify_ip
+        , cg.status
+    </sql>
+
+    <select id="selectList"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSearchCondition"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupDto">
+        SELECT
+        <include refid="CodeGroupColumns"/>
+        FROM code_group cg
+        WHERE 1 = 1
+        <if test="codeGroupId != null and codeGroupId != ''">
+            AND cg.code_group_id LIKE CONCAT('%', #{codeGroupId}, '%')
+        </if>
+        <if test="codeGroupName != null and codeGroupName != ''">
+            AND cg.code_group_name LIKE CONCAT('%', #{codeGroupName}, '%')
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND cg.use_yn = #{useYn}
+        </if>
+        <if test="status != null and status != ''">
+            AND cg.status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'codeGroupId'">cg.code_group_id</when>
+            <when test="sortBy == 'codeGroupName'">cg.code_group_name</when>
+            <when test="sortBy == 'sortOrder'">cg.sort_order</when>
+            <when test="sortBy == 'createDt'">cg.create_dt</when>
+            <otherwise>cg.code_group_seq</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc' or sortDir == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectListCnt"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSearchCondition"
+            resultType="long">
+        SELECT COUNT(*)
+        FROM code_group cg
+        WHERE 1 = 1
+        <if test="codeGroupId != null and codeGroupId != ''">
+            AND cg.code_group_id LIKE CONCAT('%', #{codeGroupId}, '%')
+        </if>
+        <if test="codeGroupName != null and codeGroupName != ''">
+            AND cg.code_group_name LIKE CONCAT('%', #{codeGroupName}, '%')
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND cg.use_yn = #{useYn}
+        </if>
+        <if test="status != null and status != ''">
+            AND cg.status = #{status}
+        </if>
+    </select>
+
+    <select id="selectDetail"
+            parameterType="long"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupDto">
+        SELECT
+        <include refid="CodeGroupColumns"/>
+        FROM code_group cg
+        WHERE cg.code_group_seq = #{codeGroupSeq}
+    </select>
+
+    <select id="findIdCheck"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupDto">
+        SELECT
+        <include refid="CodeGroupColumns"/>
+        FROM code_group cg
+        WHERE cg.code_group_id = #{codeGroupId}
+        <if test="codeGroupSeq != null">
+            AND cg.code_group_seq != #{codeGroupSeq}
+        </if>
+        LIMIT 1
+    </select>
+
+    <insert id="insertData"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest"
+            useGeneratedKeys="true"
+            keyProperty="codeGroupSeq">
+        INSERT INTO code_group (
+                                 code_group_id
+                               , code_group_name
+                               , description
+                               , sort_order
+                               , use_yn
+                               , create_dt
+                               , create_id
+                               , create_ip
+                               , modify_dt
+                               , modify_id
+                               , modify_ip
+                               , status
+        ) VALUES (
+                   #{codeGroupId}
+                 , #{codeGroupName}
+                 , #{description}
+                 , #{sortOrder}
+                 , #{useYn}
+                 , NOW()
+                 , #{createId}
+                 , #{createIp}
+                 , NOW()
+                 , #{modifyId}
+                 , #{modifyIp}
+                 , #{status}
+                 )
+    </insert>
+
+    <update id="updateData"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest">
+        UPDATE code_group
+        SET
+            code_group_name = #{codeGroupName}
+          , description     = #{description}
+          , sort_order      = #{sortOrder}
+          , use_yn          = #{useYn}
+          , modify_dt       = NOW()
+          , modify_id       = #{modifyId}
+          , modify_ip       = #{modifyIp}
+          , status          = #{status}
+        WHERE code_group_seq = #{codeGroupSeq}
+    </update>
+
+    <delete id="deleteData"
+            parameterType="long">
+        DELETE FROM code_group
+        WHERE code_group_seq = #{codeGroupSeq}
+    </delete>
+
+    <select id="findCodeGroupOptions"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">
+        SELECT
+            cg.code_group_id   AS value,
+            cg.code_group_name AS label
+        FROM code_group cg
+        WHERE cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        ORDER BY cg.sort_order ASC, cg.code_group_seq ASC
+    </select>
+
+</mapper>

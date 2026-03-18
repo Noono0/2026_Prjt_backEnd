@@ -13,4 +13,9 @@ public class MemberSearchCondition extends PageRequest {
     private String memberName;
     private String roleCode;
     private String status;
+
+    public MemberSearchCondition() {
+        setSortBy("memberSeq");
+        setSortDir("desc");
+    }
 }

@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.noonoo.prjtbackend.codeGroup.mapper.CodeDetailMapper">
+
+    <sql id="CodeDetailColumns">
+        cd.code_detail_seq
+        , cd.code_group_seq
+        , cd.parent_detail_seq
+        , cd.code_id
+        , cd.code_value
+        , cd.code_name
+        , cd.code_level
+        , cd.description
+        , cd.sort_order
+        , cd.use_yn
+        , cd.attr1
+        , cd.attr2
+        , cd.attr3
+        , cd.create_dt
+        , cd.create_id
+        , cd.create_ip
+        , cd.modify_dt
+        , cd.modify_id
+        , cd.modify_ip
+        , cd.status
+    </sql>
+
+    <select id="selectList"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailDto">
+        SELECT
+        <include refid="CodeDetailColumns"/>
+        , cg.code_group_id   AS codeGroupId
+        , cg.code_group_name AS codeGroupName
+        , p.code_name        AS parentCodeName
+        FROM code_detail cd
+        INNER JOIN code_group cg
+        ON cd.code_group_seq = cg.code_group_seq
+        LEFT JOIN code_detail p
+        ON cd.parent_detail_seq = p.code_detail_seq
+        WHERE 1 = 1
+        <if test="codeGroupSeq != null">
+            AND cd.code_group_seq = #{codeGroupSeq}
+        </if>
+        <if test="parentDetailSeq != null">
+            AND cd.parent_detail_seq = #{parentDetailSeq}
+        </if>
+        <if test="parentDetailSeq == null and codeLevel != null and codeLevel == 2">
+            AND cd.parent_detail_seq IS NULL
+        </if>
+        <if test="codeLevel != null">
+            AND cd.code_level = #{codeLevel}
+        </if>
+        <if test="codeId != null and codeId != ''">
+            AND cd.code_id LIKE CONCAT('%', #{codeId}, '%')
+        </if>
+        <if test="codeValue != null and codeValue != ''">
+            AND cd.code_value LIKE CONCAT('%', #{codeValue}, '%')
+        </if>
+        <if test="codeName != null and codeName != ''">
+            AND cd.code_name LIKE CONCAT('%', #{codeName}, '%')
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND cd.use_yn = #{useYn}
+        </if>
+        <if test="status != null and status != ''">
+            AND cd.status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'codeId'">cd.code_id</when>
+            <when test="sortBy == 'codeValue'">cd.code_value</when>
+            <when test="sortBy == 'codeName'">cd.code_name</when>
+            <when test="sortBy == 'sortOrder'">cd.sort_order</when>
+            <when test="sortBy == 'createDt'">cd.create_dt</when>
+            <otherwise>cd.code_detail_seq</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'desc' or sortDir == 'DESC'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectListCnt"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
+            resultType="long">
+        SELECT COUNT(*)
+        FROM code_detail cd
+        WHERE 1 = 1
+        <if test="codeGroupSeq != null">
+            AND cd.code_group_seq = #{codeGroupSeq}
+        </if>
+        <if test="parentDetailSeq != null">
+            AND cd.parent_detail_seq = #{parentDetailSeq}
+        </if>
+        <if test="parentDetailSeq == null and codeLevel != null and codeLevel == 2">
+            AND cd.parent_detail_seq IS NULL
+        </if>
+        <if test="codeLevel != null">
+            AND cd.code_level = #{codeLevel}
+        </if>
+        <if test="codeId != null and codeId != ''">
+            AND cd.code_id LIKE CONCAT('%', #{codeId}, '%')
+        </if>
+        <if test="codeValue != null and codeValue != ''">
+            AND cd.code_value LIKE CONCAT('%', #{codeValue}, '%')
+        </if>
+        <if test="codeName != null and codeName != ''">
+            AND cd.code_name LIKE CONCAT('%', #{codeName}, '%')
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND cd.use_yn = #{useYn}
+        </if>
+        <if test="status != null and status != ''">
+            AND cd.status = #{status}
+        </if>
+    </select>
+
+    <select id="selectDetail"
+            parameterType="long"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailDto">
+        SELECT
+        <include refid="CodeDetailColumns"/>
+        , cg.code_group_id   AS codeGroupId
+        , cg.code_group_name AS codeGroupName
+        , p.code_name        AS parentCodeName
+        FROM code_detail cd
+        INNER JOIN code_group cg
+        ON cd.code_group_seq = cg.code_group_seq
+        LEFT JOIN code_detail p
+        ON cd.parent_detail_seq = p.code_detail_seq
+        WHERE cd.code_detail_seq = #{codeDetailSeq}
+    </select>
+
+    <select id="findCodeDetailByCode"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest"
+            resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailDto">
+        SELECT
+        <include refid="CodeDetailColumns"/>
+        FROM code_detail cd
+        WHERE cd.code_group_seq = #{codeGroupSeq}
+        AND cd.code_id = #{codeId}
+        <if test="codeDetailSeq != null">
+            AND cd.code_detail_seq != #{codeDetailSeq}
+        </if>
+        LIMIT 1
+    </select>
+
+    <insert id="insertData"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest"
+            useGeneratedKeys="true"
+            keyProperty="codeDetailSeq">
+        INSERT INTO code_detail (
+                                  code_group_seq
+                                , parent_detail_seq
+                                , code_id
+                                , code_value
+                                , code_name
+                                , code_level
+                                , description
+                                , sort_order
+                                , use_yn
+                                , attr1
+                                , attr2
+                                , attr3
+                                , create_dt
+                                , create_id
+                                , create_ip
+                                , modify_dt
+                                , modify_id
+                                , modify_ip
+                                , status
+        ) VALUES (
+                   #{codeGroupSeq}
+                 , #{parentDetailSeq}
+                 , #{codeId}
+                 , #{codeValue}
+                 , #{codeName}
+                 , #{codeLevel}
+                 , #{description}
+                 , #{sortOrder}
+                 , #{useYn}
+                 , #{attr1}
+                 , #{attr2}
+                 , #{attr3}
+                 , NOW()
+                 , #{createId}
+                 , #{createIp}
+                 , NOW()
+                 , #{modifyId}
+                 , #{modifyIp}
+                 , #{status}
+                 )
+    </insert>
+
+    <update id="updateData"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest">
+        UPDATE code_detail
+        SET
+            code_group_seq    = #{codeGroupSeq}
+          , parent_detail_seq = #{parentDetailSeq}
+          , code_value        = #{codeValue}
+          , code_name         = #{codeName}
+          , code_level        = #{codeLevel}
+          , description       = #{description}
+          , sort_order        = #{sortOrder}
+          , use_yn            = #{useYn}
+          , attr1             = #{attr1}
+          , attr2             = #{attr2}
+          , attr3             = #{attr3}
+          , modify_dt         = NOW()
+          , modify_id         = #{modifyId}
+          , modify_ip         = #{modifyIp}
+          , status            = #{status}
+        WHERE code_detail_seq = #{codeDetailSeq}
+    </update>
+
+    <delete id="deleteData"
+            parameterType="long">
+        DELETE FROM code_detail
+        WHERE code_detail_seq = #{codeDetailSeq}
+    </delete>
+
+</mapper>
