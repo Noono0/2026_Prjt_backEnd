@@ -1,187 +1,186 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberMapper">
 
-    <!-- 회원 목록 조회 -->
+    <resultMap id="memberResultMap" type="com.noonoo.prjtbackend.member.dto.MemberDto">
+        <id property="memberSeq" column="memberSeq"/>
+        <result property="memberId" column="memberId"/>
+        <result property="memberPwd" column="memberPwd"/>
+        <result property="memberName" column="memberName"/>
+        <result property="birthYmd" column="birthYmd"/>
+        <result property="email" column="email"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="roleCode" column="roleCode"/>
+        <result property="roleName" column="roleName"/>
+        <result property="status" column="status"/>
+        <result property="createDt" column="createDt"/>
+        <result property="modifyDt" column="modifyDt"/>
+    </resultMap>
+
+    <sql id="memberColumns">
+        M.MEMBER_SEQ AS memberSeq,
+        M.MEMBER_ID AS memberId,
+        M.MEMBER_PWD AS memberPwd,
+        M.MEMBER_NAME AS memberName,
+        M.BIRTH_YMD AS birthYmd,
+        M.EMAIL AS email,
+        M.GENDER AS gender,
+        M.PHONE AS phone,
+        M.ROLE_CODE AS roleCode,
+        R.ROLE_NAME AS roleName,
+        M.STATUS AS status,
+        DATE_FORMAT(M.CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt,
+        DATE_FORMAT(M.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
+    </sql>
+
+    <sql id="memberWhere">
+        <where>
+            <if test="memberId != null and memberId != ''">
+                AND M.MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
+            </if>
+            <if test="memberName != null and memberName != ''">
+                AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND M.ROLE_CODE = #{roleCode}
+            </if>
+            <if test="status != null and status != ''">
+                AND M.STATUS = #{status}
+            </if>
+        </where>
+    </sql>
+
     <select id="findMembers" parameterType="com.noonoo.prjtbackend.member.dto.MemberSearchCondition"
-            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+            resultMap="memberResultMap">
         SELECT
-        MEMBER_SEQ
-        , MEMBER_ID
-        , MEMBER_NAME
-        , BIRTH_YMD
-        , GENDER
-        , PHONE
-        , EMAIL
-        , ROLE_CODE
-        , STATUS
-        , DATE_FORMAT(CREATE_DT, '%Y-%m-%d %H:%i:%s') AS CREATE_DT
-        , DATE_FORMAT(MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS MODIFY_DT
-        FROM MEMBER
-        WHERE 1=1
-        <if test="memberId != null and memberId != ''">
-            AND MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
-        </if>
-        <if test="memberName != null and memberName != ''">
-            AND MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
-        </if>
-        <if test="roleCode != null and roleCode != ''">
-            AND ROLE_CODE = #{roleCode}
-        </if>
-        <if test="status != null and status != ''">
-            AND STATUS = #{status}
-        </if>
-        ORDER BY MEMBER_SEQ DESC
-        LIMIT #{safeSize} OFFSET #{offset}
+        <include refid="memberColumns"/>
+        FROM MEMBER M
+        LEFT JOIN ROLE R
+        ON R.ROLE_CODE = M.ROLE_CODE
+        <include refid="memberWhere"/>
+
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'memberId'">M.MEMBER_ID</when>
+            <when test="sortBy == 'memberName'">M.MEMBER_NAME</when>
+            <when test="sortBy == 'roleCode'">M.ROLE_CODE</when>
+            <when test="sortBy == 'status'">M.STATUS</when>
+            <when test="sortBy == 'createDt'">M.CREATE_DT</when>
+            <when test="sortBy == 'modifyDt'">M.MODIFY_DT</when>
+            <otherwise>M.MEMBER_SEQ</otherwise>
+        </choose>
+        <choose>
+            <when test="safeSortDir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{safeSize}
+        OFFSET #{offset}
     </select>
 
-    <!-- 회원 목록 조회 -->
-    <select id="findMembersCnt"
-            parameterType="com.noonoo.prjtbackend.member.dto.MemberSearchCondition"
-            resultType="java.lang.Long">
+    <select id="findMembersCnt" parameterType="com.noonoo.prjtbackend.member.dto.MemberSearchCondition"
+            resultType="long">
         SELECT COUNT(*)
         FROM MEMBER M
-        WHERE 1 = 1
-        <if test="memberId != null and memberId != ''">
-            AND M.MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
-        </if>
-        <if test="memberName != null and memberName != ''">
-            AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
-        </if>
-        <if test="roleCode != null and roleCode != ''">
-            AND M.ROLE_CODE = #{roleCode}
-        </if>
-        <if test="status != null and status != ''">
-            AND M.STATUS = #{status}
-        </if>
+        <include refid="memberWhere"/>
     </select>
 
-
-    <!-- 회원 단건 조회 -->
-    <select id="findMemberById"
-            parameterType="long"
-            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <select id="findMemberById" parameterType="long" resultMap="memberResultMap">
         SELECT
-            M.MEMBER_SEQ
-             , M.MEMBER_ID
-             , M.MEMBER_NAME
-             , M.BIRTH_YMD
-             , M.EMAIL
-             , M.GENDER
-             , M.PHONE
-             , M.MEMBER_PWD
-             , M.ROLE_CODE
-             , M.STATUS
-             , M.CREATE_DT
-             , M.CREATE_ID
-             , M.CREATE_IP
-             , M.MODIFY_DT
-             , M.MODIFY_ID
-             , M.MODIFY_IP
+        <include refid="memberColumns"/>
         FROM MEMBER M
+        LEFT JOIN ROLE R
+        ON R.ROLE_CODE = M.ROLE_CODE
         WHERE M.MEMBER_SEQ = #{memberSeq}
     </select>
 
-    <!-- 로그인용 회원 조회 -->
-    <select id="findLoginMember"
-            parameterType="string"
-            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+    <select id="findLoginMember" parameterType="string" resultMap="memberResultMap">
         SELECT
-            M.MEMBER_SEQ
-             , M.MEMBER_ID
-             , M.MEMBER_NAME
-             , M.BIRTH_YMD
-             , M.EMAIL
-             , M.GENDER
-             , M.PHONE
-             , M.MEMBER_PWD
-             , M.ROLE_CODE
-             , M.STATUS
-             , M.CREATE_DT
-             , M.CREATE_ID
-             , M.CREATE_IP
-             , M.MODIFY_DT
-             , M.MODIFY_ID
-             , M.MODIFY_IP
+        <include refid="memberColumns"/>
         FROM MEMBER M
+        LEFT JOIN ROLE R
+        ON R.ROLE_CODE = M.ROLE_CODE
         WHERE M.MEMBER_ID = #{memberId}
     </select>
 
-    <!-- 아이디 중복 체크 -->
-    <select id="findIdCheck"
-            parameterType="string"
-            resultType="int">
-        SELECT COUNT(1)
-        FROM MEMBER
-        WHERE MEMBER_ID = #{memberId}
+    <select id="findIdCheck" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
+            resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
+        SELECT
+        <include refid="memberColumns"/>
+        FROM MEMBER M
+        LEFT JOIN ROLE R
+        ON R.ROLE_CODE = M.ROLE_CODE
+        WHERE M.MEMBER_ID = #{memberId}
+        <if test="memberSeq != null">
+            AND M.MEMBER_SEQ != #{memberSeq}
+        </if>
+        LIMIT 1
     </select>
 
-    <!-- 회원 등록 -->
-    <insert id="insertMember"
-            parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
-            useGeneratedKeys="true"
-            keyProperty="memberSeq"
-            keyColumn="MEMBER_SEQ">
+    <insert id="insertMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
         INSERT INTO MEMBER (
-                             BIRTH_YMD
-                           , CREATE_DT
-                           , CREATE_ID
-                           , CREATE_IP
-                           , EMAIL
-                           , GENDER
-                           , MEMBER_ID
-                           , MEMBER_NAME
-                           , MODIFY_DT
-                           , MODIFY_ID
-                           , MODIFY_IP
-                           , PHONE
-                           , MEMBER_PWD
-                           , ROLE_CODE
-                           , STATUS
-        )
-        VALUES (
-                 #{birthYmd}
-               , NOW()
-               , #{createId}
-               , #{createIp}
-               , #{email}
-               , #{gender}
-               , #{memberId}
-               , #{memberName}
-               , NOW()
-               , #{modifyId}
-               , #{modifyIp}
-               , #{phone}
-               , #{memberPwd}
-               , #{roleCode}
-               , #{status}
-               )
+            BIRTH_YMD,
+            CREATE_DT,
+            CREATE_ID,
+            CREATE_IP,
+            EMAIL,
+            GENDER,
+            MEMBER_ID,
+            MEMBER_NAME,
+            MEMBER_PWD,
+            MODIFY_DT,
+            MODIFY_ID,
+            MODIFY_IP,
+            PHONE,
+            ROLE_CODE,
+            STATUS
+        ) VALUES (
+                     #{birthYmd},
+                     NOW(),
+                     #{createId},
+                     #{createIp},
+                     #{email},
+                     #{gender},
+                     #{memberId},
+                     #{memberName},
+                     #{memberPwd},
+                     NOW(),
+                     #{modifyId},
+                     #{modifyIp},
+                     #{phone},
+                     #{roleCode},
+                     #{status}
+                 )
     </insert>
 
-    <!-- 회원 수정 -->
-    <update id="updateMember"
-            parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
+    <update id="updateMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
         UPDATE MEMBER
-        SET MEMBER_NAME = #{memberName}
-        , BIRTH_YMD = #{birthYmd}
-        , EMAIL = #{email}
-        , GENDER = #{gender}
-        , PHONE = #{phone}
-        , ROLE_CODE = #{roleCode}
-        , STATUS = #{status}
-        , MODIFY_DT = NOW()
+        SET
+        MEMBER_NAME = #{memberName},
+        BIRTH_YMD = #{birthYmd},
+        EMAIL = #{email},
+        GENDER = #{gender},
+        PHONE = #{phone},
+        ROLE_CODE = #{roleCode},
+        STATUS = #{status},
+        MODIFY_DT = NOW(),
+        MODIFY_ID = #{modifyId},
+        MODIFY_IP = #{modifyIp}
         <if test="memberPwd != null and memberPwd != ''">
-            , PWD = #{memberPwd}
+            , MEMBER_PWD = #{memberPwd}
         </if>
         WHERE MEMBER_SEQ = #{memberSeq}
     </update>
 
-    <!-- 회원 삭제 -->
-    <delete id="deleteMember"
-            parameterType="long">
+    <update id="deleteMember" parameterType="long">
         UPDATE MEMBER
-        SET STATUS = 'SUSPEND'
+        SET
+            STATUS = 'SUSPEND',
+            MODIFY_DT = NOW()
         WHERE MEMBER_SEQ = #{memberSeq}
-    </delete>
+    </update>
 
 </mapper>

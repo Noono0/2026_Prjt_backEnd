@@ -14,9 +14,9 @@ public interface MemberService {
 
     MemberDto findIdCheck(MemberSaveRequest condition);
 
-    Map<String, Object> createMember(MemberSaveRequest condition);
+    int createMember(MemberSaveRequest condition);
 
-    Map<String, Object> updateMember(MemberSaveRequest condition);
+    int updateMember(MemberSaveRequest condition);
 
-    Map<String, Object> deleteMember(Long memberSeq);
+    int deleteMember(Long memberSeq);
 }

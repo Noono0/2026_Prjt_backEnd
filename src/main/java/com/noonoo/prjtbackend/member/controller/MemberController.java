@@ -20,6 +20,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
+
     /**
      * 회원 목록 검색
      */
@@ -35,7 +36,7 @@ public class MemberController {
      */
     @GetMapping("/detail/{memberSeq}")
     public ApiResponse<MemberDto> findMemberDetail(@PathVariable Long memberSeq) {
-        log.info("=======> /api/members/detail param={}",memberSeq);
+        log.info("=======> /api/members/detail param={}", memberSeq);
         MemberDto detail = memberService.findMemberDetail(memberSeq);
         return ApiResponse.ok("회원 상세 조회 완료", detail);
     }
@@ -44,30 +45,30 @@ public class MemberController {
      * 회원 등록
      */
     @PostMapping("/create")
-    public ApiResponse<Void> createMember(@RequestBody MemberSaveRequest request) {
-        log.info("=======> /api/members/create param={}",request);
-        memberService.createMember(request);
-        return ApiResponse.ok("회원 등록 완료", null);
+    public ApiResponse<Integer> createMember(@RequestBody MemberSaveRequest request) {
+        log.info("=======> /api/members/create param={}", request);
+        int result = memberService.createMember(request);
+        return ApiResponse.ok(result > 0 ? "회원 등록 완료" : "회원 등록 실패", result);
     }
 
     /**
      * 회원 수정
      */
     @PutMapping("/update")
-    public ApiResponse<Void> updateMember(@RequestBody MemberSaveRequest request) {
-        log.info("=======> /api/members/updateMember param={}",request);
-        memberService.updateMember(request);
-        return ApiResponse.ok("회원 수정 완료", null);
+    public ApiResponse<Integer> updateMember(@RequestBody MemberSaveRequest request) {
+        log.info("=======> /api/members/update param={}", request);
+        int result = memberService.updateMember(request);
+        return ApiResponse.ok(result > 0 ? "회원 수정 완료" : "회원 수정 실패", result);
     }
 
     /**
      * 회원 삭제
      */
     @DeleteMapping("/delete/{memberSeq}")
-    public ApiResponse<Void> deleteMember(@PathVariable Long memberSeq) {
-        log.info("=======> /api/members/delete param={}",memberSeq);
-        memberService.deleteMember(memberSeq);
-        return ApiResponse.ok("회원 삭제 완료", null);
+    public ApiResponse<Integer> deleteMember(@PathVariable Long memberSeq) {
+        log.info("=======> /api/members/delete param={}", memberSeq);
+        int result = memberService.deleteMember(memberSeq);
+        return ApiResponse.ok(result > 0 ? "회원 삭제 완료" : "회원 삭제 실패", result);
     }
 }
 

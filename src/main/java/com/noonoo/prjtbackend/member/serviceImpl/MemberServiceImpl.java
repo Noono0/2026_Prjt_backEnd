@@ -3,19 +3,18 @@ package com.noonoo.prjtbackend.member.serviceImpl;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
-import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
+import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -29,7 +28,6 @@ public class MemberServiceImpl implements MemberService {
     public PageResponse<MemberDto> findMembers(MemberSearchCondition condition) {
         long totalCount = memberMapper.findMembersCnt(condition);
         List<MemberDto> items = memberMapper.findMembers(condition);
-
         return PagingUtils.toPageResponse(condition, totalCount, items);
     }
 
@@ -44,53 +42,43 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public Map<String, Object> createMember(MemberSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-        log.info("=======> /api/members/createMember serviceimpl param={}",condition);
+    public int createMember(MemberSaveRequest condition) {
+        log.info("=======> /api/members/createMember serviceimpl param={}", condition);
+
         String loginMemberId = RequestContext.getLoginMemberId();
         String clientIp = RequestContext.getClientIp();
 
-        condition.setCreateId(loginMemberId != null ? loginMemberId : "SYSTEM");
-        condition.setModifyId(loginMemberId != null ? loginMemberId : "SYSTEM");
+        condition.setCreateId(StringUtils.hasText(loginMemberId) ? loginMemberId : "SYSTEM");
+        condition.setModifyId(StringUtils.hasText(loginMemberId) ? loginMemberId : "SYSTEM");
         condition.setCreateIp(clientIp);
         condition.setModifyIp(clientIp);
 
-        condition.setMemberPwd(passwordEncoder.encode(condition.getMemberPwd()));
-
-        int cnt = memberMapper.insertMember(condition);
-
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        return resultMap;
-    }
-
-    @Override
-    public Map<String, Object> updateMember(MemberSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-
-        String loginMemberId = RequestContext.getLoginMemberId();
-        String clientIp = RequestContext.getClientIp();
-
-        condition.setModifyId(loginMemberId != null ? loginMemberId : "SYSTEM");
-        condition.setModifyIp(clientIp);
-
-        if (condition.getMemberPwd() != null && !condition.getMemberPwd().isBlank()) {
+        if (StringUtils.hasText(condition.getMemberPwd())) {
             condition.setMemberPwd(passwordEncoder.encode(condition.getMemberPwd()));
         }
 
-        int cnt = memberMapper.updateMember(condition);
-
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        return resultMap;
+        return memberMapper.insertMember(condition);
     }
 
     @Override
-    public Map<String, Object> deleteMember(Long memberSeq) {
-        Map<String, Object> resultMap = new HashMap<>();
-        int cnt = memberMapper.deleteMember(memberSeq);
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        return resultMap;
+    public int updateMember(MemberSaveRequest condition) {
+        String loginMemberId = RequestContext.getLoginMemberId();
+        String clientIp = RequestContext.getClientIp();
+
+        condition.setModifyId(StringUtils.hasText(loginMemberId) ? loginMemberId : "SYSTEM");
+        condition.setModifyIp(clientIp);
+
+        if (StringUtils.hasText(condition.getMemberPwd())) {
+            condition.setMemberPwd(passwordEncoder.encode(condition.getMemberPwd()));
+        } else {
+            condition.setMemberPwd(null);
+        }
+
+        return memberMapper.updateMember(condition);
+    }
+
+    @Override
+    public int deleteMember(Long memberSeq) {
+        return memberMapper.deleteMember(memberSeq);
     }
 }
