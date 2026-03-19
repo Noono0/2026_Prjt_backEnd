@@ -11,11 +11,11 @@ public interface CodeDetailService {
 
     PageResponse<CodeDetailDto> selectList(CodeDetailSearchCondition condition);
 
-    CodeDetailDto selectDetail(Long codeDetailSeq);
+    CodeDetailDto selectDetail(CodeDetailSearchCondition condition);
 
-    Map<String, Object> insertData(CodeDetailSaveRequest condition);
+    int insertData(CodeDetailSaveRequest condition);
 
-    Map<String, Object> updateData(CodeDetailSaveRequest condition);
+    int updateData(CodeDetailSaveRequest condition);
 
-    Map<String, Object> deleteData(Long codeDetailSeq);
+    int deleteData(CodeDetailSaveRequest condition);
 }

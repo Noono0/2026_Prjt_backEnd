@@ -14,9 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,8 +31,8 @@ public class CodeGroupServiceImpl implements CodeGroupService {
     }
 
     @Override
-    public CodeGroupDto selectDetail(Long codeGroupSeq) {
-        return codeGroupsMapper.selectDetail(codeGroupSeq);
+    public CodeGroupDto selectDetail(CodeGroupSearchCondition condition) {
+        return codeGroupsMapper.selectDetail(condition);
     }
 
     @Override
@@ -44,9 +42,7 @@ public class CodeGroupServiceImpl implements CodeGroupService {
 
     @Override
     @Transactional
-    public Map<String, Object> insertData(CodeGroupSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-
+    public int insertData(CodeGroupSaveRequest condition) {
         log.info("=======> /api/code-groups/create service param={}", condition);
 
         String loginMemberId = RequestContext.getLoginMemberId();
@@ -67,20 +63,12 @@ public class CodeGroupServiceImpl implements CodeGroupService {
             condition.setSortOrder(0);
         }
 
-        int cnt = codeGroupsMapper.insertData(condition);
-
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeGroupsMapper.insertData(condition);
     }
 
     @Override
     @Transactional
-    public Map<String, Object> updateData(CodeGroupSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-
+    public int updateData(CodeGroupSaveRequest condition) {
         log.info("=======> /api/code-groups/update service param={}", condition);
 
         String loginMemberId = RequestContext.getLoginMemberId();
@@ -96,29 +84,21 @@ public class CodeGroupServiceImpl implements CodeGroupService {
             condition.setSortOrder(0);
         }
 
-        int cnt = codeGroupsMapper.updateData(condition);
-
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeGroupsMapper.updateData(condition);
     }
 
     @Override
     @Transactional
-    public Map<String, Object> deleteData(Long codeGroupSeq) {
-        Map<String, Object> resultMap = new HashMap<>();
+    public int deleteData(CodeGroupSaveRequest condition) {
+        log.info("=======> /api/code-groups/delete service param={}", condition);
 
-        log.info("=======> /api/code-groups/delete service param={}", codeGroupSeq);
+        String loginMemberId = RequestContext.getLoginMemberId();
+        String clientIp = RequestContext.getClientIp();
 
-        int cnt = codeGroupsMapper.deleteData(codeGroupSeq);
+        condition.setModifyId(loginMemberId != null ? loginMemberId : "SYSTEM");
+        condition.setModifyIp(clientIp);
 
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeGroupsMapper.deleteData(condition);
     }
 
     @Override

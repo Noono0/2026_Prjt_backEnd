@@ -14,7 +14,7 @@ public interface CodeDetailMapper {
 
     long selectListCnt(CodeDetailSearchCondition condition);
 
-    CodeDetailDto selectDetail(Long codeDetailSeq);
+    CodeDetailDto selectDetail(CodeDetailSearchCondition condition);
 
     CodeDetailDto findCodeDetailByCode(CodeDetailSaveRequest condition);
 
@@ -22,5 +22,5 @@ public interface CodeDetailMapper {
 
     int updateData(CodeDetailSaveRequest condition);
 
-    int deleteData(Long codeDetailSeq);
+    int deleteData(CodeDetailSaveRequest condition);
 }

@@ -10,18 +10,17 @@ import java.util.List;
 import java.util.Map;
 
 public interface CodeGroupService {
-
     PageResponse<CodeGroupDto> selectList(CodeGroupSearchCondition condition);
 
-    CodeGroupDto selectDetail(Long codeGroupSeq);
+    CodeGroupDto selectDetail(CodeGroupSearchCondition condition);
 
     CodeGroupDto findIdCheck(CodeGroupSaveRequest condition);
 
-    Map<String, Object> insertData(CodeGroupSaveRequest condition);
+    int insertData(CodeGroupSaveRequest condition);
 
-    Map<String, Object> updateData(CodeGroupSaveRequest condition);
+    int updateData(CodeGroupSaveRequest condition);
 
-    Map<String, Object> deleteData(Long codeGroupSeq);
+    int deleteData(CodeGroupSaveRequest condition);
 
     List<OptionDto> findCodeGroupOptions();
 }

@@ -15,7 +15,7 @@ public interface CodeGroupsMapper {
 
     long selectListCnt(CodeGroupSearchCondition condition);
 
-    CodeGroupDto selectDetail(Long codeGroupSeq);
+    CodeGroupDto selectDetail(CodeGroupSearchCondition condition);
 
     CodeGroupDto findIdCheck(CodeGroupSaveRequest condition);
 
@@ -23,7 +23,7 @@ public interface CodeGroupsMapper {
 
     int updateData(CodeGroupSaveRequest condition);
 
-    int deleteData(Long codeGroupSeq);
+    int deleteData(CodeGroupSaveRequest condition);
 
     List<OptionDto> findCodeGroupOptions();
 }

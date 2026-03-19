@@ -1,12 +1,15 @@
 package com.noonoo.prjtbackend.codeGroup.dto;
 
 import com.noonoo.prjtbackend.common.paging.PageRequest;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
+@ToString(callSuper = true)
 public class CodeGroupSearchCondition extends PageRequest {
+    private Long codeGroupSeq;
     private String codeGroupId;
     private String codeGroupName;
     private String useYn;

@@ -13,9 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -32,15 +30,13 @@ public class CodeDetailServiceImpl implements CodeDetailService {
     }
 
     @Override
-    public CodeDetailDto selectDetail(Long codeDetailSeq) {
-        return codeDetailMapper.selectDetail(codeDetailSeq);
+    public CodeDetailDto selectDetail(CodeDetailSearchCondition condition) {
+        return codeDetailMapper.selectDetail(condition);
     }
 
     @Override
     @Transactional
-    public Map<String, Object> insertData(CodeDetailSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-
+    public int insertData(CodeDetailSaveRequest condition) {
         log.info("=======> /api/code-details/create service param={}", condition);
 
         String loginMemberId = RequestContext.getLoginMemberId();
@@ -57,21 +53,16 @@ public class CodeDetailServiceImpl implements CodeDetailService {
         if (condition.getStatus() == null || condition.getStatus().isBlank()) {
             condition.setStatus("ACTIVE");
         }
+        if (condition.getSortOrder() == null) {
+            condition.setSortOrder(0);
+        }
 
-        int cnt = codeDetailMapper.insertData(condition);
-
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeDetailMapper.insertData(condition);
     }
 
     @Override
     @Transactional
-    public Map<String, Object> updateData(CodeDetailSaveRequest condition) {
-        Map<String, Object> resultMap = new HashMap<>();
-
+    public int updateData(CodeDetailSaveRequest condition) {
         log.info("=======> /api/code-details/update service param={}", condition);
 
         String loginMemberId = RequestContext.getLoginMemberId();
@@ -80,28 +71,27 @@ public class CodeDetailServiceImpl implements CodeDetailService {
         condition.setModifyId(loginMemberId != null ? loginMemberId : "SYSTEM");
         condition.setModifyIp(clientIp);
 
-        int cnt = codeDetailMapper.updateData(condition);
+        if (condition.getUseYn() == null || condition.getUseYn().isBlank()) {
+            condition.setUseYn("Y");
+        }
+        if (condition.getSortOrder() == null) {
+            condition.setSortOrder(0);
+        }
 
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeDetailMapper.updateData(condition);
     }
 
     @Override
     @Transactional
-    public Map<String, Object> deleteData(Long codeDetailSeq) {
-        Map<String, Object> resultMap = new HashMap<>();
+    public int deleteData(CodeDetailSaveRequest condition) {
+        log.info("=======> /api/code-details/delete service param={}", condition);
 
-        log.info("=======> /api/code-details/delete service param={}", codeDetailSeq);
+        String loginMemberId = RequestContext.getLoginMemberId();
+        String clientIp = RequestContext.getClientIp();
 
-        int cnt = codeDetailMapper.deleteData(codeDetailSeq);
+        condition.setModifyId(loginMemberId != null ? loginMemberId : "SYSTEM");
+        condition.setModifyIp(clientIp);
 
-        resultMap.put("status", cnt > 0);
-        resultMap.put("msg", cnt > 0 ? "success" : "fail");
-        resultMap.put("affectedRows", cnt);
-
-        return resultMap;
+        return codeDetailMapper.deleteData(condition);
     }
 }

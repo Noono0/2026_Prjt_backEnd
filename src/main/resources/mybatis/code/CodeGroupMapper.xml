@@ -76,12 +76,24 @@
     </select>
 
     <select id="selectDetail"
-            parameterType="long"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSearchCondition"
             resultType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupDto">
         SELECT
-        <include refid="CodeGroupColumns"/>
-        FROM code_group cg
-        WHERE cg.code_group_seq = #{codeGroupSeq}
+            CODE_GROUP_SEQ AS codeGroupSeq
+             , CODE_GROUP_ID AS codeGroupId
+             , CODE_GROUP_NAME AS codeGroupName
+             , DESCRIPTION AS description
+             , SORT_ORDER AS sortOrder
+             , USE_YN AS useYn
+             , STATUS AS status
+             , CREATE_ID AS createId
+             , CREATE_IP AS createIp
+             , DATE_FORMAT(CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt
+             , MODIFY_ID AS modifyId
+             , MODIFY_IP AS modifyIp
+             , DATE_FORMAT(MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM CODE_GROUP
+        WHERE CODE_GROUP_SEQ = #{codeGroupSeq}
     </select>
 
     <select id="findIdCheck"
@@ -145,11 +157,16 @@
         WHERE code_group_seq = #{codeGroupSeq}
     </update>
 
-    <delete id="deleteData"
-            parameterType="long">
-        DELETE FROM code_group
-        WHERE code_group_seq = #{codeGroupSeq}
-    </delete>
+    <update id="deleteData"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest">
+        UPDATE CODE_GROUP
+        SET
+            STATUS = 'DELETED'
+          , MODIFY_ID = #{modifyId}
+          , MODIFY_IP = #{modifyIp}
+          , MODIFY_DT = NOW()
+        WHERE CODE_GROUP_SEQ = #{codeGroupSeq}
+    </update>
 
     <select id="findCodeGroupOptions"
             resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">

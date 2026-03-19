@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -30,41 +29,32 @@ public class CodeGroupController {
         return ApiResponse.ok("코드그룹 목록 조회 완료", result);
     }
 
-    @GetMapping("/detail/{codeGroupSeq}")
-    public ApiResponse<CodeGroupDto> findCodeGroupDetail(@PathVariable Long codeGroupSeq) {
-        log.info("=======> /api/code-groups/detail/{}", codeGroupSeq);
-        CodeGroupDto detail = codeGroupService.selectDetail(codeGroupSeq);
+    @PostMapping("/detail")
+    public ApiResponse<CodeGroupDto> findCodeGroupDetail(@RequestBody CodeGroupSearchCondition request) {
+        log.info("=======> /api/code-groups/detail param={}", request);
+        CodeGroupDto detail = codeGroupService.selectDetail(request);
         return ApiResponse.ok("코드그룹 상세 조회 완료", detail);
     }
 
     @PostMapping("/create")
-    public ApiResponse<Map<String, Object>> createCodeGroup(@RequestBody CodeGroupSaveRequest request) {
+    public ApiResponse<Integer> createCodeGroup(@RequestBody CodeGroupSaveRequest request) {
         log.info("=======> /api/code-groups/create param={}", request);
-        Map<String, Object> result = codeGroupService.insertData(request);
-        return ApiResponse.ok(
-                Boolean.TRUE.equals(result.get("status")) ? "코드그룹 등록 완료" : "코드그룹 등록 실패",
-                result
-        );
+        int result = codeGroupService.insertData(request);
+        return ApiResponse.ok(result > 0 ? "코드그룹 등록 완료" : "코드그룹 등록 실패", result);
     }
 
     @PutMapping("/update")
-    public ApiResponse<Map<String, Object>> updateCodeGroup(@RequestBody CodeGroupSaveRequest request) {
+    public ApiResponse<Integer> updateCodeGroup(@RequestBody CodeGroupSaveRequest request) {
         log.info("=======> /api/code-groups/update param={}", request);
-        Map<String, Object> result = codeGroupService.updateData(request);
-        return ApiResponse.ok(
-                Boolean.TRUE.equals(result.get("status")) ? "코드그룹 수정 완료" : "코드그룹 수정 실패",
-                result
-        );
+        int result = codeGroupService.updateData(request);
+        return ApiResponse.ok(result > 0 ? "코드그룹 수정 완료" : "코드그룹 수정 실패", result);
     }
 
-    @DeleteMapping("/delete/{codeGroupSeq}")
-    public ApiResponse<Map<String, Object>> deleteCodeGroup(@PathVariable Long codeGroupSeq) {
-        log.info("=======> /api/code-groups/delete/{}", codeGroupSeq);
-        Map<String, Object> result = codeGroupService.deleteData(codeGroupSeq);
-        return ApiResponse.ok(
-                Boolean.TRUE.equals(result.get("status")) ? "코드그룹 삭제 완료" : "코드그룹 삭제 실패",
-                result
-        );
+    @DeleteMapping("/delete")
+    public ApiResponse<Integer> deleteCodeGroup(@RequestBody CodeGroupSaveRequest request) {
+        log.info("=======> /api/code-groups/delete param={}", request);
+        int result = codeGroupService.deleteData(request);
+        return ApiResponse.ok(result > 0 ? "코드그룹 삭제 완료" : "코드그룹 삭제 실패", result);
     }
 
     @GetMapping("/options")
