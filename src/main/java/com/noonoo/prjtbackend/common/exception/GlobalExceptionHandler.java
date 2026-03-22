@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -21,6 +22,20 @@ public class GlobalExceptionHandler {
     /**
      * 잘못된 파라미터, 업무상 잘못된 값 등
      */
+    /**
+     * 로그인 실패 등 Spring Security 인증 예외
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException e) {
+        log.warn("인증 실패: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.fail(
+                        "AUTH_FAILED",
+                        e.getMessage() != null ? e.getMessage() : "로그인에 실패했습니다."
+                ));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("잘못된 요청 파라미터/비즈니스 예외 발생: {}", e.getMessage(), e);

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.noonoo.prjtbackend.role.mapper.RoleMenuMapper">
+
+    <select id="findPermissionsByRoleId" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        /* RoleMenuMapper.findPermissionsByRoleId */
+        SELECT
+            R.ROLE_CODE    AS roleCode
+             , M.MENU_CODE    AS menuCode
+             , M.MENU_NAME    AS menuName
+             , M.MENU_PATH    AS menuPath
+             , RM.CAN_READ    AS canRead
+             , RM.CAN_CREATE  AS canCreate
+             , RM.CAN_UPDATE  AS canUpdate
+             , RM.CAN_DELETE  AS canDelete
+        FROM ROLE_MENU RM
+                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        WHERE R.ROLE_ID = #{roleId}
+          AND R.USE_YN = 'Y'
+          AND M.USE_YN = 'Y'
+          AND RM.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+    <select id="findPermissionsByRoleCode" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        /* RoleMenuMapper.findPermissionsByRoleCode */
+        SELECT
+            R.ROLE_CODE    AS roleCode
+             , M.MENU_CODE    AS menuCode
+             , M.MENU_NAME    AS menuName
+             , M.MENU_PATH    AS menuPath
+             , RM.CAN_READ    AS canRead
+             , RM.CAN_CREATE  AS canCreate
+             , RM.CAN_UPDATE  AS canUpdate
+             , RM.CAN_DELETE  AS canDelete
+        FROM ROLE_MENU RM
+                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        WHERE R.ROLE_CODE = #{roleCode}
+          AND R.USE_YN = 'Y'
+          AND M.USE_YN = 'Y'
+          AND RM.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+    <select id="selectAllMenusWithMapping" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuAssignmentDto">
+        /* RoleMenuMapper.selectAllMenusWithMapping */
+        SELECT
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , RM.ROLE_MENU_ID  AS roleMenuId
+             , COALESCE(RM.CAN_READ, 'N')   AS canRead
+             , COALESCE(RM.CAN_CREATE, 'N') AS canCreate
+             , COALESCE(RM.CAN_UPDATE, 'N') AS canUpdate
+             , COALESCE(RM.CAN_DELETE, 'N') AS canDelete
+        FROM MENU M
+                 LEFT JOIN ROLE_MENU RM
+                           ON RM.MENU_ID = M.MENU_ID
+                               AND RM.ROLE_ID = #{roleId}
+                               AND RM.USE_YN = 'Y'
+        WHERE M.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+    <delete id="deleteByRoleId">
+        DELETE
+        FROM ROLE_MENU
+        WHERE ROLE_ID = #{roleId}
+    </delete>
+
+    <insert id="insertRoleMenu" parameterType="com.noonoo.prjtbackend.role.dto.RoleMenuInsertParam">
+        INSERT INTO ROLE_MENU (
+            ROLE_ID
+        , MENU_ID
+        , CAN_READ
+        , CAN_CREATE
+        , CAN_UPDATE
+        , CAN_DELETE
+        , USE_YN
+        , CRT_DT
+        , UPD_DT
+        ) VALUES (
+                     #{roleId}
+                 , #{menuId}
+                 , #{canRead}
+                 , #{canCreate}
+                 , #{canUpdate}
+                 , #{canDelete}
+                 , 'Y'
+                 , NOW()
+                 , NOW()
+                 )
+    </insert>
+
+</mapper>

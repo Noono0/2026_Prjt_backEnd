@@ -1,98 +1,390 @@
-### 백엔드 Role / Member API 테스트 파일
-### 사용법
-### 1) IntelliJ IDEA 또는 VS Code REST Client 확장에서 열기
-### 2) 아래 @baseUrl 값을 네 백엔드 주소로 맞추기
-### 3) 각 요청 위의 'Send Request' 실행
+### =====================================================================
+### backend-member-role-test.http
+### 실제 Controller 기준 테스트용 HTTP 파일
+### - IntelliJ HTTP Client / VS Code REST Client 실행 가능
+### - 현재 프로젝트 컨트롤러 기준으로 endpoint / method / parameter 맞춤
+###
+### 반영 기준 Controller
+### - MemberController      : /api/members/search, /detail/{memberSeq}, /create, /update, /delete/{memberSeq}
+### - CodeGroupController   : /api/code-groups/search, /detail, /create, /update, /delete, /options
+### - CodeDetailController  : /api/code-details/search, /detail, /create, /update, /delete
+### - MenuController        : /api/menus?roleCode=...
+###
+### 주의
+### - 메뉴 API는 단순 GET /api/menus 가 아니라 roleCode 필수 파라미터 필요
+### - code-group / code-detail 의 detail, delete 는 path variable 이 아니라 RequestBody 방식
+### - 검색 API는 대부분 GET 이 아니라 POST /search
+### - 실제 DTO validation 조건은 서비스/DTO 정의에 따라 더 있을 수 있음
+### =====================================================================
 
 @baseUrl = http://localhost:8080
 @json = application/json
 
-### 0. 헬스체크(있으면 확인용, 없으면 무시)
+### ---------------------------------------------------------------------
+### 공통 샘플 변수
+### ---------------------------------------------------------------------
+@memberSeq = 1
+@roleCode = ADMIN
+@codeGroupSeq = 1
+@codeDetailSeq = 1
+@menuRoleCode = ADMIN
+
+
+### =====================================================================
+### 0. 서버 확인
+### =====================================================================
+
+### 0-1. 헬스체크 (있으면 응답, 없으면 무시)
 GET {{baseUrl}}/actuator/health
 Accept: {{json}}
 
-### 1. ROLE 목록 조회
-### 프론트 MemberFormModal.tsx 가 기대하는 형태 예시
-### { "items": [ { "id": 1, "role_name": "ADMIN" } ] }
-GET {{baseUrl}}/api/roles
-Accept: {{json}}
 
-### 2. 회원 목록 조회
-### 프론트 members 화면이 기대하는 형태 예시
-### { "items": [ { "id": "000001", "name": "홍길동", ... } ], "total": 1 }
+### =====================================================================
+### 1. Member API
+### Controller: /api/members
+### =====================================================================
+
+### 1-1. 회원 목록 검색
+### 설명:
+### - 단순 GET /api/members 아님
+### - POST /api/members/search 로 검색조건 JSON 전달
 POST {{baseUrl}}/api/members/search
 Content-Type: {{json}}
 Accept: {{json}}
 
 {
-  "memberId": "AAA",
-  "memberName": "admin",
-  "roleCode": "AAA",
-  "status": "ABBB"
+  "page": 1,
+  "size": 20,
+  "memberId": "",
+  "memberName": "",
+  "roleCode": "",
+  "status": "",
+  "useYn": ""
 }
 
-### 3. 회원 목록 조회 - 검색어 포함
-GET {{baseUrl}}/api/members?q=hong
-Accept: {{json}}
-
-### 4. 회원 등록
-POST {{baseUrl}}/api/members/createMember
+### 1-2. 회원 목록 검색 - ADMIN 권한 회원만
+POST {{baseUrl}}/api/members/search
 Content-Type: {{json}}
 Accept: {{json}}
 
 {
-  "birthYmd": "19970203",
-  "createId": "admin",
-  "createIp": "127.0.0.1",
-  "email": "test@example.com",
-  "gender": "F",
+  "page": 1,
+  "size": 20,
+  "memberId": "",
+  "memberName": "",
+  "roleCode": "ADMIN",
+  "status": "ACTIVE",
+  "useYn": "Y"
+}
+
+### 1-3. 회원 상세 조회
+GET {{baseUrl}}/api/members/detail/{{memberSeq}}
+Accept: {{json}}
+
+### 1-4. 회원 등록
+### 주의:
+### - 실제 필수값은 DTO/서비스 기준으로 더 있을 수 있음
+### - memberPwd / roleCode / status / useYn 정도는 보통 필요
+POST {{baseUrl}}/api/members/create
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
   "memberId": "testuser01",
-  "memberName": "홍길동",
-  "memberPwd": "1234qwer!",
-  "modifyId": "admin",
-  "modifyIp": "127.0.0.1",
-  "phone": "01012345678",
-  "roleCode": "USER",
-  "status": "ACTIVE"
+  "memberPwd": "1234",
+  "memberName": "테스트사용자",
+  "email": "testuser01@example.com",
+  "phone": "010-1111-2222",
+  "gender": "M",
+  "birthYmd": "19900101",
+  "roleCode": "ADMIN",
+  "status": "ACTIVE",
+  "useYn": "Y",
+  "createId": "system",
+  "createIp": "127.0.0.1"
 }
 
-### 5. 회원 등록 후 재조회
-GET {{baseUrl}}/api/members?q=000777
-Accept: {{json}}
-
-### 6. 회원 수정
-PUT {{baseUrl}}/api/members
+### 1-5. 회원 수정
+### 주의:
+### - 수정은 memberSeq 포함해서 보내는 구조일 가능성이 높음
+PUT {{baseUrl}}/api/members/update
 Content-Type: {{json}}
 Accept: {{json}}
 
 {
-  "id": "000777",
-  "name": "테스트회원수정",
-  "birthYmd": "1997-02-03",
-  "gender": "F",
+  "memberSeq": {{memberSeq}},
+  "memberId": "testuser01",
+  "memberPwd": "1234",
+  "memberName": "테스트사용자수정",
+  "email": "testuser01_updated@example.com",
   "phone": "010-9999-8888",
-  "email": "test777-updated@naver.com",
-  "region": "경기",
-  "status": "SUSPENDED",
-  "role": "CS"
+  "gender": "M",
+  "birthYmd": "19900101",
+  "roleCode": "USER",
+  "status": "ACTIVE",
+  "useYn": "Y",
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1"
 }
 
-### 7. 수정 후 재조회
-GET {{baseUrl}}/api/members?q=000777
+### 1-6. 회원 삭제
+DELETE {{baseUrl}}/api/members/delete/{{memberSeq}}
 Accept: {{json}}
 
-### 8. 회원 삭제
-DELETE {{baseUrl}}/api/members?ids=000777
+
+### =====================================================================
+### 2. Code Group API
+### Controller: /api/code-groups
+### =====================================================================
+
+### 2-1. 코드그룹 목록 검색
+POST {{baseUrl}}/api/code-groups/search
+Content-Type: {{json}}
 Accept: {{json}}
 
-### 9. 삭제 후 재조회
-GET {{baseUrl}}/api/members?q=000777
+{
+  "page": 1,
+  "size": 20,
+  "codeGroupId": "",
+  "codeGroupName": "",
+  "useYn": "",
+  "status": ""
+}
+
+### 2-2. 코드그룹 상세 조회
+### 주의:
+### - GET /{id} 형태가 아니라 POST /detail + body 구조
+POST {{baseUrl}}/api/code-groups/detail
+Content-Type: {{json}}
 Accept: {{json}}
 
-### 10. ROLE 응답 형식 검증용 주석
-### 정상이라면 items 배열 안 객체에 id, role_name 필드가 있어야 함
-### 프론트 MemberFormModal.tsx 는 option key/value 렌더링에 이 필드를 사용함
+{
+  "codeGroupSeq": {{codeGroupSeq}}
+}
 
-### 11. members 응답 형식 검증용 주석
-### 정상이라면 items 배열 안 객체에 아래 필드가 있으면 프론트에서 바로 표시 가능
-### id, name, birthYmd, gender, phone, email, region, status, role, lastLoginAt
+### 2-3. 코드그룹 등록
+POST {{baseUrl}}/api/code-groups/create
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeGroupId": "MEMBER_STATUS",
+  "codeGroupName": "회원상태",
+  "description": "회원 상태 코드 그룹",
+  "sortOrder": 1,
+  "useYn": "Y",
+  "status": "ACTIVE",
+  "createId": "system",
+  "createIp": "127.0.0.1"
+}
+
+### 2-4. 코드그룹 수정
+PUT {{baseUrl}}/api/code-groups/update
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeGroupSeq": {{codeGroupSeq}},
+  "codeGroupId": "MEMBER_STATUS",
+  "codeGroupName": "회원상태수정",
+  "description": "회원 상태 코드 그룹 수정",
+  "sortOrder": 2,
+  "useYn": "Y",
+  "status": "ACTIVE",
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1"
+}
+
+### 2-5. 코드그룹 삭제
+### 주의:
+### - DELETE 이지만 body 로 식별값 전달
+DELETE {{baseUrl}}/api/code-groups/delete
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeGroupSeq": {{codeGroupSeq}},
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1"
+}
+
+### 2-6. 코드그룹 옵션 조회
+GET {{baseUrl}}/api/code-groups/options
+Accept: {{json}}
+
+
+### =====================================================================
+### 3. Code Detail API
+### Controller: /api/code-details
+### =====================================================================
+
+### 3-1. 코드디테일 목록 검색
+POST {{baseUrl}}/api/code-details/search
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "page": 1,
+  "size": 20,
+  "codeGroupSeq": {{codeGroupSeq}},
+  "codeId": "",
+  "codeName": "",
+  "useYn": "",
+  "status": ""
+}
+
+### 3-2. 코드디테일 상세 조회
+POST {{baseUrl}}/api/code-details/detail
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeDetailSeq": {{codeDetailSeq}}
+}
+
+### 3-3. 코드디테일 등록
+POST {{baseUrl}}/api/code-details/create
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeGroupSeq": {{codeGroupSeq}},
+  "parentDetailSeq": null,
+  "codeId": "ACTIVE",
+  "codeValue": "ACTIVE",
+  "codeName": "정상",
+  "codeLevel": 1,
+  "description": "정상 회원 상태",
+  "sortOrder": 1,
+  "useYn": "Y",
+  "status": "ACTIVE",
+  "attr1": "회원",
+  "attr2": "사용가능",
+  "attr3": "기본",
+  "createId": "system",
+  "createIp": "127.0.0.1"
+}
+
+### 3-4. 코드디테일 수정
+PUT {{baseUrl}}/api/code-details/update
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeDetailSeq": {{codeDetailSeq}},
+  "codeGroupSeq": {{codeGroupSeq}},
+  "parentDetailSeq": null,
+  "codeId": "ACTIVE",
+  "codeValue": "ACTIVE",
+  "codeName": "정상수정",
+  "codeLevel": 1,
+  "description": "정상 회원 상태 수정",
+  "sortOrder": 1,
+  "useYn": "Y",
+  "status": "ACTIVE",
+  "attr1": "회원",
+  "attr2": "사용가능",
+  "attr3": "수정",
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1"
+}
+
+### 3-5. 코드디테일 삭제
+### 주의:
+### - DELETE 이지만 body 로 식별값 전달
+DELETE {{baseUrl}}/api/code-details/delete
+Content-Type: {{json}}
+Accept: {{json}}
+
+{
+  "codeDetailSeq": {{codeDetailSeq}},
+  "codeGroupSeq": {{codeGroupSeq}},
+  "modifyId": "admin",
+  "modifyIp": "127.0.0.1"
+}
+
+
+### =====================================================================
+### 4. Menu API
+### Controller: /api/menus
+### =====================================================================
+
+### 4-1. 메뉴 조회 - roleCode 필수
+### 중요:
+### - 이 API는 /api/menus?roleCode=ADMIN 형태여야 함
+### - 그냥 GET /api/menus 호출하면 MissingServletRequestParameterException 또는 500/400 발생 가능
+GET {{baseUrl}}/api/menus?roleCode={{menuRoleCode}}
+Accept: {{json}}
+
+### 4-2. 메뉴 조회 - USER 권한 기준
+GET {{baseUrl}}/api/menus?roleCode=USER
+Accept: {{json}}
+
+### 4-3. 메뉴 조회 - MANAGER 권한 기준
+GET {{baseUrl}}/api/menus?roleCode=MANAGER
+Accept: {{json}}
+
+
+### =====================================================================
+### 5. 자주 하는 실수 정리
+### =====================================================================
+
+### [실수1] 아래 요청은 잘못된 호출
+### GET {{baseUrl}}/api/members
+### 이유: members 는 GET 목록 조회가 아니라 POST /search 구조
+
+### [실수2] 아래 요청은 잘못된 호출
+### GET {{baseUrl}}/api/menus
+### 이유: roleCode 파라미터가 필수
+
+### [실수3] 아래 요청은 잘못된 호출
+### GET {{baseUrl}}/api/code-groups
+### 이유: code-groups 는 POST /search 구조
+
+### [실수4] 아래 요청은 잘못된 호출
+### GET {{baseUrl}}/api/code-details
+### 이유: code-details 는 POST /search 구조
+
+
+### =====================================================================
+### 5-b. 역할–메뉴 매핑 (RoleMenuMappingController)
+### =====================================================================
+@roleId = 1
+
+### 역할별 전체 메뉴 + 현재 ROLE_MENU 매핑 조회
+POST {{baseUrl}}/api/roles/menu-mappings
+Content-Type: {{json}}
+
+{
+  "roleId": {{roleId}}
+}
+
+### 역할–메뉴 매핑 저장 (해당 역할 기존 매핑 삭제 후 재등록)
+PUT {{baseUrl}}/api/roles/menu-mappings
+Content-Type: {{json}}
+
+{
+  "roleId": {{roleId}},
+  "items": [
+    {
+      "menuId": 1,
+      "canRead": "Y",
+      "canCreate": "N",
+      "canUpdate": "N",
+      "canDelete": "N"
+    }
+  ]
+}
+
+
+### =====================================================================
+### 6. 빠른 테스트 순서 추천
+### =====================================================================
+
+### 1) 코드그룹 등록
+### 2) 코드디테일 등록
+### 3) 회원 등록
+### 4) 회원 검색
+### 5) 메뉴 조회(roleCode=ADMIN)
+### 6) 상세조회 / 수정 / 삭제 순서로 확인
+### =====================================================================

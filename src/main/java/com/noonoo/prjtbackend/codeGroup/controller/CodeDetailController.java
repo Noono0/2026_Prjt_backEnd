@@ -6,8 +6,10 @@ import com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.service.CodeDetailService;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
+import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -19,6 +21,7 @@ public class CodeDetailController {
     private final CodeDetailService codeDetailService;
 
     @PostMapping("/search")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_DETAIL + "')")
     public ApiResponse<PageResponse<CodeDetailDto>> searchCodeDetails(
             @RequestBody CodeDetailSearchCondition request) {
         log.info("=======> /api/code-details/search param={}", request);
@@ -27,6 +30,7 @@ public class CodeDetailController {
     }
 
     @PostMapping("/detail")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_DETAIL + "')")
     public ApiResponse<CodeDetailDto> findCodeDetail(@RequestBody CodeDetailSearchCondition request) {
         log.info("=======> /api/code-details/detail param={}", request);
         CodeDetailDto detail = codeDetailService.selectDetail(request);
@@ -34,6 +38,7 @@ public class CodeDetailController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("@securityExpressions.canCreate('" + MenuAuthorities.CODE_DETAIL + "')")
     public ApiResponse<Integer> createCodeDetail(@RequestBody CodeDetailSaveRequest request) {
         log.info("=======> /api/code-details/create param={}", request);
         int result = codeDetailService.insertData(request);
@@ -41,6 +46,7 @@ public class CodeDetailController {
     }
 
     @PutMapping("/update")
+    @PreAuthorize("@securityExpressions.canUpdate('" + MenuAuthorities.CODE_DETAIL + "')")
     public ApiResponse<Integer> updateCodeDetail(@RequestBody CodeDetailSaveRequest request) {
         log.info("=======> /api/code-details/update param={}", request);
         int result = codeDetailService.updateData(request);
@@ -48,6 +54,7 @@ public class CodeDetailController {
     }
 
     @DeleteMapping("/delete")
+    @PreAuthorize("@securityExpressions.canDelete('" + MenuAuthorities.CODE_DETAIL + "')")
     public ApiResponse<Integer> deleteCodeDetail(@RequestBody CodeDetailSaveRequest request) {
         log.info("=======> /api/code-details/delete param={}", request);
         int result = codeDetailService.deleteData(request);

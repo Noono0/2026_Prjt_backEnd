@@ -1,17 +1,157 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.noonoo.prjtbackend.menu.mapper.MenuMapper">
+
     <select id="findMenusByRole" resultType="com.noonoo.prjtbackend.menu.dto.MenuDto">
-        /* MenuMapper.findMenusByRole */
         SELECT
-            m.menu_id,
-            m.menu_name,
-            m.menu_url,
-            m.parent_menu_id,
-            m.sort_no
-        FROM menu m
-        INNER JOIN role_menu rm ON m.menu_id = rm.menu_id
-        WHERE rm.role_code = #{roleCode}
-        ORDER BY m.sort_no ASC, m.menu_id ASC
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , M.USE_YN         AS useYn
+        FROM MENU M
+                 INNER JOIN ROLE_MENU RM ON M.MENU_ID = RM.MENU_ID
+                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
+        WHERE R.ROLE_CODE = #{roleCode}
+          AND COALESCE(RM.USE_YN, 'Y') = 'Y'
+          AND M.USE_YN = 'Y'
+          AND R.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
     </select>
+
+    <select id="selectAllForTree" resultType="com.noonoo.prjtbackend.menu.dto.MenuDto">
+        /* MenuMapper.selectAllForTree */
+        SELECT
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , M.USE_YN         AS useYn
+        FROM MENU M
+        WHERE M.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
+    <sql id="menuWhere">
+        WHERE 1 = 1
+        <if test="menuId != null">
+            AND M.MENU_ID = #{menuId}
+        </if>
+        <if test="menuCode != null and menuCode != ''">
+            AND M.MENU_CODE LIKE CONCAT('%', #{menuCode}, '%')
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND M.MENU_NAME LIKE CONCAT('%', #{menuName}, '%')
+        </if>
+        <if test="parentMenuId != null">
+            AND M.PARENT_MENU_ID = #{parentMenuId}
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND M.USE_YN = #{useYn}
+        </if>
+    </sql>
+
+    <select id="selectListCnt" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSearchCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM MENU M
+        <include refid="menuWhere"/>
+    </select>
+
+    <select id="selectList" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSearchCondition"
+            resultType="com.noonoo.prjtbackend.menu.dto.MenuDto">
+        SELECT
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , M.USE_YN         AS useYn
+        FROM MENU M
+        <include refid="menuWhere"/>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'menuCode'">M.MENU_CODE</when>
+            <when test="sortBy == 'menuName'">M.MENU_NAME</when>
+            <when test="sortBy == 'menuPath'">M.MENU_PATH</when>
+            <when test="sortBy == 'useYn'">M.USE_YN</when>
+            <otherwise>M.SORT_ORDER</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc' or sortDir == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        , M.MENU_ID ASC
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectDetail" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSearchCondition"
+            resultType="com.noonoo.prjtbackend.menu.dto.MenuDto">
+        SELECT
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , M.USE_YN         AS useYn
+        FROM MENU M
+        WHERE M.MENU_ID = #{menuId}
+    </select>
+
+    <select id="countByMenuCode" resultType="long">
+        SELECT COUNT(*)
+        FROM MENU M
+        WHERE M.MENU_CODE = #{menuCode}
+        <if test="excludeMenuId != null">
+            AND M.MENU_ID != #{excludeMenuId}
+        </if>
+    </select>
+
+    <insert id="insertData" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSaveRequest"
+            useGeneratedKeys="true" keyProperty="menuId" keyColumn="MENU_ID">
+        INSERT INTO MENU (
+            MENU_CODE
+        , MENU_NAME
+        , MENU_PATH
+        , PARENT_MENU_ID
+        , SORT_ORDER
+        , USE_YN
+        , CRT_DT
+        , UPD_DT
+        ) VALUES (
+                     #{menuCode}
+                 , #{menuName}
+                 , #{menuPath}
+                 , #{parentMenuId}
+                 , #{sortOrder}
+                 , #{useYn}
+                 , NOW()
+                 , NOW()
+                 )
+    </insert>
+
+    <update id="updateData" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSaveRequest">
+        UPDATE MENU
+        SET MENU_CODE      = #{menuCode}
+          , MENU_NAME      = #{menuName}
+          , MENU_PATH      = #{menuPath}
+          , PARENT_MENU_ID = #{parentMenuId}
+          , SORT_ORDER     = #{sortOrder}
+          , USE_YN         = #{useYn}
+          , UPD_DT         = NOW()
+        WHERE MENU_ID = #{menuId}
+    </update>
+
+    <update id="deleteData" parameterType="com.noonoo.prjtbackend.menu.dto.MenuSaveRequest">
+        UPDATE MENU
+        SET USE_YN = 'N'
+          , UPD_DT = NOW()
+        WHERE MENU_ID = #{menuId}
+    </update>
+
 </mapper>

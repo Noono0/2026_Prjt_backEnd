@@ -3,7 +3,8 @@ package com.noonoo.prjtbackend.role.mapper;
 import java.util.List;
 
 import com.noonoo.prjtbackend.role.dto.RoleDto;
-import com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto;
+import com.noonoo.prjtbackend.role.dto.RoleSaveRequest;
+import com.noonoo.prjtbackend.role.dto.RoleSearchCondition;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,7 +13,17 @@ import org.apache.ibatis.annotations.Param;
 public interface RoleMapper {
     List<RoleDto> findAllActiveRoles();
 
-    List<RoleMenuPermissionDto> findPermissionsByRoleId(@Param("roleId") Long roleId);
+    long selectListCnt(RoleSearchCondition condition);
 
-    List<RoleMenuPermissionDto> findPermissionsByRoleCode(@Param("roleCode") String roleCode);
+    List<RoleDto> selectList(RoleSearchCondition condition);
+
+    RoleDto selectDetail(RoleSearchCondition condition);
+
+    long countByRoleCode(@Param("roleCode") String roleCode, @Param("excludeRoleId") Long excludeRoleId);
+
+    int insertData(RoleSaveRequest request);
+
+    int updateData(RoleSaveRequest request);
+
+    int deleteData(RoleSaveRequest request);
 }

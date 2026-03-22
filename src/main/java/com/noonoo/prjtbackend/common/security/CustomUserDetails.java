@@ -9,17 +9,18 @@ import java.util.Collection;
 @Getter
 public class CustomUserDetails extends User {
 
-    private final Long memberId;
+    /** 회원 PK */
+    private final Long memberSeq;
     private final String roleCode;
 
     public CustomUserDetails(
-            Long memberId,
+            Long memberSeq,
             String username,
-            String memberPwd,
+            String password,
             String roleCode,
             Collection<? extends GrantedAuthority> authorities) {
-        super(username, memberPwd, authorities);
-        this.memberId = memberId;
+        super(username, password, authorities);
+        this.memberSeq = memberSeq;
         this.roleCode = roleCode;
     }
 }

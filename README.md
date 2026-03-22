@@ -58,3 +58,27 @@
 2. `Category`, `Role`, `RoleMenu`, `RefreshToken` 도 같은 규칙으로 분리
 3. `security`, `audit`, `exception` 도 `common` 또는 전용 모듈로 재배치
 4. 기존 컨트롤러 URL을 새 구조에 맞춰 매핑 정리
+
+
+
+## 역할–메뉴 매핑 화면에 메뉴가 안 나올 때
+
+- 매핑 API는 **`MENU` 테이블**에서 `USE_YN='Y'` 인 행을 전부 읽습니다. **메뉴가 한 건도 없으면** 그리드가 비어 있습니다.
+- 최초 기동 시 `src/main/resources/data.sql` 이 기본 메뉴(MEMBER, MENU, ROLE, CODE_GROUP, CODE_DETAIL 등)를 `INSERT IGNORE` 로 넣습니다. 적용하려면 `application.yml` 의 `spring.jpa.defer-datasource-initialization` / `spring.sql.init.mode` 가 켜져 있어야 합니다.
+- 이미 DB가 있는 경우 수동으로 `MENU` 에 행을 넣거나, **메뉴관리** 화면에서 등록해도 됩니다.
+
+## 보안 (Spring Security + DB 역할–메뉴 권한)
+
+- `AuthorityBuilder` 가 `ROLE_MENU` 조회 결과로 `MEMBER_READ`, `MENU_UPDATE` 형태의 `GrantedAuthority` 를 부여합니다.
+- `MenuAuthorities` 상수(`MEMBER`, `MENU`, `ROLE`, `CODE_GROUP`, `CODE_DETAIL`)는 **MENU.MENU_CODE** 와 동일해야 합니다.
+- 컨트롤러는 `@PreAuthorize("@securityExpressions.canRead('MEMBER')")` 처럼 메뉴 코드별 조회/등록/수정/삭제를 검사합니다.
+- `app.security.permit-all` (기본 `true`): 로컬에서 기존처럼 전체 허용 + 메서드 권한도 `SecurityExpressions` 가 통과시킵니다. **운영 전 `false`** 로 두고 `/api/auth/login` 으로 세션 로그인 후 호출하세요.
+- `false` 일 때: 미인증 → JSON 401, 권한 부족 → JSON 403 (`JsonAuthenticationEntryPoint`, `JsonAccessDeniedHandler`).
+- 로그인은 `AuthenticationManager` 로 `SecurityContext` 를 세팅합니다. 프론트는 `credentials: 'include'` 로 JSESSIONID 를 보내도록 `defaultApiRequestInit` 을 사용합니다.
+
+## 실행
+spring boot 로 하거나
+# port 만 5005 에서 5006이나 바꿔줘도됨
+$env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'; .\gradlew.bat bootRun
+# 일반실행
+.\gradlew.bat bootRun

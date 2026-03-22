@@ -6,8 +6,10 @@ import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
 import com.noonoo.prjtbackend.member.service.MemberService;
+import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +27,7 @@ public class MemberController {
      * 회원 목록 검색
      */
     @PostMapping("/search")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<PageResponse<MemberDto>> searchMembers(@RequestBody MemberSearchCondition request) {
         log.info("=======> /api/members/search param={}", request);
         PageResponse<MemberDto> result = memberService.findMembers(request);
@@ -35,6 +38,7 @@ public class MemberController {
      * 회원 상세 조회
      */
     @GetMapping("/detail/{memberSeq}")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<MemberDto> findMemberDetail(@PathVariable Long memberSeq) {
         log.info("=======> /api/members/detail param={}", memberSeq);
         MemberDto detail = memberService.findMemberDetail(memberSeq);
@@ -45,6 +49,7 @@ public class MemberController {
      * 회원 등록
      */
     @PostMapping("/create")
+    @PreAuthorize("@securityExpressions.canCreate('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> createMember(@RequestBody MemberSaveRequest request) {
         log.info("=======> /api/members/create param={}", request);
         int result = memberService.createMember(request);
@@ -55,6 +60,7 @@ public class MemberController {
      * 회원 수정
      */
     @PutMapping("/update")
+    @PreAuthorize("@securityExpressions.canUpdate('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> updateMember(@RequestBody MemberSaveRequest request) {
         log.info("=======> /api/members/update param={}", request);
         int result = memberService.updateMember(request);
@@ -65,6 +71,7 @@ public class MemberController {
      * 회원 삭제
      */
     @DeleteMapping("/delete/{memberSeq}")
+    @PreAuthorize("@securityExpressions.canDelete('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> deleteMember(@PathVariable Long memberSeq) {
         log.info("=======> /api/members/delete param={}", memberSeq);
         int result = memberService.deleteMember(memberSeq);

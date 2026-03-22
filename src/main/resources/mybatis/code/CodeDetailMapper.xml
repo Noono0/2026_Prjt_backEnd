@@ -8,70 +8,146 @@
     <resultMap id="codeDetailResultMap" type="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailDto">
         <id property="codeDetailSeq" column="codeDetailSeq"/>
         <result property="codeGroupSeq" column="codeGroupSeq"/>
-        <result property="parentCodeDetailSeq" column="parentCodeDetailSeq"/>
-        <result property="code" column="code"/>
+        <result property="parentDetailSeq" column="parentDetailSeq"/>
+        <result property="codeId" column="codeId"/>
         <result property="codeName" column="codeName"/>
         <result property="codeValue" column="codeValue"/>
-        <result property="codeDesc" column="codeDesc"/>
-        <result property="levelNo" column="levelNo"/>
+        <result property="description" column="description"/>
+        <result property="codeLevel" column="codeLevel"/>
         <result property="sortOrder" column="sortOrder"/>
         <result property="useYn" column="useYn"/>
+        <result property="attr1" column="attr1"/>
+        <result property="attr2" column="attr2"/>
+        <result property="attr3" column="attr3"/>
+        <result property="createId" column="createId"/>
+        <result property="createIp" column="createIp"/>
         <result property="createDt" column="createDt"/>
+        <result property="modifyId" column="modifyId"/>
+        <result property="modifyIp" column="modifyIp"/>
         <result property="modifyDt" column="modifyDt"/>
+        <result property="status" column="status"/>
     </resultMap>
 
     <sql id="baseColumns">
         CD.CODE_DETAIL_SEQ     AS codeDetailSeq,
         CD.CODE_GROUP_SEQ      AS codeGroupSeq,
-        CD.PARENT_CODE_DETAIL_SEQ AS parentCodeDetailSeq,
-        CD.CODE                AS code,
+        CD.PARENT_DETAIL_SEQ   AS parentDetailSeq,
+        CD.CODE_ID             AS codeId,
         CD.CODE_NAME           AS codeName,
         CD.CODE_VALUE          AS codeValue,
-        CD.CODE_DESC           AS codeDesc,
-        CD.LEVEL_NO            AS levelNo,
+        CD.DESCRIPTION         AS description,
+        CD.CODE_LEVEL          AS codeLevel,
         CD.SORT_ORDER          AS sortOrder,
         CD.USE_YN              AS useYn,
+        CD.ATTR1               AS attr1,
+        CD.ATTR2               AS attr2,
+        CD.ATTR3               AS attr3,
+        CD.CREATE_ID           AS createId,
+        CD.CREATE_IP           AS createIp,
         DATE_FORMAT(CD.CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt,
+        CD.MODIFY_ID           AS modifyId,
+        CD.MODIFY_IP           AS modifyIp,
+        CD.STATUS              AS status,
         DATE_FORMAT(CD.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
     </sql>
 
-    <select id="findMiddleList" resultMap="codeDetailResultMap">
+    <sql id="whereClause">
+        WHERE 1 = 1
+        <if test="codeDetailSeq != null">
+            AND CD.CODE_DETAIL_SEQ = #{codeDetailSeq}
+        </if>
+        <if test="codeGroupSeq != null">
+            AND CD.CODE_GROUP_SEQ = #{codeGroupSeq}
+        </if>
+        <if test="parentDetailSeq != null">
+            AND CD.PARENT_DETAIL_SEQ = #{parentDetailSeq}
+        </if>
+        <if test="codeId != null and codeId != ''">
+            AND CD.CODE_ID LIKE CONCAT('%', #{codeId}, '%')
+        </if>
+        <if test="codeName != null and codeName != ''">
+            AND CD.CODE_NAME LIKE CONCAT('%', #{codeName}, '%')
+        </if>
+        <if test="codeLevel != null">
+            AND CD.CODE_LEVEL = #{codeLevel}
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND CD.USE_YN = #{useYn}
+        </if>
+        <if test="status != null and status != ''">
+            AND CD.STATUS = #{status}
+        </if>
+    </sql>
+
+    <select id="selectList"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
+            resultMap="codeDetailResultMap">
         SELECT
         <include refid="baseColumns"/>
         FROM CODE_DETAIL CD
-        WHERE CD.CODE_GROUP_SEQ = #{codeGroupSeq}
-        AND CD.PARENT_CODE_DETAIL_SEQ IS NULL
-        AND CD.LEVEL_NO = 2
-        ORDER BY CD.SORT_ORDER ASC, CD.CODE_DETAIL_SEQ ASC
+        <include refid="whereClause"/>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'codeId'">CD.CODE_ID</when>
+            <when test="sortBy == 'codeName'">CD.CODE_NAME</when>
+            <when test="sortBy == 'codeLevel'">CD.CODE_LEVEL</when>
+            <when test="sortBy == 'sortOrder'">CD.SORT_ORDER</when>
+            <when test="sortBy == 'createDt'">CD.CREATE_DT</when>
+            <otherwise>CD.CODE_DETAIL_SEQ</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc' or sortDir == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{safeSize} OFFSET #{offset}
     </select>
 
-    <select id="findSmallList" resultMap="codeDetailResultMap">
-        SELECT
-        <include refid="baseColumns"/>
+    <select id="selectListCnt"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
+            resultType="long">
+        SELECT COUNT(*)
         FROM CODE_DETAIL CD
-        WHERE CD.PARENT_CODE_DETAIL_SEQ = #{parentCodeDetailSeq}
-        AND CD.LEVEL_NO = 3
-        ORDER BY CD.SORT_ORDER ASC, CD.CODE_DETAIL_SEQ ASC
+        <include refid="whereClause"/>
     </select>
 
-    <select id="findDetail" resultMap="codeDetailResultMap">
+    <select id="selectDetail"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
+            resultMap="codeDetailResultMap">
         SELECT
         <include refid="baseColumns"/>
         FROM CODE_DETAIL CD
         WHERE CD.CODE_DETAIL_SEQ = #{codeDetailSeq}
     </select>
 
+    <select id="findCodeDetailByCode"
+            parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest"
+            resultMap="codeDetailResultMap">
+        SELECT
+        <include refid="baseColumns"/>
+        FROM CODE_DETAIL CD
+        WHERE CD.CODE_GROUP_SEQ = #{codeGroupSeq}
+          AND CD.CODE_ID = #{codeId}
+        <if test="codeDetailSeq != null">
+            AND CD.CODE_DETAIL_SEQ != #{codeDetailSeq}
+        </if>
+        LIMIT 1
+    </select>
+
     <insert id="insertData" parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest">
         INSERT INTO CODE_DETAIL (
             CODE_GROUP_SEQ,
-            PARENT_CODE_DETAIL_SEQ,
-            CODE,
+            PARENT_DETAIL_SEQ,
+            CODE_ID,
             CODE_NAME,
             CODE_VALUE,
-            CODE_DESC,
-            LEVEL_NO,
+            DESCRIPTION,
+            CODE_LEVEL,
             SORT_ORDER,
             USE_YN,
+            ATTR1,
+            ATTR2,
+            ATTR3,
+            STATUS,
             CREATE_DT,
             CREATE_ID,
             CREATE_IP,
@@ -80,14 +156,18 @@
             MODIFY_IP
         ) VALUES (
                      #{codeGroupSeq},
-                     #{parentCodeDetailSeq},
-                     #{code},
+                     #{parentDetailSeq},
+                     #{codeId},
                      #{codeName},
                      #{codeValue},
-                     #{codeDesc},
-                     #{levelNo},
+                     #{description},
+                     #{codeLevel},
                      #{sortOrder},
                      #{useYn},
+                     #{attr1},
+                     #{attr2},
+                     #{attr3},
+                     #{status},
                      NOW(),
                      #{createId},
                      #{createIp},
@@ -100,12 +180,18 @@
     <update id="updateData" parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest">
         UPDATE CODE_DETAIL
         SET
-            CODE = #{code},
+            CODE_ID = #{codeId},
             CODE_NAME = #{codeName},
             CODE_VALUE = #{codeValue},
-            CODE_DESC = #{codeDesc},
+            DESCRIPTION = #{description},
+            CODE_LEVEL = #{codeLevel},
+            PARENT_DETAIL_SEQ = #{parentDetailSeq},
             SORT_ORDER = #{sortOrder},
             USE_YN = #{useYn},
+            ATTR1 = #{attr1},
+            ATTR2 = #{attr2},
+            ATTR3 = #{attr3},
+            STATUS = #{status},
             MODIFY_DT = NOW(),
             MODIFY_ID = #{modifyId},
             MODIFY_IP = #{modifyIp}

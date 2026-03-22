@@ -1,16 +1,20 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul
     username: prjt
     password: prjt1234
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
         show_sql: true
+  sql:
+    init:
+      mode: always
 mybatis:
   mapper-locations: classpath:/mybatis/**/*.xml
   type-aliases-package: com.noonoo.prjtbackend
@@ -18,6 +22,11 @@ mybatis:
     map-underscore-to-camel-case: true
 server:
   port: 8080
+
+# 보안: false 로 두면 로그인 세션 + DB 역할–메뉴 권한(MEMBER_READ 등) 검사. 로컬 개발은 true 권장.
+app:
+  security:
+    permit-all: true
 
 decorator:
   datasource:

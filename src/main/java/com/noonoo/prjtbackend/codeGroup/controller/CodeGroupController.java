@@ -7,8 +7,10 @@ import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.codeGroup.service.CodeGroupService;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
+import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ public class CodeGroupController {
     private final CodeGroupService codeGroupService;
 
     @PostMapping("/search")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<PageResponse<CodeGroupDto>> searchCodeGroups(
             @RequestBody CodeGroupSearchCondition request) {
         log.info("=======> /api/code-groups/search param={}", request);
@@ -30,6 +33,7 @@ public class CodeGroupController {
     }
 
     @PostMapping("/detail")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<CodeGroupDto> findCodeGroupDetail(@RequestBody CodeGroupSearchCondition request) {
         log.info("=======> /api/code-groups/detail param={}", request);
         CodeGroupDto detail = codeGroupService.selectDetail(request);
@@ -37,6 +41,7 @@ public class CodeGroupController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("@securityExpressions.canCreate('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<Integer> createCodeGroup(@RequestBody CodeGroupSaveRequest request) {
         log.info("=======> /api/code-groups/create param={}", request);
         int result = codeGroupService.insertData(request);
@@ -44,6 +49,7 @@ public class CodeGroupController {
     }
 
     @PutMapping("/update")
+    @PreAuthorize("@securityExpressions.canUpdate('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<Integer> updateCodeGroup(@RequestBody CodeGroupSaveRequest request) {
         log.info("=======> /api/code-groups/update param={}", request);
         int result = codeGroupService.updateData(request);
@@ -51,6 +57,7 @@ public class CodeGroupController {
     }
 
     @DeleteMapping("/delete")
+    @PreAuthorize("@securityExpressions.canDelete('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<Integer> deleteCodeGroup(@RequestBody CodeGroupSaveRequest request) {
         log.info("=======> /api/code-groups/delete param={}", request);
         int result = codeGroupService.deleteData(request);
@@ -58,6 +65,7 @@ public class CodeGroupController {
     }
 
     @GetMapping("/options")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_GROUP + "')")
     public ApiResponse<List<OptionDto>> findCodeGroupOptions() {
         return ApiResponse.ok("코드그룹 옵션 조회 완료", codeGroupService.findCodeGroupOptions());
     }
