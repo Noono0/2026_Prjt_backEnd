@@ -2,6 +2,7 @@ package com.noonoo.prjtbackend.menu.service;
 
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.menu.dto.MenuDto;
+import com.noonoo.prjtbackend.menu.dto.MenuReorderItem;
 import com.noonoo.prjtbackend.menu.dto.MenuSaveRequest;
 import com.noonoo.prjtbackend.menu.dto.MenuSearchCondition;
 
@@ -22,4 +23,7 @@ public interface MenuService {
     int updateData(MenuSaveRequest request);
 
     int deleteData(MenuSaveRequest request);
+
+    /** 트리 드래그: 부모/정렬만 반영 */
+    int reorderMenus(List<MenuReorderItem> items);
 }

@@ -1,6 +1,7 @@
 package com.noonoo.prjtbackend.menu.mapper;
 
 import com.noonoo.prjtbackend.menu.dto.MenuDto;
+import com.noonoo.prjtbackend.menu.dto.MenuReorderItem;
 import com.noonoo.prjtbackend.menu.dto.MenuSaveRequest;
 import com.noonoo.prjtbackend.menu.dto.MenuSearchCondition;
 import org.apache.ibatis.annotations.Mapper;
@@ -28,4 +29,7 @@ public interface MenuMapper {
     int updateData(MenuSaveRequest request);
 
     int deleteData(MenuSaveRequest request);
+
+    /** 부모·정렬만 변경 (메뉴코드 중복 검사 없음) */
+    int updateParentAndSort(MenuReorderItem item);
 }

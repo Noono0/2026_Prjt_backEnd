@@ -3,6 +3,7 @@ package com.noonoo.prjtbackend.menu.controller;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.menu.dto.MenuDto;
+import com.noonoo.prjtbackend.menu.dto.MenuReorderItem;
 import com.noonoo.prjtbackend.menu.dto.MenuSaveRequest;
 import com.noonoo.prjtbackend.menu.dto.MenuSearchCondition;
 import com.noonoo.prjtbackend.common.security.MenuAuthorities;
@@ -68,6 +69,16 @@ public class MenuController {
     public ApiResponse<Integer> updateMenu(@RequestBody MenuSaveRequest request) {
         int result = menuService.updateData(request);
         return ApiResponse.ok(result > 0 ? "메뉴 수정 완료" : "메뉴 수정 실패", result);
+    }
+
+    /**
+     * 트리 드래그 순서/부모만 반영. 메뉴코드·이름은 건드리지 않으며 중복코드 검사를 하지 않음.
+     */
+    @PutMapping("/reorder")
+    @PreAuthorize("@securityExpressions.canUpdate('" + MenuAuthorities.MENU + "')")
+    public ApiResponse<Integer> reorderMenus(@RequestBody List<MenuReorderItem> items) {
+        int result = menuService.reorderMenus(items);
+        return ApiResponse.ok("메뉴 순서 반영 완료", result);
     }
 
     @DeleteMapping("/delete")

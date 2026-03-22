@@ -3,6 +3,7 @@ package com.noonoo.prjtbackend.menu.serviceImpl;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
 import com.noonoo.prjtbackend.menu.dto.MenuDto;
+import com.noonoo.prjtbackend.menu.dto.MenuReorderItem;
 import com.noonoo.prjtbackend.menu.dto.MenuSaveRequest;
 import com.noonoo.prjtbackend.menu.dto.MenuSearchCondition;
 import com.noonoo.prjtbackend.menu.mapper.MenuMapper;
@@ -97,5 +98,24 @@ public class MenuServiceImpl implements MenuService {
             throw new IllegalArgumentException("menuId가 필요합니다.");
         }
         return menuMapper.deleteData(request);
+    }
+
+    @Override
+    @Transactional
+    public int reorderMenus(List<MenuReorderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return 0;
+        }
+        int total = 0;
+        for (MenuReorderItem it : items) {
+            if (it.getMenuId() == null) {
+                throw new IllegalArgumentException("menuId가 필요합니다.");
+            }
+            if (it.getSortOrder() == null) {
+                it.setSortOrder(0);
+            }
+            total += menuMapper.updateParentAndSort(it);
+        }
+        return total;
     }
 }

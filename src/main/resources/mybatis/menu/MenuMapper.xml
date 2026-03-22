@@ -32,7 +32,7 @@
              , M.SORT_ORDER     AS sortOrder
              , M.USE_YN         AS useYn
         FROM MENU M
-        WHERE M.USE_YN = 'Y'
+        /* 관리자 트리: 미사용(USE_YN=N) 포함 — 화면에서 구분·복구 */
         ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
     </select>
 
@@ -151,6 +151,15 @@
         UPDATE MENU
         SET USE_YN = 'N'
           , UPD_DT = NOW()
+        WHERE MENU_ID = #{menuId}
+    </update>
+
+    <!-- 트리 드래그 전용: MENU_CODE / 중복 검사 없음 -->
+    <update id="updateParentAndSort" parameterType="com.noonoo.prjtbackend.menu.dto.MenuReorderItem">
+        UPDATE MENU
+        SET PARENT_MENU_ID = #{parentMenuId,jdbcType=BIGINT}
+          , SORT_ORDER     = #{sortOrder,jdbcType=INTEGER}
+          , UPD_DT         = NOW()
         WHERE MENU_ID = #{menuId}
     </update>
 
