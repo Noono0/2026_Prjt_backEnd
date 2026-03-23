@@ -36,6 +36,20 @@
         ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
     </select>
 
+    <select id="selectActiveForSidebar" resultType="com.noonoo.prjtbackend.menu.dto.MenuDto">
+        SELECT
+            M.MENU_ID          AS menuId
+             , M.MENU_CODE      AS menuCode
+             , M.MENU_NAME      AS menuName
+             , M.MENU_PATH      AS menuPath
+             , M.PARENT_MENU_ID AS parentMenuId
+             , M.SORT_ORDER     AS sortOrder
+             , M.USE_YN         AS useYn
+        FROM MENU M
+        WHERE M.USE_YN = 'Y'
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
     <sql id="menuWhere">
         WHERE 1 = 1
         <if test="menuId != null">

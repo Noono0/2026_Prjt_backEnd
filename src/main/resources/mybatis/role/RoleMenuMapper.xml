@@ -47,6 +47,36 @@
         ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
     </select>
 
+    <select id="findPermissionsByRoleCodes" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto">
+        SELECT
+            R.ROLE_CODE    AS roleCode
+             , M.MENU_CODE    AS menuCode
+             , M.MENU_NAME    AS menuName
+             , M.MENU_PATH    AS menuPath
+             , RM.CAN_READ    AS canRead
+             , RM.CAN_CREATE  AS canCreate
+             , RM.CAN_UPDATE  AS canUpdate
+             , RM.CAN_DELETE  AS canDelete
+        FROM ROLE_MENU RM
+                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        WHERE R.USE_YN = 'Y'
+          AND M.USE_YN = 'Y'
+          AND RM.USE_YN = 'Y'
+        <choose>
+            <when test="roleCodes != null and roleCodes.size() > 0">
+                AND R.ROLE_CODE IN
+                <foreach collection="roleCodes" item="code" open="(" separator="," close=")">
+                    #{code}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        ORDER BY M.SORT_ORDER ASC, M.MENU_ID ASC
+    </select>
+
     <select id="selectAllMenusWithMapping" resultType="com.noonoo.prjtbackend.role.dto.RoleMenuAssignmentDto">
         /* RoleMenuMapper.selectAllMenusWithMapping */
         SELECT

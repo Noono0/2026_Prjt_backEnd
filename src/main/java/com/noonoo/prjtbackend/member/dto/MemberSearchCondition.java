@@ -11,8 +11,10 @@ import lombok.ToString;
 public class MemberSearchCondition extends PageRequest {
     private String memberId;
     private String memberName;
+    /** MEMBER_ROLE 존재 여부 필터 */
     private String roleCode;
-    private String status;
+    private String gradeCode;
+    private String statusCode;
 
     public MemberSearchCondition() {
         setSortBy("memberSeq");

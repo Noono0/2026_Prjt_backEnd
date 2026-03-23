@@ -11,8 +11,11 @@ import java.util.List;
 public interface MenuService {
     List<MenuDto> findMenusByRole(String roleCode);
 
-    /** 관리자 트리 화면용 전체 메뉴 (USE_YN=Y) */
+    /** 관리자 트리 화면용 전체 메뉴 */
     List<MenuDto> findAllForTree();
+
+    /** 사이드바: 사용 중 메뉴만 (네비용) */
+    List<MenuDto> findActiveForSidebar();
 
     PageResponse<MenuDto> selectList(MenuSearchCondition condition);
 

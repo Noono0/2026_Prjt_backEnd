@@ -67,6 +67,18 @@
 - 최초 기동 시 `src/main/resources/data.sql` 이 기본 메뉴(MEMBER, MENU, ROLE, CODE_GROUP, CODE_DETAIL 등)를 `INSERT IGNORE` 로 넣습니다. 적용하려면 `application.yml` 의 `spring.jpa.defer-datasource-initialization` / `spring.sql.init.mode` 가 켜져 있어야 합니다.
 - 이미 DB가 있는 경우 수동으로 `MENU` 에 행을 넣거나, **메뉴관리** 화면에서 등록해도 됩니다.
 
+## 회원 권한 체계 (ROLE / GRADE / STATUS)
+
+| 구분 | 저장 위치 | 공통코드 그룹 | 설명 |
+|------|-----------|----------------|------|
+| **ROLE** (시스템 권한) | `MEMBER_ROLE` 테이블 (회원당 다중) | `MEMBER_ROLE` | `ROLE.ROLE_CODE`·`ROLE_MENU`와 동일 코드. Spring Security `GrantedAuthority`(메뉴 CRUD + `ROLE_*`) |
+| **GRADE** (등급) | `member.grade_code` | `MEMBER_GRADE` | VIP 등 **비즈니스 등급** (권한과 분리) |
+| **STATUS** (계정 상태) | `member.status_code` | `MEMBER_STATUS` | `ACTIVE`만 로그인 허용, 탈퇴 시 `WITHDRAWN` 등 |
+
+- 신규/초기 데이터: `src/main/resources/data.sql` 에 `ROLE`(USER, ADMIN), 공통코드 그룹/상세, `ROLE_MENU` 샘플 매핑이 포함됩니다.
+- 기존 DB 이관은 `src/main/resources/db/manual-migration-member-role-grade-status.sql` 참고.
+- 로그인 시 `MEMBER_ROLE` 이 비어 있으면 권한 조회용으로 `USER` 를 기본 사용합니다 (`CustomUserDetailsService`).
+
 ## 보안 (Spring Security + DB 역할–메뉴 권한)
 
 - `AuthorityBuilder` 가 `ROLE_MENU` 조회 결과로 `MEMBER_READ`, `MENU_UPDATE` 형태의 `GrantedAuthority` 를 부여합니다.
@@ -79,6 +91,6 @@
 ## 실행
 spring boot 로 하거나
 # port 만 5005 에서 5006이나 바꿔줘도됨
-$env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'; .\gradlew.bat bootRun
+$env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'; 
 # 일반실행
 .\gradlew.bat bootRun

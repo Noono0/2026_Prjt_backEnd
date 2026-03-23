@@ -14,6 +14,7 @@ spring:
         show_sql: true
   sql:
     init:
+      encoding: UTF-8
       mode: always
 mybatis:
   mapper-locations: classpath:/mybatis/**/*.xml

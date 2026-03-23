@@ -31,6 +31,11 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    public List<MenuDto> findActiveForSidebar() {
+        return menuMapper.selectActiveForSidebar();
+    }
+
+    @Override
     public PageResponse<MenuDto> selectList(MenuSearchCondition condition) {
         long totalCount = menuMapper.selectListCnt(condition);
         List<MenuDto> items = menuMapper.selectList(condition);

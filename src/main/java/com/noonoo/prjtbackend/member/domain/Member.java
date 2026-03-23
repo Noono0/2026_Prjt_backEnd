@@ -3,14 +3,15 @@ package com.noonoo.prjtbackend.member.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import com.noonoo.prjtbackend.role.domain.Role;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
-
+/**
+ * 회원 기본 정보. 시스템 권한(ROLE)은 {@link MemberRole} 참고.
+ * 등급/상태는 공통코드 MEMBER_GRADE, MEMBER_STATUS 로 관리.
+ */
 @Getter
 @Setter
 @Entity
@@ -21,7 +22,6 @@ public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_seq")
-
     private Long memberSeq;
 
     @Column(name = "member_id")
@@ -66,10 +66,11 @@ public class Member {
     @Column(name = "modify_ip")
     private String modifyIp;
 
-    @Column(name = "status")
-    private String status;
+    /** 공통코드 MEMBER_GRADE (비즈니스 등급, Security 아님) */
+    @Column(name = "grade_code", length = 50)
+    private String gradeCode = "NORMAL";
 
-    @Column(name = "role_code")
-    @NotBlank(message = "권한은 필수입니다.")
-    private String roleCode;
+    /** 공통코드 MEMBER_STATUS (계정 상태) */
+    @Column(name = "status_code", length = 50)
+    private String statusCode = "ACTIVE";
 }

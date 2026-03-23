@@ -14,9 +14,9 @@
         <result property="email" column="email"/>
         <result property="gender" column="gender"/>
         <result property="phone" column="phone"/>
-        <result property="roleCode" column="roleCode"/>
-        <result property="roleName" column="roleName"/>
-        <result property="status" column="status"/>
+        <result property="gradeCode" column="gradeCode"/>
+        <result property="statusCode" column="statusCode"/>
+        <result property="roleCodesDisplay" column="roleCodesDisplay"/>
         <result property="createDt" column="createDt"/>
         <result property="modifyDt" column="modifyDt"/>
     </resultMap>
@@ -30,9 +30,11 @@
         M.EMAIL AS email,
         M.GENDER AS gender,
         M.PHONE AS phone,
-        M.ROLE_CODE AS roleCode,
-        R.ROLE_NAME AS roleName,
-        M.STATUS AS status,
+        M.GRADE_CODE AS gradeCode,
+        M.STATUS_CODE AS statusCode,
+        (SELECT GROUP_CONCAT(DISTINCT MR.ROLE_CODE ORDER BY MR.ROLE_CODE SEPARATOR ',')
+         FROM MEMBER_ROLE MR
+         WHERE MR.MEMBER_SEQ = M.MEMBER_SEQ) AS roleCodesDisplay,
         DATE_FORMAT(M.CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt,
         DATE_FORMAT(M.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
     </sql>
@@ -46,10 +48,16 @@
                 AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
             </if>
             <if test="roleCode != null and roleCode != ''">
-                AND M.ROLE_CODE = #{roleCode}
+                AND EXISTS (
+                    SELECT 1 FROM MEMBER_ROLE MR
+                    WHERE MR.MEMBER_SEQ = M.MEMBER_SEQ AND MR.ROLE_CODE = #{roleCode}
+                )
             </if>
-            <if test="status != null and status != ''">
-                AND M.STATUS = #{status}
+            <if test="gradeCode != null and gradeCode != ''">
+                AND M.GRADE_CODE = #{gradeCode}
+            </if>
+            <if test="statusCode != null and statusCode != ''">
+                AND M.STATUS_CODE = #{statusCode}
             </if>
         </where>
     </sql>
@@ -59,16 +67,14 @@
         SELECT
         <include refid="memberColumns"/>
         FROM MEMBER M
-        LEFT JOIN ROLE R
-        ON R.ROLE_CODE = M.ROLE_CODE
         <include refid="memberWhere"/>
 
         ORDER BY
         <choose>
             <when test="sortBy == 'memberId'">M.MEMBER_ID</when>
             <when test="sortBy == 'memberName'">M.MEMBER_NAME</when>
-            <when test="sortBy == 'roleCode'">M.ROLE_CODE</when>
-            <when test="sortBy == 'status'">M.STATUS</when>
+            <when test="sortBy == 'gradeCode'">M.GRADE_CODE</when>
+            <when test="sortBy == 'statusCode'">M.STATUS_CODE</when>
             <when test="sortBy == 'createDt'">M.CREATE_DT</when>
             <when test="sortBy == 'modifyDt'">M.MODIFY_DT</when>
             <otherwise>M.MEMBER_SEQ</otherwise>
@@ -92,8 +98,6 @@
         SELECT
         <include refid="memberColumns"/>
         FROM MEMBER M
-        LEFT JOIN ROLE R
-        ON R.ROLE_CODE = M.ROLE_CODE
         WHERE M.MEMBER_SEQ = #{memberSeq}
     </select>
 
@@ -101,8 +105,6 @@
         SELECT
         <include refid="memberColumns"/>
         FROM MEMBER M
-        LEFT JOIN ROLE R
-        ON R.ROLE_CODE = M.ROLE_CODE
         WHERE M.MEMBER_ID = #{memberId}
     </select>
 
@@ -111,8 +113,6 @@
         SELECT
         <include refid="memberColumns"/>
         FROM MEMBER M
-        LEFT JOIN ROLE R
-        ON R.ROLE_CODE = M.ROLE_CODE
         WHERE M.MEMBER_ID = #{memberId}
         <if test="memberSeq != null">
             AND M.MEMBER_SEQ != #{memberSeq}
@@ -120,7 +120,8 @@
         LIMIT 1
     </select>
 
-    <insert id="insertMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
+    <insert id="insertMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
+            useGeneratedKeys="true" keyProperty="memberSeq" keyColumn="MEMBER_SEQ">
         INSERT INTO MEMBER (
             BIRTH_YMD,
             CREATE_DT,
@@ -135,8 +136,8 @@
             MODIFY_ID,
             MODIFY_IP,
             PHONE,
-            ROLE_CODE,
-            STATUS
+            GRADE_CODE,
+            STATUS_CODE
         ) VALUES (
                      #{birthYmd},
                      NOW(),
@@ -151,8 +152,8 @@
                      #{modifyId},
                      #{modifyIp},
                      #{phone},
-                     #{roleCode},
-                     #{status}
+                     #{gradeCode},
+                     #{statusCode}
                  )
     </insert>
 
@@ -164,8 +165,8 @@
         EMAIL = #{email},
         GENDER = #{gender},
         PHONE = #{phone},
-        ROLE_CODE = #{roleCode},
-        STATUS = #{status},
+        GRADE_CODE = #{gradeCode},
+        STATUS_CODE = #{statusCode},
         MODIFY_DT = NOW(),
         MODIFY_ID = #{modifyId},
         MODIFY_IP = #{modifyIp}
@@ -178,7 +179,7 @@
     <update id="deleteMember" parameterType="long">
         UPDATE MEMBER
         SET
-            STATUS = 'SUSPEND',
+            STATUS_CODE = 'WITHDRAWN',
             MODIFY_DT = NOW()
         WHERE MEMBER_SEQ = #{memberSeq}
     </update>

@@ -58,8 +58,8 @@ Accept: {{json}}
   "memberId": "",
   "memberName": "",
   "roleCode": "",
-  "status": "",
-  "useYn": ""
+  "gradeCode": "",
+  "statusCode": ""
 }
 
 ### 1-2. 회원 목록 검색 - ADMIN 권한 회원만
@@ -73,8 +73,8 @@ Accept: {{json}}
   "memberId": "",
   "memberName": "",
   "roleCode": "ADMIN",
-  "status": "ACTIVE",
-  "useYn": "Y"
+  "gradeCode": "",
+  "statusCode": "ACTIVE"
 }
 
 ### 1-3. 회원 상세 조회
@@ -84,7 +84,7 @@ Accept: {{json}}
 ### 1-4. 회원 등록
 ### 주의:
 ### - 실제 필수값은 DTO/서비스 기준으로 더 있을 수 있음
-### - memberPwd / roleCode / status / useYn 정도는 보통 필요
+### - memberPwd / gradeCode / statusCode / roleCodes[] (시스템 권한 다중)
 POST {{baseUrl}}/api/members/create
 Content-Type: {{json}}
 Accept: {{json}}
@@ -97,9 +97,9 @@ Accept: {{json}}
   "phone": "010-1111-2222",
   "gender": "M",
   "birthYmd": "19900101",
-  "roleCode": "ADMIN",
-  "status": "ACTIVE",
-  "useYn": "Y",
+  "gradeCode": "NORMAL",
+  "statusCode": "ACTIVE",
+  "roleCodes": ["ADMIN"],
   "createId": "system",
   "createIp": "127.0.0.1"
 }
@@ -120,9 +120,9 @@ Accept: {{json}}
   "phone": "010-9999-8888",
   "gender": "M",
   "birthYmd": "19900101",
-  "roleCode": "USER",
-  "status": "ACTIVE",
-  "useYn": "Y",
+  "gradeCode": "NORMAL",
+  "statusCode": "ACTIVE",
+  "roleCodes": ["USER"],
   "modifyId": "admin",
   "modifyIp": "127.0.0.1"
 }

@@ -43,6 +43,17 @@ public class MenuController {
         return ApiResponse.ok("메뉴 트리 조회 완료", menuService.findAllForTree());
     }
 
+    /**
+     * 메인 레이아웃 사이드바 "추가 메뉴"용 (사용 중 메뉴만).
+     * {@code /tree}는 MENU_READ 필요 — 사이드바는 레이아웃에서 비로그인 상태로도 호출되므로 공개 허용.
+     * (경로·이름 수준의 네비 메타만 반환)
+     */
+    @GetMapping("/sidebar")
+    @PreAuthorize("permitAll()")
+    public ApiResponse<List<MenuDto>> sidebarMenus() {
+        return ApiResponse.ok("사이드바 메뉴", menuService.findActiveForSidebar());
+    }
+
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.MENU + "')")
     public ApiResponse<PageResponse<MenuDto>> searchMenus(@RequestBody MenuSearchCondition request) {

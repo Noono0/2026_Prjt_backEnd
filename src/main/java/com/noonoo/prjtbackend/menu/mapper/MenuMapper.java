@@ -16,6 +16,9 @@ public interface MenuMapper {
     /** 트리 UI용: 페이징 없이 전체 메뉴 */
     List<MenuDto> selectAllForTree();
 
+    /** 사이드바 네비: 사용 중 메뉴만 */
+    List<MenuDto> selectActiveForSidebar();
+
     long selectListCnt(MenuSearchCondition condition);
 
     List<MenuDto> selectList(MenuSearchCondition condition);
