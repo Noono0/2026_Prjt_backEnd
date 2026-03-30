@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberWalletMapper">
+
+    <select id="selectWalletByMemberSeq" resultType="com.noonoo.prjtbackend.member.dto.MemberWalletBalance">
+        SELECT member_seq AS memberSeq,
+               point_balance AS pointBalance,
+               iron_qty AS ironQty,
+               silver_qty AS silverQty,
+               gold_qty AS goldQty,
+               diamond_qty AS diamondQty
+        FROM member_wallet
+        WHERE member_seq = #{memberSeq}
+    </select>
+
+    <insert id="insertWallet">
+        INSERT INTO member_wallet (member_seq, point_balance, iron_qty, silver_qty, gold_qty, diamond_qty, modify_dt)
+        VALUES (#{memberSeq}, 0, 0, 0, 0, 0, NOW())
+    </insert>
+
+    <update id="addPoints">
+        UPDATE member_wallet
+        SET point_balance = point_balance + #{delta},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+    </update>
+
+    <update id="subtractPointsIfEnough">
+        UPDATE member_wallet
+        SET point_balance = point_balance - #{delta},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+          AND point_balance &gt;= #{delta}
+    </update>
+
+    <update id="purchaseIron">
+        UPDATE member_wallet
+        SET point_balance = point_balance - #{cost},
+            iron_qty = iron_qty + #{qty},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+          AND point_balance &gt;= #{cost}
+    </update>
+
+    <update id="exchangeIronToSilver">
+        UPDATE member_wallet
+        SET iron_qty = iron_qty - #{ironCost},
+            silver_qty = silver_qty + #{silverGain},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+          AND iron_qty &gt;= #{ironCost}
+    </update>
+
+    <update id="exchangeSilverToGold">
+        UPDATE member_wallet
+        SET silver_qty = silver_qty - #{silverCost},
+            gold_qty = gold_qty + #{goldGain},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+          AND silver_qty &gt;= #{silverCost}
+    </update>
+
+    <update id="exchangeGoldToDiamond">
+        UPDATE member_wallet
+        SET gold_qty = gold_qty - #{goldCost},
+            diamond_qty = diamond_qty + #{diamondGain},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+          AND gold_qty &gt;= #{goldCost}
+    </update>
+
+    <insert id="insertLedger" useGeneratedKeys="true" keyProperty="ledgerSeq" keyColumn="ledger_seq">
+        INSERT INTO member_wallet_ledger (
+            member_seq, reason_code, summary,
+            point_delta, iron_delta, silver_delta, gold_delta, diamond_delta,
+            create_dt, create_id
+        ) VALUES (
+            #{memberSeq}, #{reasonCode}, #{summary},
+            #{pointDelta}, #{ironDelta}, #{silverDelta}, #{goldDelta}, #{diamondDelta},
+            NOW(), #{createId}
+        )
+    </insert>
+
+    <select id="countLedger" resultType="long">
+        SELECT COUNT(*) FROM member_wallet_ledger WHERE member_seq = #{memberSeq}
+    </select>
+
+    <select id="selectLedgerPage" resultType="com.noonoo.prjtbackend.member.dto.MemberWalletLedgerDto">
+        SELECT ledger_seq AS ledgerSeq,
+               member_seq AS memberSeq,
+               reason_code AS reasonCode,
+               summary,
+               point_delta AS pointDelta,
+               iron_delta AS ironDelta,
+               silver_delta AS silverDelta,
+               gold_delta AS goldDelta,
+               diamond_delta AS diamondDelta,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt
+        FROM member_wallet_ledger
+        WHERE member_seq = #{memberSeq}
+        ORDER BY ledger_seq DESC
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectPointRanking" resultType="com.noonoo.prjtbackend.member.dto.PointRankingRowDto">
+        SELECT m.MEMBER_SEQ AS memberSeq,
+               m.MEMBER_ID AS memberId,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), m.MEMBER_NAME) AS memberName,
+               COALESCE(SUM(l.point_delta), 0) AS pointsEarned
+        FROM member_wallet_ledger l
+        INNER JOIN MEMBER m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
+        WHERE l.point_delta &gt; 0
+          AND l.create_dt &gt;= #{fromInclusive}
+          AND l.create_dt &lt; #{toExclusive}
+          AND l.reason_code NOT IN ('POINT_GIFT_SENT', 'POINT_GIFT_RECEIVED')
+        GROUP BY m.MEMBER_SEQ, m.MEMBER_ID, m.MEMBER_NAME, m.NICKNAME
+        HAVING SUM(l.point_delta) &gt; 0
+        ORDER BY SUM(l.point_delta) DESC, m.MEMBER_SEQ ASC
+        LIMIT 100
+    </select>
+
+    <select id="selectPointRankingBreakdown" resultType="com.noonoo.prjtbackend.member.dto.PointRankingBreakdownRowDto">
+        SELECT l.member_seq AS memberSeq,
+               l.reason_code AS reasonCode,
+               COALESCE(SUM(l.point_delta), 0) AS pointsEarned
+        FROM member_wallet_ledger l
+        INNER JOIN MEMBER m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
+        WHERE l.point_delta &gt; 0
+          AND l.create_dt &gt;= #{fromInclusive}
+          AND l.create_dt &lt; #{toExclusive}
+          AND l.reason_code NOT IN ('POINT_GIFT_SENT', 'POINT_GIFT_RECEIVED')
+          AND l.member_seq IN
+        <foreach collection="memberSeqs" item="sid" open="(" separator="," close=")">
+            #{sid}
+        </foreach>
+        GROUP BY l.member_seq, l.reason_code
+        HAVING SUM(l.point_delta) &gt; 0
+        ORDER BY l.member_seq ASC, SUM(l.point_delta) DESC
+    </select>
+</mapper>

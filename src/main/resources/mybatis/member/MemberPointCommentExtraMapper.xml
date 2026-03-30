@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberPointCommentExtraMapper">
+
+    <select id="selectExtraPointsEarned" resultType="java.lang.Integer">
+        SELECT extra_points_earned
+        FROM member_point_comment_extra
+        WHERE member_seq = #{memberSeq}
+          AND post_type = #{postType}
+          AND post_seq = #{postSeq}
+    </select>
+
+    <insert id="upsertExtraPoints">
+        INSERT INTO member_point_comment_extra (member_seq, post_type, post_seq, extra_points_earned, modify_dt)
+        VALUES (#{memberSeq}, #{postType}, #{postSeq}, #{addPoints}, NOW())
+        ON DUPLICATE KEY UPDATE
+            extra_points_earned = extra_points_earned + #{addPoints},
+            modify_dt = NOW()
+    </insert>
+</mapper>

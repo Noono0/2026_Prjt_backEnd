@@ -16,6 +16,10 @@ spring:
     init:
       encoding: UTF-8
       mode: always
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
 mybatis:
   mapper-locations: classpath:/mybatis/**/*.xml
   type-aliases-package: com.noonoo.prjtbackend
@@ -23,11 +27,31 @@ mybatis:
     map-underscore-to-camel-case: true
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 24h
 
 # 보안: false 로 두면 로그인 세션 + DB 역할–메뉴 권한(MEMBER_READ 등) 검사. 로컬 개발은 true 권장.
 app:
   security:
     permit-all: true
+  board:
+    # 신고 수가 이 값 이상이면 목록 제목 치환·상세 차단·글/댓글 작성 포인트 회수(1회)
+    blind-report-threshold: 10
+    blind-list-title: "다수의 신고로 블라인드 처리된 게시글 입니다."
+    # 자유게시판·공지 댓글/답글 목록에서 본문 치환(HTML). 댓글 블라인드 시 포인트 차감액은 free-board-post-points 와 동일.
+    blind-comment-content: "<p>다수의 신고로 블라인드 처리된 댓글입니다.</p>"
+  wallet:
+    # 자유게시판 글 작성 시 지급 포인트(카테고리 무관). 블라인드 시 동일 금액 회수.
+    free-board-post-points: 100
+  # 금칙어: replace=* 치환 저장 | reject=포함 시 400(BAD_REQUEST)로 저장 거부
+  content-filter:
+    mode: reject
+  file:
+    # 업로드 파일 저장 루트 (상대 경로는 애플리케이션 작업 디렉터리 기준)
+    upload-dir: upload-data/files
+    # 비우면 요청 Host 기준으로 view/download URL 생성. 리버스 프록시 뒤면 http(s)://도메인 으로 지정
+    public-base-url: ""
 
 decorator:
   datasource:

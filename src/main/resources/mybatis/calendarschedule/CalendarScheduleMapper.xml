@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.calendarschedule.mapper.CalendarScheduleMapper">
+
+    <sql id="categoryJoin">
+        LEFT JOIN code_detail cd_cat
+          ON cd_cat.code_value = cs.category_code
+         AND cd_cat.use_yn = 'Y'
+         AND (cd_cat.status IS NULL OR cd_cat.status = 'ACTIVE')
+        LEFT JOIN code_group cg_cat
+          ON cg_cat.code_group_seq = cd_cat.code_group_seq
+         AND cg_cat.code_group_id = 'A0003'
+         AND cg_cat.use_yn = 'Y'
+         AND (cg_cat.status IS NULL OR cg_cat.status = 'ACTIVE')
+    </sql>
+
+    <select id="findScheduleCategoryOptions" resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">
+        SELECT cd.code_value AS value,
+               cd.code_name AS label
+        FROM code_group cg
+        INNER JOIN code_detail cd
+            ON cd.code_group_seq = cg.code_group_seq
+        WHERE cg.code_group_id = 'A0003'
+          AND cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+          AND cd.use_yn = 'Y'
+          AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
+    </select>
+
+    <select id="selectGeneralInRange" resultType="com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleDto">
+        SELECT cs.calendar_schedule_seq AS calendarScheduleSeq,
+               cs.event_kind AS eventKind,
+               cs.title,
+               cs.category_code AS categoryCode,
+               cs.event_color AS eventColor,
+               cd_cat.code_name AS categoryName,
+               cs.content,
+               DATE_FORMAT(cs.start_date, '%Y-%m-%d') AS startDate,
+               DATE_FORMAT(cs.end_date, '%Y-%m-%d') AS endDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.birth_month AS birthMonth,
+               cs.birth_day AS birthDay,
+               cs.create_id AS createId,
+               DATE_FORMAT(cs.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(cs.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM calendar_schedule cs
+        <include refid="categoryJoin"/>
+        WHERE cs.use_yn = 'Y'
+          AND cs.event_kind = 'GENERAL'
+          AND cs.start_date IS NOT NULL
+          AND cs.end_date IS NOT NULL
+          AND cs.start_date &lt;= #{to}
+          AND cs.end_date &gt;= #{from}
+        ORDER BY cs.start_date ASC, cs.calendar_schedule_seq ASC
+    </select>
+
+    <select id="selectAllBirthdays" resultType="com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleDto">
+        SELECT cs.calendar_schedule_seq AS calendarScheduleSeq,
+               cs.event_kind AS eventKind,
+               cs.title,
+               cs.category_code AS categoryCode,
+               cs.event_color AS eventColor,
+               cd_cat.code_name AS categoryName,
+               cs.content,
+               DATE_FORMAT(cs.start_date, '%Y-%m-%d') AS startDate,
+               DATE_FORMAT(cs.end_date, '%Y-%m-%d') AS endDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.birth_month AS birthMonth,
+               cs.birth_day AS birthDay,
+               cs.create_id AS createId,
+               DATE_FORMAT(cs.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(cs.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM calendar_schedule cs
+        <include refid="categoryJoin"/>
+        WHERE cs.use_yn = 'Y'
+          AND cs.event_kind = 'BIRTHDAY'
+          AND cs.birth_month IS NOT NULL
+          AND cs.birth_day IS NOT NULL
+        ORDER BY cs.birth_month ASC, cs.birth_day ASC, cs.calendar_schedule_seq ASC
+    </select>
+
+    <select id="selectById" resultType="com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleDto">
+        SELECT cs.calendar_schedule_seq AS calendarScheduleSeq,
+               cs.event_kind AS eventKind,
+               cs.title,
+               cs.category_code AS categoryCode,
+               cs.event_color AS eventColor,
+               cd_cat.code_name AS categoryName,
+               cs.content,
+               DATE_FORMAT(cs.start_date, '%Y-%m-%d') AS startDate,
+               DATE_FORMAT(cs.end_date, '%Y-%m-%d') AS endDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.birth_month AS birthMonth,
+               cs.birth_day AS birthDay,
+               cs.create_id AS createId,
+               DATE_FORMAT(cs.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(cs.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM calendar_schedule cs
+        <include refid="categoryJoin"/>
+        WHERE cs.calendar_schedule_seq = #{calendarScheduleSeq}
+          AND cs.use_yn = 'Y'
+    </select>
+
+    <insert id="insertSchedule" useGeneratedKeys="true" keyProperty="calendarScheduleSeq" keyColumn="calendar_schedule_seq">
+        INSERT INTO calendar_schedule (
+            event_kind, title, category_code, event_color, content,
+            start_date, end_date, start_time, end_time, birth_month, birth_day,
+            use_yn, create_id, create_ip, create_dt, modify_id, modify_ip, modify_dt
+        ) VALUES (
+            #{eventKind}, #{title}, #{categoryCode}, #{eventColor}, #{content},
+            #{startDate}, #{endDate}, #{startTime}, #{endTime}, #{birthMonth}, #{birthDay},
+            'Y', #{createId}, #{createIp}, NOW(), #{modifyId}, #{modifyIp}, NOW()
+        )
+    </insert>
+
+    <update id="updateSchedule">
+        UPDATE calendar_schedule
+        SET event_kind = #{eventKind},
+            title = #{title},
+            category_code = #{categoryCode},
+            event_color = #{eventColor},
+            content = #{content},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            birth_month = #{birthMonth},
+            birth_day = #{birthDay},
+            modify_id = #{modifyId},
+            modify_ip = #{modifyIp},
+            modify_dt = NOW()
+        WHERE calendar_schedule_seq = #{calendarScheduleSeq}
+          AND use_yn = 'Y'
+    </update>
+
+    <update id="softDelete">
+        UPDATE calendar_schedule
+        SET use_yn = 'N', modify_dt = NOW()
+        WHERE calendar_schedule_seq = #{calendarScheduleSeq}
+          AND use_yn = 'Y'
+    </update>
+</mapper>

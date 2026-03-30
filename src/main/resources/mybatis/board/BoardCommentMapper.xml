@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.board.mapper.BoardCommentMapper">
+
+    <select id="findBoardCommentsFlat" resultType="com.noonoo.prjtbackend.board.dto.BoardCommentDto">
+        SELECT c.board_comment_seq,
+               c.board_seq,
+               c.parent_board_comment_seq,
+               c.writer_member_seq,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(c.writer_name), ''), wm.member_id) AS writer_name,
+               wm.member_id AS writer_member_id,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writer_profile_image_url,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN #{blindCommentMaskedContent}
+                   ELSE c.content
+               END AS content,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE c.emoticon_seq_1
+               END AS emoticonSeq1,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE c.emoticon_seq_2
+               END AS emoticonSeq2,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE c.emoticon_seq_3
+               END AS emoticonSeq3,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE me1.image_url
+               END AS emoticon_image_url_1,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE me2.image_url
+               END AS emoticon_image_url_2,
+               CASE
+                   WHEN IFNULL(c.report_count, 0) &gt;= #{blindReportThreshold} THEN NULL
+                   ELSE me3.image_url
+               END AS emoticon_image_url_3,
+               c.like_count,
+               c.dislike_count,
+               c.report_count,
+               (SELECT COUNT(1) FROM board_comment r
+                 WHERE r.parent_board_comment_seq = c.board_comment_seq
+                   AND r.show_yn = 'Y') AS reply_count,
+               (SELECT v.vote_type FROM board_comment_vote v
+                 WHERE v.board_comment_seq = c.board_comment_seq
+                   AND v.member_seq = #{currentMemberSeq}
+                 LIMIT 1) AS my_vote_type,
+               DATE_FORMAT(c.create_dt, '%Y-%m-%d %H:%i:%s') AS create_dt
+        FROM board_comment c
+        LEFT JOIN member wm ON wm.member_seq = c.writer_member_seq
+        LEFT JOIN member_emoticon me1 ON me1.member_emoticon_seq = c.emoticon_seq_1 AND me1.use_yn = 'Y'
+        LEFT JOIN member_emoticon me2 ON me2.member_emoticon_seq = c.emoticon_seq_2 AND me2.use_yn = 'Y'
+        LEFT JOIN member_emoticon me3 ON me3.member_emoticon_seq = c.emoticon_seq_3 AND me3.use_yn = 'Y'
+        WHERE c.board_seq = #{boardSeq}
+          AND c.show_yn = 'Y'
+        ORDER BY c.create_dt ASC
+    </select>
+
+    <select id="countCommentsByBoardAndMember" resultType="int">
+        SELECT COUNT(*)
+        FROM board_comment
+        WHERE board_seq = #{boardSeq}
+          AND writer_member_seq = #{memberSeq}
+          AND show_yn = 'Y'
+    </select>
+
+    <select id="findBoardCommentById" resultType="com.noonoo.prjtbackend.board.dto.BoardCommentDto">
+        SELECT c.board_comment_seq,
+               c.board_seq,
+               c.parent_board_comment_seq,
+               c.writer_member_seq,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(c.writer_name), ''), wm.member_id) AS writer_name,
+               c.content,
+               c.emoticon_seq_1 AS emoticonSeq1,
+               c.emoticon_seq_2 AS emoticonSeq2,
+               c.emoticon_seq_3 AS emoticonSeq3,
+               c.like_count,
+               c.dislike_count,
+               c.report_count,
+               DATE_FORMAT(c.create_dt, '%Y-%m-%d %H:%i:%s') AS create_dt
+        FROM board_comment c
+        LEFT JOIN member wm ON wm.member_seq = c.writer_member_seq
+        WHERE c.board_comment_seq = #{boardCommentSeq}
+          AND c.show_yn = 'Y'
+    </select>
+
+    <insert id="insertBoardComment" useGeneratedKeys="true" keyProperty="boardCommentSeq" keyColumn="board_comment_seq">
+        INSERT INTO board_comment (
+            board_seq, parent_board_comment_seq,
+            writer_member_seq, writer_name, content,
+            emoticon_seq_1, emoticon_seq_2, emoticon_seq_3,
+            like_count, dislike_count, report_count,
+            show_yn, create_dt, create_id, create_ip
+        ) VALUES (
+            #{boardSeq}, #{parentBoardCommentSeq},
+            #{writerMemberSeq}, #{writerName}, #{content},
+            #{emoticonSeq1}, #{emoticonSeq2}, #{emoticonSeq3},
+            0, 0, 0,
+            'Y', NOW(), #{createId}, #{createIp}
+        )
+    </insert>
+
+    <select id="findVoteType" resultType="string">
+        SELECT vote_type
+        FROM board_comment_vote
+        WHERE board_comment_seq = #{boardCommentSeq}
+          AND member_seq = #{memberSeq}
+    </select>
+
+    <insert id="insertVote">
+        INSERT INTO board_comment_vote (board_comment_seq, member_seq, vote_type)
+        VALUES (#{boardCommentSeq}, #{memberSeq}, #{voteType})
+    </insert>
+
+    <update id="updateVoteType">
+        UPDATE board_comment_vote
+           SET vote_type = #{voteType}
+         WHERE board_comment_seq = #{boardCommentSeq}
+           AND member_seq = #{memberSeq}
+    </update>
+
+    <update id="adjustLikeDislike">
+        UPDATE board_comment
+           SET like_count = IFNULL(like_count, 0) + #{deltaLike},
+               dislike_count = IFNULL(dislike_count, 0) + #{deltaDislike}
+         WHERE board_comment_seq = #{boardCommentSeq}
+    </update>
+
+    <insert id="insertReportIgnore">
+        INSERT IGNORE INTO board_comment_report (board_comment_seq, member_seq)
+        VALUES (#{boardCommentSeq}, #{memberSeq})
+    </insert>
+
+    <update id="increaseReportCount">
+        UPDATE board_comment
+           SET report_count = IFNULL(report_count, 0) + 1
+         WHERE board_comment_seq = #{boardCommentSeq}
+    </update>
+
+    <update id="updateBoardComment">
+        UPDATE board_comment
+           SET content = #{body.content},
+               emoticon_seq_1 = #{body.emoticonSeq1},
+               emoticon_seq_2 = #{body.emoticonSeq2},
+               emoticon_seq_3 = #{body.emoticonSeq3},
+               modify_dt = NOW()
+         WHERE board_comment_seq = #{boardCommentSeq}
+           AND board_seq = #{boardSeq}
+           AND writer_member_seq = #{writerMemberSeq}
+           AND show_yn = 'Y'
+    </update>
+
+    <update id="softDeleteBoardCommentThread">
+        UPDATE board_comment
+           SET show_yn = 'N'
+         WHERE board_seq = #{boardSeq}
+           AND show_yn = 'Y'
+           AND (board_comment_seq = #{rootCommentSeq}
+                OR parent_board_comment_seq = #{rootCommentSeq})
+    </update>
+
+    <update id="softDeleteBoardCommentRow">
+        UPDATE board_comment
+           SET show_yn = 'N'
+         WHERE board_seq = #{boardSeq}
+           AND board_comment_seq = #{boardCommentSeq}
+           AND show_yn = 'Y'
+    </update>
+
+    <select id="countEmoticonsForMember" resultType="int">
+        SELECT COUNT(1)
+        FROM member_emoticon
+        WHERE member_seq = #{memberSeq}
+          AND use_yn = 'Y'
+          AND member_emoticon_seq IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+    </select>
+
+</mapper>

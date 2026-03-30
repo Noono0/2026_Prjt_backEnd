@@ -1,0 +1,7 @@
+-- 기존 left/right 컬럼 방식 DB에서 옵션 테이블로 이전할 때만 사용 (신규는 data.sql 기준)
+-- 운영 DB는 백업 후 적용하세요.
+--
+-- 실행 스크립트: migrate-event-battle-existing-db.sql
+-- (winner_option_seq 없음 / event_battle_option 미생성 등 기존 스키마 → 현재 앱 스키마)
+--
+-- 신규 설치: data.sql 의 CREATE TABLE IF NOT EXISTS 만으로 충분합니다.

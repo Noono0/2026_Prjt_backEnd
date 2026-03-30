@@ -32,7 +32,10 @@ public class AuthServiceImpl implements AuthService {
                 member.getMemberSeq(),
                 member.getMemberId(),
                 "sample-access-token",
-                "sample-refresh-token"
+                "sample-refresh-token",
+                member.getProfileImageUrl(),
+                member.getNickname(),
+                member.getMemberName()
         );
     }
 }

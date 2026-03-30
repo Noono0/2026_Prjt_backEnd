@@ -10,8 +10,11 @@
         <result property="memberId" column="memberId"/>
         <result property="memberPwd" column="memberPwd"/>
         <result property="memberName" column="memberName"/>
+        <result property="nickname" column="nickname"/>
         <result property="birthYmd" column="birthYmd"/>
         <result property="email" column="email"/>
+        <result property="profileImageUrl" column="profileImageUrl"/>
+        <result property="profileImageFileSeq" column="profileImageFileSeq"/>
         <result property="gender" column="gender"/>
         <result property="phone" column="phone"/>
         <result property="gradeCode" column="gradeCode"/>
@@ -26,8 +29,14 @@
         M.MEMBER_ID AS memberId,
         M.MEMBER_PWD AS memberPwd,
         M.MEMBER_NAME AS memberName,
+        M.NICKNAME AS nickname,
         M.BIRTH_YMD AS birthYmd,
         M.EMAIL AS email,
+        COALESCE(
+            CASE WHEN M.PROFILE_IMAGE_FILE_SEQ IS NOT NULL THEN CONCAT('/api/files/view/', M.PROFILE_IMAGE_FILE_SEQ) END,
+            M.PROFILE_IMAGE_URL
+        ) AS profileImageUrl,
+        M.PROFILE_IMAGE_FILE_SEQ AS profileImageFileSeq,
         M.GENDER AS gender,
         M.PHONE AS phone,
         M.GRADE_CODE AS gradeCode,
@@ -41,11 +50,15 @@
 
     <sql id="memberWhere">
         <where>
+            AND M.USE_YN = 'Y'
             <if test="memberId != null and memberId != ''">
                 AND M.MEMBER_ID LIKE CONCAT('%', #{memberId}, '%')
             </if>
             <if test="memberName != null and memberName != ''">
-                AND M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
+                AND (
+                    M.MEMBER_NAME LIKE CONCAT('%', #{memberName}, '%')
+                    OR M.NICKNAME LIKE CONCAT('%', #{memberName}, '%')
+                )
             </if>
             <if test="roleCode != null and roleCode != ''">
                 AND EXISTS (
@@ -99,6 +112,7 @@
         <include refid="memberColumns"/>
         FROM MEMBER M
         WHERE M.MEMBER_SEQ = #{memberSeq}
+          AND M.USE_YN = 'Y'
     </select>
 
     <select id="findLoginMember" parameterType="string" resultMap="memberResultMap">
@@ -106,6 +120,7 @@
         <include refid="memberColumns"/>
         FROM MEMBER M
         WHERE M.MEMBER_ID = #{memberId}
+          AND M.USE_YN = 'Y'
     </select>
 
     <select id="findIdCheck" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
@@ -114,6 +129,7 @@
         <include refid="memberColumns"/>
         FROM MEMBER M
         WHERE M.MEMBER_ID = #{memberId}
+          AND M.USE_YN = 'Y'
         <if test="memberSeq != null">
             AND M.MEMBER_SEQ != #{memberSeq}
         </if>
@@ -128,32 +144,40 @@
             CREATE_ID,
             CREATE_IP,
             EMAIL,
+            PROFILE_IMAGE_URL,
+            PROFILE_IMAGE_FILE_SEQ,
             GENDER,
             MEMBER_ID,
             MEMBER_NAME,
+            NICKNAME,
             MEMBER_PWD,
             MODIFY_DT,
             MODIFY_ID,
             MODIFY_IP,
             PHONE,
             GRADE_CODE,
-            STATUS_CODE
+            STATUS_CODE,
+            USE_YN
         ) VALUES (
                      #{birthYmd},
                      NOW(),
                      #{createId},
                      #{createIp},
                      #{email},
+                     #{profileImageUrl},
+                     #{profileImageFileSeq},
                      #{gender},
                      #{memberId},
                      #{memberName},
+                     #{nickname},
                      #{memberPwd},
                      NOW(),
                      #{modifyId},
                      #{modifyIp},
                      #{phone},
                      #{gradeCode},
-                     #{statusCode}
+                     #{statusCode},
+                     'Y'
                  )
     </insert>
 
@@ -161,8 +185,11 @@
         UPDATE MEMBER
         SET
         MEMBER_NAME = #{memberName},
+        NICKNAME = #{nickname},
         BIRTH_YMD = #{birthYmd},
         EMAIL = #{email},
+        PROFILE_IMAGE_URL = #{profileImageUrl},
+        PROFILE_IMAGE_FILE_SEQ = #{profileImageFileSeq},
         GENDER = #{gender},
         PHONE = #{phone},
         GRADE_CODE = #{gradeCode},
@@ -174,14 +201,28 @@
             , MEMBER_PWD = #{memberPwd}
         </if>
         WHERE MEMBER_SEQ = #{memberSeq}
+          AND USE_YN = 'Y'
+    </update>
+
+    <update id="updateMemberPassword">
+        UPDATE MEMBER
+        SET
+            MEMBER_PWD = #{memberPwd},
+            MODIFY_DT = NOW(),
+            MODIFY_ID = #{modifyId},
+            MODIFY_IP = #{modifyIp}
+        WHERE MEMBER_SEQ = #{memberSeq}
+          AND USE_YN = 'Y'
     </update>
 
     <update id="deleteMember" parameterType="long">
         UPDATE MEMBER
         SET
             STATUS_CODE = 'WITHDRAWN',
+            USE_YN = 'N',
             MODIFY_DT = NOW()
         WHERE MEMBER_SEQ = #{memberSeq}
+          AND USE_YN = 'Y'
     </update>
 
 </mapper>

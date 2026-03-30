@@ -53,6 +53,7 @@
 
     <sql id="whereClause">
         WHERE 1 = 1
+        AND CD.USE_YN = 'Y'
         <if test="codeDetailSeq != null">
             AND CD.CODE_DETAIL_SEQ = #{codeDetailSeq}
         </if>
@@ -70,9 +71,6 @@
         </if>
         <if test="codeLevel != null">
             AND CD.CODE_LEVEL = #{codeLevel}
-        </if>
-        <if test="useYn != null and useYn != ''">
-            AND CD.USE_YN = #{useYn}
         </if>
         <if test="status != null and status != ''">
             AND CD.STATUS = #{status}
@@ -117,6 +115,7 @@
         <include refid="baseColumns"/>
         FROM CODE_DETAIL CD
         WHERE CD.CODE_DETAIL_SEQ = #{codeDetailSeq}
+          AND CD.USE_YN = 'Y'
     </select>
 
     <select id="findCodeDetailByCode"
@@ -127,6 +126,7 @@
         FROM CODE_DETAIL CD
         WHERE CD.CODE_GROUP_SEQ = #{codeGroupSeq}
           AND CD.CODE_ID = #{codeId}
+          AND CD.USE_YN = 'Y'
         <if test="codeDetailSeq != null">
             AND CD.CODE_DETAIL_SEQ != #{codeDetailSeq}
         </if>
@@ -199,8 +199,13 @@
     </update>
 
     <update id="deleteData">
-        DELETE FROM CODE_DETAIL
+        UPDATE CODE_DETAIL
+        SET USE_YN = 'N',
+            MODIFY_DT = NOW(),
+            MODIFY_ID = #{modifyId},
+            MODIFY_IP = #{modifyIp}
         WHERE CODE_DETAIL_SEQ = #{codeDetailSeq}
+          AND USE_YN = 'Y'
     </update>
 
 </mapper>

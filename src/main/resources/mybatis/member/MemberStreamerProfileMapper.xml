@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberStreamerProfileMapper">
+
+    <select id="selectByMemberSeq" resultType="com.noonoo.prjtbackend.member.dto.MemberStreamerProfileDto">
+        SELECT member_streamer_profile_seq AS memberStreamerProfileSeq,
+               member_seq                  AS memberSeq,
+               instagram_url               AS instagramUrl,
+               youtube_url                 AS youtubeUrl,
+               soop_channel_url            AS soopChannelUrl,
+               company_category_code       AS companyCategoryCode,
+               blood_type                  AS bloodType,
+               career_history              AS careerHistory
+        FROM member_streamer_profile
+        WHERE member_seq = #{memberSeq}
+    </select>
+
+    <select id="countByMemberSeq" resultType="int">
+        SELECT COUNT(*) FROM member_streamer_profile WHERE member_seq = #{memberSeq}
+    </select>
+
+    <insert id="insertProfile">
+        INSERT INTO member_streamer_profile (
+            member_seq,
+            instagram_url,
+            youtube_url,
+            soop_channel_url,
+            company_category_code,
+            blood_type,
+            career_history,
+            create_dt,
+            modify_dt
+        ) VALUES (
+            #{memberSeq},
+            #{p.instagramUrl},
+            #{p.youtubeUrl},
+            #{p.soopChannelUrl},
+            #{p.companyCategoryCode},
+            #{p.bloodType},
+            #{p.careerHistory},
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <update id="updateProfile">
+        UPDATE member_streamer_profile
+        SET instagram_url = #{p.instagramUrl},
+            youtube_url = #{p.youtubeUrl},
+            soop_channel_url = #{p.soopChannelUrl},
+            company_category_code = #{p.companyCategoryCode},
+            blood_type = #{p.bloodType},
+            career_history = #{p.careerHistory},
+            modify_dt = NOW()
+        WHERE member_seq = #{memberSeq}
+    </update>
+
+    <delete id="deleteByMemberSeq">
+        DELETE FROM member_streamer_profile WHERE member_seq = #{memberSeq}
+    </delete>
+</mapper>

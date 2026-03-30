@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.member.mapper.PointPolicyMapper">
+
+    <select id="selectAllPolicies" resultType="com.noonoo.prjtbackend.member.dto.PointPolicyRowDto">
+        SELECT policy_key AS policyKey,
+               use_yn AS useYn,
+               threshold_int AS thresholdInt,
+               reward_points AS rewardPoints,
+               cap_int AS capInt
+        FROM point_policy_setting
+        ORDER BY FIELD(policy_key,
+            'SIGNUP',
+            'FREE_BOARD_POST',
+            'BOARD_COMMENT_FIRST',
+            'BOARD_COMMENT_EXTRA',
+            'NOTICE_COMMENT_FIRST',
+            'NOTICE_COMMENT_EXTRA',
+            'FREE_BOARD_LIKE')
+    </select>
+
+    <select id="selectByPolicyKey" resultType="com.noonoo.prjtbackend.member.dto.PointPolicyRowDto">
+        SELECT policy_key AS policyKey,
+               use_yn AS useYn,
+               threshold_int AS thresholdInt,
+               reward_points AS rewardPoints,
+               cap_int AS capInt
+        FROM point_policy_setting
+        WHERE policy_key = #{policyKey}
+    </select>
+
+    <update id="updatePolicy" parameterType="com.noonoo.prjtbackend.member.dto.PointPolicyRowDto">
+        UPDATE point_policy_setting
+        SET use_yn = #{useYn},
+            threshold_int = #{thresholdInt},
+            reward_points = #{rewardPoints},
+            cap_int = #{capInt},
+            modify_dt = NOW()
+        WHERE policy_key = #{policyKey}
+    </update>
+
+    <insert id="insertMilestoneGrantedIfAbsent">
+        INSERT INTO board_like_milestone_granted (board_seq, writer_member_seq, reward_points, granted_dt)
+        SELECT #{boardSeq}, #{writerMemberSeq}, #{rewardPoints}, NOW()
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1 FROM board_like_milestone_granted g WHERE g.board_seq = #{boardSeq}
+        )
+    </insert>
+
+    <delete id="deleteMilestoneGranted">
+        DELETE FROM board_like_milestone_granted WHERE board_seq = #{boardSeq}
+    </delete>
+</mapper>

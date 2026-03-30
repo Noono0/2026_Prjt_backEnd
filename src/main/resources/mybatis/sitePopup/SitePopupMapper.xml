@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.sitePopup.mapper.SitePopupMapper">
+
+    <sql id="sitePopupWhere">
+        WHERE 1 = 1
+        AND p.use_yn = 'Y'
+        <if test="title != null and title != ''">
+            AND p.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="showYn != null and showYn != ''">
+            AND p.show_yn = #{showYn}
+        </if>
+    </sql>
+
+    <sql id="sitePopupColumns">
+        p.site_popup_seq,
+        p.title,
+        p.content,
+        p.show_yn AS showYn,
+        'Y' AS popupYn,
+        p.popup_type AS popupType,
+        p.popup_width AS popupWidth,
+        p.popup_height AS popupHeight,
+        p.popup_pos_x AS popupPosX,
+        p.popup_pos_y AS popupPosY,
+        DATE_FORMAT(p.popup_start_dt, '%Y-%m-%d %H:%i:%s') AS popupStartDt,
+        DATE_FORMAT(p.popup_end_dt, '%Y-%m-%d %H:%i:%s') AS popupEndDt,
+        p.sort_order AS sortOrder,
+        DATE_FORMAT(p.create_dt, '%Y-%m-%d %H:%i:%s') AS create_dt,
+        DATE_FORMAT(p.modify_dt, '%Y-%m-%d %H:%i:%s') AS modify_dt
+    </sql>
+
+    <select id="findSitePopups" resultType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto">
+        SELECT
+        <include refid="sitePopupColumns"/>
+        FROM site_popup p
+        <include refid="sitePopupWhere"/>
+        ORDER BY p.sort_order ASC, p.site_popup_seq DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findSitePopupsCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM site_popup p
+        <include refid="sitePopupWhere"/>
+    </select>
+
+    <select id="findSitePopupById" resultType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto">
+        SELECT
+        <include refid="sitePopupColumns"/>
+        FROM site_popup p
+        WHERE p.site_popup_seq = #{sitePopupSeq}
+          AND p.use_yn = 'Y'
+    </select>
+
+    <select id="findSitePopupsForSiteLoad" resultType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto">
+        SELECT
+        <include refid="sitePopupColumns"/>
+        FROM site_popup p
+        WHERE p.use_yn = 'Y'
+          AND p.show_yn = 'Y'
+          AND (p.popup_start_dt IS NULL OR p.popup_start_dt &lt;= NOW())
+          AND (p.popup_end_dt IS NULL OR p.popup_end_dt &gt;= NOW())
+        ORDER BY p.sort_order ASC, p.site_popup_seq DESC
+        LIMIT 50
+    </select>
+
+    <select id="findSitePopupPublic" resultType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto">
+        SELECT
+        <include refid="sitePopupColumns"/>
+        FROM site_popup p
+        WHERE p.site_popup_seq = #{sitePopupSeq}
+          AND p.use_yn = 'Y'
+          AND p.show_yn = 'Y'
+          AND (p.popup_start_dt IS NULL OR p.popup_start_dt &lt;= NOW())
+          AND (p.popup_end_dt IS NULL OR p.popup_end_dt &gt;= NOW())
+    </select>
+
+    <insert id="insertSitePopup" parameterType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest" useGeneratedKeys="true" keyProperty="sitePopupSeq">
+        INSERT INTO site_popup (
+            title, content, show_yn, use_yn,
+            popup_type, popup_width, popup_height, popup_pos_x, popup_pos_y,
+            popup_start_dt, popup_end_dt, sort_order,
+            create_dt, create_id, create_ip, modify_dt, modify_id, modify_ip
+        ) VALUES (
+            #{title}, #{content}, #{showYn}, 'Y',
+            #{popupType}, #{popupWidth}, #{popupHeight}, #{popupPosX}, #{popupPosY},
+            #{popupStartDt}, #{popupEndDt}, #{sortOrder},
+            NOW(), #{createId}, #{createIp}, NOW(), #{modifyId}, #{modifyIp}
+        )
+    </insert>
+
+    <update id="updateSitePopup" parameterType="com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest">
+        UPDATE site_popup
+           SET title = #{title},
+               content = #{content},
+               show_yn = #{showYn},
+               popup_type = #{popupType},
+               popup_width = #{popupWidth},
+               popup_height = #{popupHeight},
+               popup_pos_x = #{popupPosX},
+               popup_pos_y = #{popupPosY},
+               popup_start_dt = #{popupStartDt},
+               popup_end_dt = #{popupEndDt},
+               sort_order = #{sortOrder},
+               modify_dt = NOW(),
+               modify_id = #{modifyId},
+               modify_ip = #{modifyIp}
+         WHERE site_popup_seq = #{sitePopupSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="deleteSitePopup">
+        UPDATE site_popup
+           SET use_yn = 'N',
+               modify_dt = NOW()
+         WHERE site_popup_seq = #{sitePopupSeq}
+           AND use_yn = 'Y'
+    </update>
+</mapper>

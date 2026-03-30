@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.contentfilter.mapper.ContentFilterWordMapper">
+
+    <select id="selectAllActiveForFilter" resultType="com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordDto">
+        SELECT content_filter_word_seq AS contentFilterWordSeq,
+               category,
+               keyword,
+               use_yn AS useYn,
+               sort_order AS sortOrder,
+               remark
+        FROM content_filter_word
+        WHERE use_yn = 'Y'
+        ORDER BY LENGTH(keyword) DESC, sort_order ASC, content_filter_word_seq ASC
+    </select>
+
+    <sql id="searchWhere">
+        WHERE use_yn = 'Y'
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND keyword LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </sql>
+
+    <select id="selectListCnt" resultType="long">
+        SELECT COUNT(1) FROM content_filter_word
+        <include refid="searchWhere"/>
+    </select>
+
+    <select id="selectList" resultType="com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordDto">
+        SELECT content_filter_word_seq AS contentFilterWordSeq,
+               category,
+               keyword,
+               use_yn AS useYn,
+               sort_order AS sortOrder,
+               remark,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM content_filter_word
+        <include refid="searchWhere"/>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'category'">category</when>
+            <when test="sortBy == 'keyword'">keyword</when>
+            <when test="sortBy == 'sortOrder'">sort_order</when>
+            <otherwise>content_filter_word_seq</otherwise>
+        </choose>
+        <choose>
+            <when test="safeSortDir == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectById" resultType="com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordDto">
+        SELECT content_filter_word_seq AS contentFilterWordSeq,
+               category,
+               keyword,
+               use_yn AS useYn,
+               sort_order AS sortOrder,
+               remark,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM content_filter_word
+        WHERE content_filter_word_seq = #{contentFilterWordSeq}
+    </select>
+
+    <insert id="insertWord" useGeneratedKeys="true" keyProperty="contentFilterWordSeq" keyColumn="content_filter_word_seq">
+        INSERT INTO content_filter_word (category, keyword, use_yn, sort_order, remark, create_dt, modify_dt)
+        VALUES (#{category}, #{keyword}, #{useYn}, #{sortOrder}, #{remark}, NOW(), NOW())
+    </insert>
+
+    <update id="updateWord">
+        UPDATE content_filter_word
+        SET category = #{category},
+            keyword = #{keyword},
+            use_yn = #{useYn},
+            sort_order = #{sortOrder},
+            remark = #{remark},
+            modify_dt = NOW()
+        WHERE content_filter_word_seq = #{contentFilterWordSeq}
+    </update>
+
+    <update id="softDelete">
+        UPDATE content_filter_word
+        SET use_yn = 'N', modify_dt = NOW()
+        WHERE content_filter_word_seq = #{contentFilterWordSeq}
+    </update>
+
+    <select id="countByCategoryAndKeywordIgnoreCase" resultType="long">
+        SELECT COUNT(1)
+        FROM content_filter_word
+        WHERE category = #{category}
+          AND LOWER(keyword) = LOWER(#{keyword})
+          AND use_yn = 'Y'
+        <if test="excludeSeq != null">
+            AND content_filter_word_seq != #{excludeSeq}
+        </if>
+    </select>
+</mapper>

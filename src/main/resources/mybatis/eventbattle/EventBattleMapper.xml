@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.eventbattle.mapper.EventBattleMapper">
+
+    <insert id="insertEvent" parameterType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleSaveRequest"
+            useGeneratedKeys="true" keyProperty="eventBattleSeq" keyColumn="event_battle_seq">
+        INSERT INTO event_battle (
+            title, status, creator_member_seq, use_yn,
+            create_id, create_ip, create_dt, modify_dt
+        ) VALUES (
+            #{title}, 'OPEN', #{creatorMemberSeq}, 'Y',
+            #{createId}, #{createIp}, NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="insertOption">
+        INSERT INTO event_battle_option (event_battle_seq, sort_order, label, points_total)
+        VALUES (#{eventBattleSeq}, #{sortOrder}, #{label}, 0)
+    </insert>
+
+    <select id="selectById" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleDto">
+        SELECT e.event_battle_seq AS eventBattleSeq,
+               e.title AS title,
+               e.status AS status,
+               e.winner_option_seq AS winnerOptionSeq,
+               wl.label AS winnerLabel,
+               e.creator_member_seq AS creatorMemberSeq,
+               COALESCE(NULLIF(TRIM(c.NICKNAME), ''), NULLIF(TRIM(c.MEMBER_NAME), ''), c.MEMBER_ID) AS creatorDisplayName,
+               DATE_FORMAT(e.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(e.settle_dt, '%Y-%m-%d %H:%i:%s') AS settleDt
+        FROM event_battle e
+        INNER JOIN member c ON c.member_seq = e.creator_member_seq AND c.USE_YN = 'Y'
+        LEFT JOIN event_battle_option wl ON wl.event_battle_option_seq = e.winner_option_seq
+        WHERE e.event_battle_seq = #{eventBattleSeq}
+          AND e.use_yn = 'Y'
+    </select>
+
+    <select id="selectOptionsByEventSeq" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleOptionDto">
+        SELECT event_battle_option_seq AS eventBattleOptionSeq,
+               event_battle_seq AS eventBattleSeq,
+               sort_order AS sortOrder,
+               label AS label,
+               points_total AS pointsTotal
+        FROM event_battle_option
+        WHERE event_battle_seq = #{eventBattleSeq}
+        ORDER BY sort_order ASC
+    </select>
+
+    <select id="selectOptionById" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleOptionDto">
+        SELECT event_battle_option_seq AS eventBattleOptionSeq,
+               event_battle_seq AS eventBattleSeq,
+               sort_order AS sortOrder,
+               label AS label,
+               points_total AS pointsTotal
+        FROM event_battle_option
+        WHERE event_battle_option_seq = #{eventBattleOptionSeq}
+    </select>
+
+    <sql id="eventWhere">
+        <where>
+            e.use_yn = 'Y'
+            <if test="status != null and status != ''">
+                AND e.status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findEvents" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleDto">
+        SELECT e.event_battle_seq AS eventBattleSeq,
+               e.title AS title,
+               e.status AS status,
+               e.winner_option_seq AS winnerOptionSeq,
+               wl.label AS winnerLabel,
+               e.creator_member_seq AS creatorMemberSeq,
+               COALESCE(NULLIF(TRIM(c.NICKNAME), ''), NULLIF(TRIM(c.MEMBER_NAME), ''), c.MEMBER_ID) AS creatorDisplayName,
+               (SELECT GROUP_CONCAT(o.label ORDER BY o.sort_order SEPARATOR ' · ')
+                FROM event_battle_option o WHERE o.event_battle_seq = e.event_battle_seq) AS optionLabelsPreview,
+               DATE_FORMAT(e.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(e.settle_dt, '%Y-%m-%d %H:%i:%s') AS settleDt
+        FROM event_battle e
+        INNER JOIN member c ON c.member_seq = e.creator_member_seq AND c.USE_YN = 'Y'
+        LEFT JOIN event_battle_option wl ON wl.event_battle_option_seq = e.winner_option_seq
+        <include refid="eventWhere"/>
+        ORDER BY e.event_battle_seq DESC
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="findEventsCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM event_battle e
+        <include refid="eventWhere"/>
+    </select>
+
+    <update id="incrementOptionPoints">
+        UPDATE event_battle_option o
+        INNER JOIN event_battle e ON e.event_battle_seq = o.event_battle_seq AND e.use_yn = 'Y'
+        SET o.points_total = o.points_total + #{delta}
+        WHERE o.event_battle_option_seq = #{eventBattleOptionSeq}
+          AND e.status = 'OPEN'
+    </update>
+
+    <insert id="insertBet">
+        INSERT INTO event_battle_bet (event_battle_seq, event_battle_option_seq, member_seq, point_amount, create_dt)
+        VALUES (#{eventBattleSeq}, #{eventBattleOptionSeq}, #{memberSeq}, #{pointAmount}, NOW())
+    </insert>
+
+    <select id="selectMyBet" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleMyBetDto">
+        SELECT b.event_battle_option_seq AS eventBattleOptionSeq,
+               MAX(o.label) AS label,
+               SUM(b.point_amount) AS pointAmount
+        FROM event_battle_bet b
+        INNER JOIN event_battle_option o ON o.event_battle_option_seq = b.event_battle_option_seq
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+          AND b.member_seq = #{memberSeq}
+        GROUP BY b.event_battle_option_seq
+        LIMIT 1
+    </select>
+
+    <select id="countBets" resultType="long">
+        SELECT COUNT(1) FROM event_battle_bet WHERE event_battle_seq = #{eventBattleSeq}
+    </select>
+
+    <select id="countDistinctBetMembers" resultType="long">
+        SELECT COUNT(DISTINCT member_seq) FROM event_battle_bet WHERE event_battle_seq = #{eventBattleSeq}
+    </select>
+
+    <select id="maxBetSeq" resultType="long">
+        SELECT MAX(event_battle_bet_seq) FROM event_battle_bet WHERE event_battle_seq = #{eventBattleSeq}
+    </select>
+
+    <select id="selectRecentBets" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleBetRowDto">
+        SELECT b.event_battle_bet_seq AS eventBattleBetSeq,
+               b.member_seq AS memberSeq,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), NULLIF(TRIM(m.MEMBER_NAME), ''), m.MEMBER_ID) AS memberDisplayName,
+               b.event_battle_option_seq AS eventBattleOptionSeq,
+               o.label AS optionLabel,
+               b.point_amount AS pointAmount,
+               DATE_FORMAT(b.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt
+        FROM event_battle_bet b
+        INNER JOIN member m ON m.member_seq = b.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN event_battle_option o ON o.event_battle_option_seq = b.event_battle_option_seq
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+        <if test="sinceSeq != null">
+            AND b.event_battle_bet_seq &gt; #{sinceSeq}
+        </if>
+        ORDER BY b.event_battle_bet_seq DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 최근 베팅 추가 로드: beforeBetSeq 보다 오래된 행만 (더보기 / lazy) -->
+    <select id="selectRecentBetsBefore" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleBetRowDto">
+        SELECT b.event_battle_bet_seq AS eventBattleBetSeq,
+               b.member_seq AS memberSeq,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), NULLIF(TRIM(m.MEMBER_NAME), ''), m.MEMBER_ID) AS memberDisplayName,
+               b.event_battle_option_seq AS eventBattleOptionSeq,
+               o.label AS optionLabel,
+               b.point_amount AS pointAmount,
+               DATE_FORMAT(b.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt
+        FROM event_battle_bet b
+        INNER JOIN member m ON m.member_seq = b.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN event_battle_option o ON b.event_battle_option_seq = o.event_battle_option_seq
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+          AND b.event_battle_bet_seq &lt; #{beforeBetSeq}
+        ORDER BY b.event_battle_bet_seq DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectMyBetsForEvent" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleBetRowDto">
+        SELECT b.event_battle_bet_seq AS eventBattleBetSeq,
+               b.member_seq AS memberSeq,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), NULLIF(TRIM(m.MEMBER_NAME), ''), m.MEMBER_ID) AS memberDisplayName,
+               b.event_battle_option_seq AS eventBattleOptionSeq,
+               o.label AS optionLabel,
+               b.point_amount AS pointAmount,
+               DATE_FORMAT(b.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt
+        FROM event_battle_bet b
+        INNER JOIN member m ON m.member_seq = b.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN event_battle_option o ON o.event_battle_option_seq = b.event_battle_option_seq
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+          AND b.member_seq = #{memberSeq}
+        ORDER BY b.event_battle_bet_seq DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- rank 는 서비스에서 setRank 로 채움. option_label → optionLabel 은 resultMap 으로 고정 매핑 -->
+    <resultMap id="EventBattleBettorRankResultMap" type="com.noonoo.prjtbackend.eventbattle.dto.EventBattleBettorRankDto">
+        <result property="memberSeq" column="member_seq"/>
+        <result property="memberDisplayName" column="member_display_name"/>
+        <result property="totalPoints" column="total_points"/>
+        <result property="optionLabel" column="option_label"/>
+    </resultMap>
+
+    <select id="selectBettorRanking" resultMap="EventBattleBettorRankResultMap">
+        SELECT b.member_seq AS member_seq,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), NULLIF(TRIM(m.MEMBER_NAME), ''), m.MEMBER_ID) AS member_display_name,
+               SUM(b.point_amount) AS total_points,
+               MAX(o.label) AS option_label
+        FROM event_battle_bet b
+        INNER JOIN member m ON m.member_seq = b.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN event_battle_option o ON b.event_battle_option_seq = o.event_battle_option_seq
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+        GROUP BY b.member_seq, m.NICKNAME, m.MEMBER_NAME, m.MEMBER_ID
+        HAVING SUM(b.point_amount) &gt; 0
+        ORDER BY SUM(b.point_amount) DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="sumStakesByOption" resultType="com.noonoo.prjtbackend.eventbattle.dto.MemberStakeRow">
+        SELECT member_seq AS memberSeq,
+               SUM(point_amount) AS stakeAmount
+        FROM event_battle_bet
+        WHERE event_battle_seq = #{eventBattleSeq}
+          AND event_battle_option_seq = #{eventBattleOptionSeq}
+        GROUP BY member_seq
+        HAVING SUM(point_amount) &gt; 0
+    </select>
+
+    <select id="selectStakesByOptionWithMember" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleStakeMemberRow">
+        SELECT b.member_seq AS memberSeq,
+               SUM(b.point_amount) AS stakeAmount,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), NULLIF(TRIM(m.MEMBER_NAME), ''), m.MEMBER_ID) AS memberDisplayName
+        FROM event_battle_bet b
+        INNER JOIN member m ON m.member_seq = b.member_seq AND m.USE_YN = 'Y'
+        WHERE b.event_battle_seq = #{eventBattleSeq}
+          AND b.event_battle_option_seq = #{eventBattleOptionSeq}
+        GROUP BY b.member_seq, m.NICKNAME, m.MEMBER_NAME, m.MEMBER_ID
+        HAVING SUM(b.point_amount) &gt; 0
+        ORDER BY b.member_seq ASC
+    </select>
+
+    <select id="sumStakesAllMembers" resultType="com.noonoo.prjtbackend.eventbattle.dto.MemberStakeRow">
+        SELECT member_seq AS memberSeq,
+               SUM(point_amount) AS stakeAmount
+        FROM event_battle_bet
+        WHERE event_battle_seq = #{eventBattleSeq}
+        GROUP BY member_seq
+    </select>
+
+    <update id="updateSettled">
+        UPDATE event_battle
+        SET status = 'SETTLED',
+            winner_option_seq = #{winnerOptionSeq},
+            settle_dt = NOW(),
+            modify_id = #{modifyId},
+            modify_ip = #{modifyIp},
+            modify_dt = NOW()
+        WHERE event_battle_seq = #{eventBattleSeq}
+          AND status = 'OPEN'
+          AND use_yn = 'Y'
+    </update>
+</mapper>

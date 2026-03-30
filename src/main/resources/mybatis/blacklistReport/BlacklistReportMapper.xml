@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.blacklistreport.mapper.BlacklistReportMapper">
+
+    <!-- 등록·수정 글 분류 (게시글에 저장되는 category_code) -->
+    <select id="findBlacklistCategoryOptions" resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">
+        SELECT cd.code_value AS value,
+               cd.code_name AS label
+        FROM code_group cg
+        INNER JOIN code_detail cd
+            ON cd.code_group_seq = cg.code_group_seq
+        WHERE cg.code_group_id = 'A0005'
+          AND cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+          AND cd.use_yn = 'Y'
+          AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
+    </select>
+
+    <!-- 목록·조회 필터 칩 (검색 조건용, 글 저장값과 별도 그룹) -->
+    <select id="findBlacklistListCategoryOptions" resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">
+        SELECT cd.code_value AS value,
+               cd.code_name AS label
+        FROM code_group cg
+        INNER JOIN code_detail cd
+            ON cd.code_group_seq = cg.code_group_seq
+        WHERE cg.code_group_id = 'A0006'
+          AND cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+          AND cd.use_yn = 'Y'
+          AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
+    </select>
+
+    <!-- 대분류 A0006, 중분류 code_id A00052·A00053: 목록 추천 수 탭( attr1 = 최소 추천 수 ) -->
+    <select id="findBlacklistPopularLikeRules"
+            resultType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistPopularLikeRuleRow">
+        SELECT cd.code_id       AS codeId,
+               cd.attr1         AS attr1,
+               cd.code_name     AS codeName,
+               cd.code_value    AS codeValue
+        FROM code_detail cd
+        INNER JOIN code_group cg ON cg.code_group_seq = cd.code_group_seq
+        WHERE cd.use_yn = 'Y'
+          AND cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+          AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+          AND cg.code_group_id = 'A0006'
+          AND cd.code_id IN ('A00052', 'A00053')
+        ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
+    </select>
+
+    <sql id="blacklistWhere">
+        WHERE br.use_yn = 'Y'
+        <if test="blacklistTargetId != null and blacklistTargetId != ''">
+            AND br.blacklist_target_id LIKE CONCAT('%', #{blacklistTargetId}, '%')
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (br.title LIKE CONCAT('%', #{keyword}, '%') OR br.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="createDtFrom != null and createDtFrom != ''">
+            AND DATE(br.create_dt) &gt;= #{createDtFrom}
+        </if>
+        <if test="createDtTo != null and createDtTo != ''">
+            AND DATE(br.create_dt) &lt;= #{createDtTo}
+        </if>
+        <if test="minLikeCount != null">
+            AND IFNULL(br.like_count, 0) &gt;= #{minLikeCount}
+        </if>
+        <if test="categoryCode != null and categoryCode != ''">
+            AND br.category_code = #{categoryCode}
+        </if>
+    </sql>
+
+    <select id="findBlacklistReports" resultType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportDto">
+        SELECT br.blacklist_report_seq AS blacklistReportSeq,
+               br.blacklist_target_id AS blacklistTargetId,
+               CASE
+                   WHEN IFNULL(br.report_count, 0) &gt;= #{blindReportThreshold} THEN #{blindListTitle}
+                   ELSE br.title
+               END AS title,
+               CASE
+                   WHEN IFNULL(br.report_count, 0) &gt;= #{blindReportThreshold} THEN ''
+                   ELSE br.content
+               END AS content,
+               br.writer_member_seq AS writerMemberSeq,
+               wm.member_id AS writerMemberId,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writerProfileImageUrl,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(br.writer_name), ''), wm.member_id) AS writerName,
+               br.category_code AS categoryCode,
+               CASE WHEN cg.code_group_seq IS NOT NULL THEN cd.code_name END AS categoryName,
+               br.view_count AS viewCount,
+               br.like_count AS likeCount,
+               br.dislike_count AS dislikeCount,
+               br.comment_count AS commentCount,
+               br.report_count AS reportCount,
+               br.comment_allowed_yn AS commentAllowedYn,
+               br.reply_allowed_yn AS replyAllowedYn,
+               DATE_FORMAT(br.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(br.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM blacklist_report_board br
+        LEFT JOIN code_detail cd
+          ON cd.code_value = br.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        LEFT JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.code_group_id = 'A0005'
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        LEFT JOIN member wm
+          ON wm.member_seq = br.writer_member_seq
+        <include refid="blacklistWhere"/>
+        ORDER BY
+        <if test="minLikeCount != null">
+            br.like_count DESC,
+        </if>
+        br.blacklist_report_seq DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findBlacklistReportsCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM blacklist_report_board br
+        <include refid="blacklistWhere"/>
+    </select>
+
+    <select id="findById" resultType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportDto">
+        SELECT br.blacklist_report_seq AS blacklistReportSeq,
+               br.blacklist_target_id AS blacklistTargetId,
+               br.title,
+               br.content,
+               br.writer_member_seq AS writerMemberSeq,
+               wm.member_id AS writerMemberId,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writerProfileImageUrl,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(br.writer_name), ''), wm.member_id) AS writerName,
+               br.category_code AS categoryCode,
+               CASE WHEN cg.code_group_seq IS NOT NULL THEN cd.code_name END AS categoryName,
+               br.view_count AS viewCount,
+               br.like_count AS likeCount,
+               br.dislike_count AS dislikeCount,
+               br.comment_count AS commentCount,
+               br.report_count AS reportCount,
+               br.comment_allowed_yn AS commentAllowedYn,
+               br.reply_allowed_yn AS replyAllowedYn,
+               DATE_FORMAT(br.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(br.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM blacklist_report_board br
+        LEFT JOIN code_detail cd
+          ON cd.code_value = br.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        LEFT JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.code_group_id = 'A0005'
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        LEFT JOIN member wm
+          ON wm.member_seq = br.writer_member_seq
+        WHERE br.blacklist_report_seq = #{blacklistReportSeq}
+          AND br.use_yn = 'Y'
+    </select>
+
+    <insert id="insertBlacklistReport" parameterType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSaveRequest"
+            useGeneratedKeys="true" keyProperty="blacklistReportSeq" keyColumn="blacklist_report_seq">
+        INSERT INTO blacklist_report_board (
+            blacklist_target_id, title, content,
+            category_code, comment_allowed_yn, reply_allowed_yn,
+            writer_member_seq, writer_name, view_count,
+            like_count, dislike_count, comment_count, report_count,
+            use_yn,
+            create_dt, create_id, create_ip, modify_dt, modify_id, modify_ip
+        ) VALUES (
+            #{blacklistTargetId}, #{title}, #{content},
+            #{categoryCode}, #{commentAllowedYn}, #{replyAllowedYn},
+            #{writerMemberSeq}, #{writerName}, #{viewCount},
+            #{likeCount}, #{dislikeCount}, #{commentCount}, #{reportCount},
+            'Y',
+            NOW(), #{createId}, #{createIp}, NOW(), #{modifyId}, #{modifyIp}
+        )
+    </insert>
+
+    <update id="updateBlacklistReport" parameterType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSaveRequest">
+        UPDATE blacklist_report_board
+           SET blacklist_target_id = #{blacklistTargetId},
+               title = #{title},
+               content = #{content},
+               category_code = #{categoryCode},
+               comment_allowed_yn = #{commentAllowedYn},
+               reply_allowed_yn = #{replyAllowedYn},
+               modify_dt = NOW(),
+               modify_id = #{modifyId},
+               modify_ip = #{modifyIp}
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="deleteBlacklistReport">
+        UPDATE blacklist_report_board
+           SET use_yn = 'N',
+               modify_dt = NOW()
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="increaseViewCount">
+        UPDATE blacklist_report_board
+           SET view_count = IFNULL(view_count, 0) + 1
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="increaseBlacklistReportLikeCount">
+        UPDATE blacklist_report_board
+           SET like_count = IFNULL(like_count, 0) + 1
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="increaseBlacklistReportDislikeCount">
+        UPDATE blacklist_report_board
+           SET dislike_count = IFNULL(dislike_count, 0) + 1
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="increaseBlacklistReportReportCount">
+        UPDATE blacklist_report_board
+           SET report_count = IFNULL(report_count, 0) + 1
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="increaseBlacklistReportCommentCount">
+        UPDATE blacklist_report_board
+           SET comment_count = IFNULL(comment_count, 0) + 1
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <update id="adjustBlacklistReportCommentCount">
+        UPDATE blacklist_report_board
+           SET comment_count = GREATEST(IFNULL(comment_count, 0) + #{delta}, 0)
+         WHERE blacklist_report_seq = #{blacklistReportSeq}
+           AND use_yn = 'Y'
+    </update>
+
+    <insert id="insertBlacklistReportActionLog">
+        INSERT IGNORE INTO board_action_log (
+            board_kind, target_kind, target_seq, action_type,
+            member_seq, member_id, client_ip, create_dt
+        ) VALUES (
+            #{boardKind}, #{targetKind}, #{targetSeq}, #{actionType},
+            #{memberSeq}, #{memberId}, #{clientIp}, NOW()
+        )
+    </insert>
+
+    <select id="findBlacklistReportsForExport" resultType="com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportDto">
+        SELECT br.blacklist_report_seq AS blacklistReportSeq,
+               br.blacklist_target_id AS blacklistTargetId,
+               br.title,
+               br.content,
+               br.writer_member_seq AS writerMemberSeq,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(br.writer_name), ''), wm.member_id) AS writerName,
+               br.view_count AS viewCount,
+               br.like_count AS likeCount,
+               br.dislike_count AS dislikeCount,
+               DATE_FORMAT(br.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(br.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM blacklist_report_board br
+        LEFT JOIN member wm ON wm.member_seq = br.writer_member_seq
+        <include refid="blacklistWhere"/>
+        ORDER BY br.blacklist_target_id ASC, br.blacklist_report_seq DESC
+        LIMIT 10000
+    </select>
+</mapper>

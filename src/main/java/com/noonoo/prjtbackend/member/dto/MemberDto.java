@@ -15,8 +15,14 @@ public class MemberDto {
     private String memberId;
     private String memberPwd;
     private String memberName;
+    /** 화면 표시용 닉네임(게시자 이름 등) */
+    private String nickname;
     private String birthYmd;
     private String email;
+    /** 조회용 URL — 파일 연동 시 `/api/files/view/{seq}`, 레거시는 기존 컬럼 값 */
+    private String profileImageUrl;
+    /** attach_file.file_seq */
+    private Long profileImageFileSeq;
     private String gender;
     private String phone;
     private String region;
@@ -33,4 +39,6 @@ public class MemberDto {
     private String createDt;
     private String modifyDt;
     private String lastLoginAt;
+    /** 스트리머·컴퍼니 확장 프로필 (없으면 null) */
+    private MemberStreamerProfileDto streamerProfile;
 }

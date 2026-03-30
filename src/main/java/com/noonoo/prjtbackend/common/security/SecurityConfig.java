@@ -57,6 +57,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/menus/sidebar").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/site-popups/active").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/site-popups/public/*").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/files/view/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/files/download/**").permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated()
             );

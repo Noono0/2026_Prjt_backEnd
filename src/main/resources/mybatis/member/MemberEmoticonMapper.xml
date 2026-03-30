@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.member.mapper.MemberEmoticonMapper">
+
+    <select id="findByMemberSeq" resultType="com.noonoo.prjtbackend.member.dto.MemberEmoticonDto">
+        SELECT member_emoticon_seq AS memberEmoticonSeq,
+               member_seq           AS memberSeq,
+               image_url            AS imageUrl,
+               sort_order           AS sortOrder,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt
+        FROM member_emoticon
+        WHERE member_seq = #{memberSeq}
+          AND use_yn = 'Y'
+        ORDER BY sort_order ASC, member_emoticon_seq ASC
+    </select>
+
+    <select id="countByMemberSeq" resultType="int">
+        SELECT COUNT(1) FROM member_emoticon WHERE member_seq = #{memberSeq} AND use_yn = 'Y'
+    </select>
+
+    <insert id="insert">
+        INSERT INTO member_emoticon (member_seq, image_url, sort_order, use_yn, create_dt)
+        VALUES (#{memberSeq}, #{imageUrl}, #{sortOrder}, 'Y', NOW())
+    </insert>
+
+    <update id="deleteBySeqAndMember">
+        UPDATE member_emoticon
+           SET use_yn = 'N'
+         WHERE member_emoticon_seq = #{memberEmoticonSeq}
+           AND member_seq = #{memberSeq}
+           AND use_yn = 'Y'
+    </update>
+
+</mapper>

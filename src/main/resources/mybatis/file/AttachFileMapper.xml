@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.file.mapper.AttachFileMapper">
+
+    <insert id="insertAttachFile" parameterType="com.noonoo.prjtbackend.file.dto.AttachFileDto"
+            useGeneratedKeys="true" keyProperty="fileSeq" keyColumn="file_seq">
+        INSERT INTO attach_file (
+            original_name, stored_path, content_type, file_size,
+            menu_url, member_seq, create_id, create_ip, create_dt, use_yn
+        ) VALUES (
+            #{originalName}, #{storedPath}, #{contentType}, #{fileSize},
+            #{menuUrl}, #{memberSeq}, #{createId}, #{createIp}, NOW(), 'Y'
+        )
+    </insert>
+
+    <select id="selectByFileSeq" resultType="com.noonoo.prjtbackend.file.dto.AttachFileDto">
+        SELECT file_seq        AS fileSeq,
+               original_name   AS originalName,
+               stored_path     AS storedPath,
+               content_type    AS contentType,
+               file_size       AS fileSize,
+               menu_url        AS menuUrl,
+               member_seq      AS memberSeq,
+               create_id       AS createId,
+               create_ip       AS createIp,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               use_yn          AS useYn
+        FROM attach_file
+        WHERE file_seq = #{fileSeq}
+          AND use_yn = 'Y'
+    </select>
+</mapper>

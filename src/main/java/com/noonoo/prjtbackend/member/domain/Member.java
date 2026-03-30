@@ -45,8 +45,19 @@ public class Member {
     @NotBlank(message = "성명은 필수입니다.")
     private String memberName;
 
+    /** 게시·댓글·선물 등에 노출되는 닉네임(없으면 회원명으로 대체 표시) */
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
     @Column(name = "email")
     private String email;
+
+    @Column(name = "profile_image_url", columnDefinition = "LONGTEXT")
+    private String profileImageUrl;
+
+    /** {@code attach_file.file_seq} — 프로필 이미지는 첨부 메타 + 디스크 파일로 관리 */
+    @Column(name = "profile_image_file_seq")
+    private Long profileImageFileSeq;
 
     @Column(name = "create_dt")
     private LocalDateTime createDt;
