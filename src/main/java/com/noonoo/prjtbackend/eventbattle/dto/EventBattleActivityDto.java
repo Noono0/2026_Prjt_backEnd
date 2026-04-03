@@ -35,4 +35,7 @@ public class EventBattleActivityDto {
     private EventBattleMyBetDto myBet;
     /** 로그인 유저 본인 베팅 행(건당 금액, 최신순) */
     private List<EventBattleBetRowDto> myBetHistory;
+    /** 로그인 유저가 선택한 투표 option seq 목록 */
+    @Builder.Default
+    private List<Long> myVoteOptionSeqs = new ArrayList<>();
 }

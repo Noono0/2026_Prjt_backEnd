@@ -123,6 +123,17 @@
           AND M.USE_YN = 'Y'
     </select>
 
+    <select id="findMemberByMemberIdAndEmail" resultMap="memberResultMap">
+        SELECT
+        <include refid="memberColumns"/>
+        FROM MEMBER M
+        WHERE M.MEMBER_ID = #{memberId}
+          AND LOWER(TRIM(M.EMAIL)) = LOWER(TRIM(#{email}))
+          AND M.USE_YN = 'Y'
+          AND (M.STATUS_CODE IS NULL OR M.STATUS_CODE IN ('ACTIVE', 'SUSPENDED'))
+        LIMIT 1
+    </select>
+
     <select id="findIdCheck" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
             resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT

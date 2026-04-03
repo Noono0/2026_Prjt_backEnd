@@ -573,6 +573,8 @@ CREATE TABLE IF NOT EXISTS event_battle (
     event_battle_seq       BIGINT AUTO_INCREMENT PRIMARY KEY,
     title                  VARCHAR(500) NOT NULL,
     status                 VARCHAR(20)  NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN | SETTLED | CANCELLED',
+    vote_limit_per_member  INT          NOT NULL DEFAULT 1 COMMENT '1인당 선택 가능한 주제 수',
+    vote_only_yn           CHAR(1)      NOT NULL DEFAULT 'N' COMMENT 'Y=투표 전용(베팅 불가)',
     winner_option_seq      BIGINT       NULL COMMENT 'event_battle_option.event_battle_option_seq',
     creator_member_seq     BIGINT       NOT NULL,
     use_yn                 CHAR(1)      NOT NULL DEFAULT 'Y',
@@ -596,6 +598,23 @@ SET @sql_eb_winner := (SELECT IF(
     'ALTER TABLE event_battle ADD COLUMN winner_option_seq BIGINT NULL COMMENT ''event_battle_option.event_battle_option_seq''',
     'SELECT 1'));
 PREPARE _prjt_stmt FROM @sql_eb_winner;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+SET @sql_eb_vote_limit := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'event_battle' AND COLUMN_NAME = 'vote_limit_per_member') = 0,
+    'ALTER TABLE event_battle ADD COLUMN vote_limit_per_member INT NOT NULL DEFAULT 1 COMMENT ''1인당 선택 가능한 주제 수''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_eb_vote_limit;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_eb_vote_only := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'event_battle' AND COLUMN_NAME = 'vote_only_yn') = 0,
+    'ALTER TABLE event_battle ADD COLUMN vote_only_yn CHAR(1) NOT NULL DEFAULT ''N'' COMMENT ''Y=투표 전용(베팅 불가)''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_eb_vote_only;
 EXECUTE _prjt_stmt;
 DEALLOCATE PREPARE _prjt_stmt;
 
@@ -660,6 +679,19 @@ CREATE TABLE IF NOT EXISTS event_battle_bet (
     CONSTRAINT fk_ebb_event FOREIGN KEY (event_battle_seq) REFERENCES event_battle (event_battle_seq) ON DELETE CASCADE,
     CONSTRAINT fk_ebb_option FOREIGN KEY (event_battle_option_seq) REFERENCES event_battle_option (event_battle_option_seq),
     CONSTRAINT fk_ebb_member FOREIGN KEY (member_seq) REFERENCES member (member_seq)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS event_battle_vote (
+    event_battle_vote_seq    BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_battle_seq         BIGINT NOT NULL,
+    event_battle_option_seq  BIGINT NOT NULL,
+    member_seq               BIGINT NOT NULL,
+    create_dt                DATETIME NULL,
+    UNIQUE KEY uk_ebv_member_option (event_battle_seq, member_seq, event_battle_option_seq),
+    KEY idx_ebv_event_member (event_battle_seq, member_seq),
+    CONSTRAINT fk_ebv_event FOREIGN KEY (event_battle_seq) REFERENCES event_battle (event_battle_seq) ON DELETE CASCADE,
+    CONSTRAINT fk_ebv_option FOREIGN KEY (event_battle_option_seq) REFERENCES event_battle_option (event_battle_option_seq),
+    CONSTRAINT fk_ebv_member FOREIGN KEY (member_seq) REFERENCES member (member_seq)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 기존 event_battle_bet 에 event_battle_option_seq 없음 → CREATE IF NOT EXISTS 가 테이블을 바꾸지 않음

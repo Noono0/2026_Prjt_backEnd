@@ -1,11 +1,17 @@
 package com.noonoo.prjtbackend.auth.controller;
 
 import com.noonoo.prjtbackend.auth.dto.LoginRequest;
+import com.noonoo.prjtbackend.auth.dto.PasswordResetCompleteDto;
+import com.noonoo.prjtbackend.auth.dto.PasswordResetRequestDto;
+import com.noonoo.prjtbackend.auth.dto.PasswordResetVerifyDto;
+import com.noonoo.prjtbackend.auth.dto.PasswordResetVerifyResponseDto;
 import com.noonoo.prjtbackend.auth.dto.TokenResponse;
+import com.noonoo.prjtbackend.auth.service.PasswordResetService;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.security.CustomUserDetails;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +34,10 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final MemberMapper memberMapper;
+    private final PasswordResetService passwordResetService;
+
+    private static final String PW_RESET_SENT_MSG =
+            "요청이 접수되었습니다. 가입 시 등록한 이메일로 인증코드가 발송되었습니다. 메일이 오지 않으면 스팸함을 확인해 주세요.";
 
     /**
      * 로그인: Spring Security {@link SecurityContextHolder} 에 인증을 올려
@@ -84,5 +94,27 @@ public class AuthController {
         String memberName = member != null ? member.getMemberName() : null;
         return ApiResponse.ok(
                 new TokenResponse(memberSeq, memberId, "session", "session", profileUrl, nickname, memberName));
+    }
+
+    /** 비밀번호 찾기 1단계 — 아이디·이메일 일치 시 등록 이메일로 6자리 코드 발송 (수신 도메인 무관: naver, gmail, kakao 등) */
+    @PostMapping("/password-reset/request")
+    public ApiResponse<Void> passwordResetRequest(@RequestBody PasswordResetRequestDto body, HttpServletRequest request) {
+        passwordResetService.requestCode(body, request);
+        return ApiResponse.ok(PW_RESET_SENT_MSG, null);
+    }
+
+    @PostMapping("/password-reset/verify")
+    public ApiResponse<PasswordResetVerifyResponseDto> passwordResetVerify(@RequestBody PasswordResetVerifyDto body) {
+        PasswordResetVerifyResponseDto data = passwordResetService.verifyCode(body);
+        return ApiResponse.ok("인증되었습니다. 새 비밀번호를 입력해 주세요.", data);
+    }
+
+    @PostMapping("/password-reset/complete")
+    public ApiResponse<Void> passwordResetComplete(
+            @RequestBody PasswordResetCompleteDto body,
+            HttpServletRequest request
+    ) {
+        passwordResetService.completeReset(body, request);
+        return ApiResponse.ok("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.", null);
     }
 }

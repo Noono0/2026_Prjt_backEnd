@@ -17,9 +17,11 @@ import com.noonoo.prjtbackend.eventbattle.dto.EventBattleOptionDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSaveRequest;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSearchCondition;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSettleRequest;
+import com.noonoo.prjtbackend.eventbattle.dto.EventBattleVoteRequest;
 import com.noonoo.prjtbackend.eventbattle.dto.MemberStakeRow;
 import com.noonoo.prjtbackend.eventbattle.mapper.EventBattleMapper;
 import com.noonoo.prjtbackend.eventbattle.service.EventBattleService;
+import com.noonoo.prjtbackend.eventbattle.sse.EventBattleActivitySseBroadcaster;
 import com.noonoo.prjtbackend.member.dto.MemberWalletLedgerDto;
 import com.noonoo.prjtbackend.member.mapper.MemberWalletMapper;
 import com.noonoo.prjtbackend.member.wallet.WalletPointRules;
@@ -30,6 +32,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,11 +44,11 @@ public class EventBattleServiceImpl implements EventBattleService {
     private static final int BETTOR_RANKING_TOP = 10;
     private static final int MY_BET_HISTORY_LIMIT = 5;
     private static final int MIN_OPTIONS = 2;
-    private static final int MAX_OPTIONS = 5;
 
     private final EventBattleMapper eventBattleMapper;
     private final MemberWalletMapper memberWalletMapper;
     private final SecurityExpressions securityExpressions;
+    private final EventBattleActivitySseBroadcaster sseBroadcaster;
 
     @Override
     @Transactional
@@ -54,13 +57,15 @@ public class EventBattleServiceImpl implements EventBattleService {
             throw new IllegalArgumentException("이벤트 제목을 입력해 주세요.");
         }
         List<String> labels = normalizeOptionLabels(request.getOptionLabels());
-        if (labels.size() < MIN_OPTIONS || labels.size() > MAX_OPTIONS) {
-            throw new IllegalArgumentException("주제는 " + MIN_OPTIONS + "개 이상 " + MAX_OPTIONS + "개 이하로 입력해 주세요.");
+        if (labels.size() < MIN_OPTIONS) {
+            throw new IllegalArgumentException("주제는 " + MIN_OPTIONS + "개 이상 입력해 주세요.");
         }
         long creator = requireLoginMemberSeq();
         String loginId = RequestContext.getLoginMemberId();
         String ip = RequestContext.getClientIp();
         request.setTitle(request.getTitle().trim());
+        request.setVoteLimitPerMember(request.getVoteLimitPerMember() == null || request.getVoteLimitPerMember() < 1 ? 1 : request.getVoteLimitPerMember());
+        request.setVoteOnlyYn(Boolean.TRUE.equals(request.getVoteOnly()) ? "Y" : "N");
         request.setCreatorMemberSeq(creator);
         request.setCreateId(StringUtils.hasText(loginId) ? loginId : "SYSTEM");
         request.setCreateIp(StringUtils.hasText(ip) ? ip : "0.0.0.0");
@@ -83,7 +88,6 @@ public class EventBattleServiceImpl implements EventBattleService {
         return raw.stream()
                 .filter(s -> s != null && StringUtils.hasText(s.trim()))
                 .map(s -> s.trim())
-                .limit(MAX_OPTIONS)
                 .collect(Collectors.toList());
     }
 
@@ -110,6 +114,20 @@ public class EventBattleServiceImpl implements EventBattleService {
 
     @Override
     public EventBattleActivityDto activity(long eventBattleSeq, Long sinceBetSeq, int recentLimit) {
+        return buildActivity(eventBattleSeq, sinceBetSeq, recentLimit, true);
+    }
+
+    @Override
+    public EventBattleActivityDto activityForBroadcast(long eventBattleSeq, int recentLimit) {
+        return buildActivity(eventBattleSeq, null, recentLimit, false);
+    }
+
+    private EventBattleActivityDto buildActivity(
+            long eventBattleSeq,
+            Long sinceBetSeq,
+            int recentLimit,
+            boolean includeViewerBets
+    ) {
         EventBattleDto e = get(eventBattleSeq);
         int lim = recentLimit > 0 && recentLimit <= 200 ? recentLimit : ACTIVITY_RECENT_DEFAULT;
         List<EventBattleBetRowDto> rows = eventBattleMapper.selectRecentBets(eventBattleSeq, sinceBetSeq, lim);
@@ -128,13 +146,17 @@ public class EventBattleServiceImpl implements EventBattleService {
 
         EventBattleMyBetDto myBet = null;
         List<EventBattleBetRowDto> myBetHistory = new ArrayList<>();
-        Long login = RequestContext.getLoginMemberSeq();
-        if (login != null) {
-            myBet = eventBattleMapper.selectMyBet(eventBattleSeq, login);
-            List<EventBattleBetRowDto> mine = eventBattleMapper.selectMyBetsForEvent(
-                    eventBattleSeq, login, MY_BET_HISTORY_LIMIT);
-            if (mine != null) {
-                myBetHistory = mine;
+        List<Long> myVoteOptionSeqs = new ArrayList<>();
+        if (includeViewerBets) {
+            Long login = RequestContext.getLoginMemberSeq();
+            if (login != null) {
+                myBet = eventBattleMapper.selectMyBet(eventBattleSeq, login);
+                myVoteOptionSeqs = eventBattleMapper.selectMyVoteOptionSeqs(eventBattleSeq, login);
+                List<EventBattleBetRowDto> mine = eventBattleMapper.selectMyBetsForEvent(
+                        eventBattleSeq, login, MY_BET_HISTORY_LIMIT);
+                if (mine != null) {
+                    myBetHistory = mine;
+                }
             }
         }
 
@@ -160,6 +182,7 @@ public class EventBattleServiceImpl implements EventBattleService {
                 .winnerPayoutOtherTotal(winnerSplit.otherPayoutTotal())
                 .myBet(myBet)
                 .myBetHistory(myBetHistory)
+                .myVoteOptionSeqs(myVoteOptionSeqs)
                 .build();
     }
 
@@ -266,6 +289,9 @@ public class EventBattleServiceImpl implements EventBattleService {
         long pts = request.getPoints();
 
         EventBattleDto e = get(eventBattleSeq);
+        if ("Y".equals(e.getVoteOnlyYn())) {
+            throw new IllegalStateException("이 이벤트는 투표 전용입니다. 포인트 베팅은 할 수 없습니다.");
+        }
         if (!"OPEN".equals(e.getStatus())) {
             throw new IllegalStateException("베팅이 마감된 이벤트입니다.");
         }
@@ -297,6 +323,42 @@ public class EventBattleServiceImpl implements EventBattleService {
         if (n == 0) {
             throw new IllegalStateException("베팅 반영에 실패했습니다. 이벤트 상태를 확인해 주세요.");
         }
+
+        // 베팅 반영 후 activity 변경을 SSE로 푸시
+        sseBroadcaster.broadcastActivity(eventBattleSeq);
+    }
+
+    @Override
+    @Transactional
+    public void vote(long eventBattleSeq, EventBattleVoteRequest request) {
+        long memberSeq = requireLoginMemberSeq();
+        EventBattleDto e = get(eventBattleSeq);
+        if (!"Y".equals(e.getVoteOnlyYn())) {
+            throw new IllegalStateException("이 이벤트는 베팅 방식입니다. 투표는 투표 전용 이벤트에서만 가능합니다.");
+        }
+        if (!"OPEN".equals(e.getStatus())) {
+            throw new IllegalStateException("투표가 마감된 이벤트입니다.");
+        }
+        int limit = e.getVoteLimitPerMember() == null || e.getVoteLimitPerMember() < 1 ? 1 : e.getVoteLimitPerMember();
+        List<Long> raw = request != null && request.getOptionSeqs() != null ? request.getOptionSeqs() : List.of();
+        List<Long> picks = new ArrayList<>(new LinkedHashSet<>(raw.stream().filter(v -> v != null && v > 0).toList()));
+        if (picks.isEmpty()) {
+            throw new IllegalArgumentException("최소 1개 주제를 선택해 주세요.");
+        }
+        if (picks.size() > limit) {
+            throw new IllegalArgumentException("투표권은 최대 " + limit + "개까지 선택할 수 있습니다.");
+        }
+        for (Long optionSeq : picks) {
+            EventBattleOptionDto opt = eventBattleMapper.selectOptionById(optionSeq);
+            if (opt == null || opt.getEventBattleSeq() == null || opt.getEventBattleSeq() != eventBattleSeq) {
+                throw new IllegalArgumentException("이벤트에 속한 유효한 주제를 선택해 주세요.");
+            }
+        }
+        eventBattleMapper.deleteMyVotes(eventBattleSeq, memberSeq);
+        for (Long optionSeq : picks) {
+            eventBattleMapper.insertVote(eventBattleSeq, optionSeq, memberSeq);
+        }
+        sseBroadcaster.broadcastActivity(eventBattleSeq);
     }
 
     @Override
@@ -333,6 +395,8 @@ public class EventBattleServiceImpl implements EventBattleService {
             if (u == 0) {
                 throw new IllegalStateException("정산 처리에 실패했습니다.");
             }
+            // totalPool=0에서도 status 변경이 생기므로, SSE 스냅샷을 푸시합니다.
+            sseBroadcaster.broadcastActivity(eventBattleSeq);
             return;
         }
 
@@ -344,6 +408,8 @@ public class EventBattleServiceImpl implements EventBattleService {
             if (u == 0) {
                 throw new IllegalStateException("정산 상태 반영에 실패했습니다.");
             }
+            // 환급+status 변경 후 SSE 스냅샷을 푸시합니다.
+            sseBroadcaster.broadcastActivity(eventBattleSeq);
             return;
         }
 
@@ -388,6 +454,67 @@ public class EventBattleServiceImpl implements EventBattleService {
         if (u == 0) {
             throw new IllegalStateException("정산 처리에 실패했습니다.");
         }
+
+        // 정산 완료 후 activity 변경을 SSE로 푸시
+        sseBroadcaster.broadcastActivity(eventBattleSeq);
+    }
+
+    @Override
+    @Transactional
+    public void closeVoteOnly(long eventBattleSeq) {
+        long login = requireLoginMemberSeq();
+        EventBattleDto e = get(eventBattleSeq);
+        if (!"Y".equals(e.getVoteOnlyYn())) {
+            throw new IllegalStateException("투표 전용 이벤트에서만 투표를 마감할 수 있습니다.");
+        }
+        if (!"OPEN".equals(e.getStatus())) {
+            throw new IllegalStateException("이미 종료된 이벤트입니다.");
+        }
+        if (!canSettle(e, login)) {
+            throw new IllegalArgumentException("투표 마감 권한이 없습니다.");
+        }
+        String modId = loginIdOrSystem();
+        String modIp = RequestContext.getClientIp();
+        int u = eventBattleMapper.updateSettled(
+                eventBattleSeq,
+                null,
+                modId,
+                StringUtils.hasText(modIp) ? modIp : "0.0.0.0"
+        );
+        if (u == 0) {
+            throw new IllegalStateException("투표 마감 처리에 실패했습니다.");
+        }
+        sseBroadcaster.broadcastActivity(eventBattleSeq);
+    }
+
+    @Override
+    @Transactional
+    public void cancel(long eventBattleSeq) {
+        long login = requireLoginMemberSeq();
+        EventBattleDto e = get(eventBattleSeq);
+        if (!"OPEN".equals(e.getStatus())) {
+            throw new IllegalStateException("이미 종료된 이벤트입니다.");
+        }
+        if (!canSettle(e, login)) {
+            throw new IllegalArgumentException("이벤트 취소 권한이 없습니다.");
+        }
+
+        String modId = loginIdOrSystem();
+        String modIp = RequestContext.getClientIp();
+        int u = eventBattleMapper.updateCancelled(
+                eventBattleSeq,
+                modId,
+                StringUtils.hasText(modIp) ? modIp : "0.0.0.0"
+        );
+        if (u == 0) {
+            throw new IllegalStateException("이벤트 취소 처리에 실패했습니다.");
+        }
+
+        // 취소 처리 시 참가자 베팅 포인트를 모두 환불하고, 이벤트는 CANCELLED로 종료
+        refundAll(eventBattleSeq);
+
+        // 취소 완료 후 activity 변경을 SSE로 푸시
+        sseBroadcaster.broadcastActivity(eventBattleSeq);
     }
 
     private void refundAll(long eventBattleSeq) {

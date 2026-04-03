@@ -14,6 +14,7 @@ import java.util.List;
 @Mapper
 public interface BoardMapper {
     List<OptionDto> findBoardCategoryOptions();
+    List<OptionDto> findCategoryOptionsByGroupId(@Param("groupId") String groupId);
 
     /**
      * 대분류 그룹 ID A0001(code_group) + 중분류 코드 ID A00017(code_detail).
@@ -22,10 +23,13 @@ public interface BoardMapper {
     BoardPopularCodeRawDto findBoardPopularCodeDetail();
 
     List<BoardDto> findBoards(BoardSearchCondition condition);
+    List<BoardDto> findInquiryBoards(BoardSearchCondition condition);
 
     long findBoardsCnt(BoardSearchCondition condition);
+    long findInquiryBoardsCnt(BoardSearchCondition condition);
 
     BoardDto findBoardById(Long boardSeq);
+    BoardDto findInquiryBoardById(Long boardSeq);
 
     int insertBoard(BoardSaveRequest condition);
 

@@ -15,6 +15,9 @@ public class BoardSaveRequest {
 
     private Long writerMemberSeq;
     private String writerName;
+    private String secretYn;
+    private String secretPassword;
+    private String anonymousYn;
 
     private Long viewCount;
     private Long likeCount;

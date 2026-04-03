@@ -61,6 +61,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/site-popups/public/*").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/files/view/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/files/download/**").permitAll()
+                    .requestMatchers("/api/analytics/**").permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated()
             );

@@ -46,6 +46,13 @@ public interface EventBattleMapper {
             @Param("memberSeq") long memberSeq,
             @Param("pointAmount") long pointAmount
     );
+    int insertVote(
+            @Param("eventBattleSeq") long eventBattleSeq,
+            @Param("eventBattleOptionSeq") long eventBattleOptionSeq,
+            @Param("memberSeq") long memberSeq
+    );
+    int deleteMyVotes(@Param("eventBattleSeq") long eventBattleSeq, @Param("memberSeq") long memberSeq);
+    List<Long> selectMyVoteOptionSeqs(@Param("eventBattleSeq") long eventBattleSeq, @Param("memberSeq") long memberSeq);
 
     EventBattleMyBetDto selectMyBet(
             @Param("eventBattleSeq") long eventBattleSeq,
@@ -97,6 +104,12 @@ public interface EventBattleMapper {
     int updateSettled(
             @Param("eventBattleSeq") long eventBattleSeq,
             @Param("winnerOptionSeq") Long winnerOptionSeq,
+            @Param("modifyId") String modifyId,
+            @Param("modifyIp") String modifyIp
+    );
+
+    int updateCancelled(
+            @Param("eventBattleSeq") long eventBattleSeq,
             @Param("modifyId") String modifyId,
             @Param("modifyIp") String modifyIp
     );

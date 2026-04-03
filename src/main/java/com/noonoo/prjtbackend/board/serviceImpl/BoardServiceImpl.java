@@ -22,6 +22,9 @@ import com.noonoo.prjtbackend.member.service.PointPolicyService;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -43,10 +46,18 @@ public class BoardServiceImpl implements BoardService {
     private final PointPolicyService pointPolicyService;
     private final CurrentMemberService currentMemberService;
     private final BoardBlindSupport boardBlindSupport;
+    private final PasswordEncoder passwordEncoder;
+
+    private static final String INQUIRY_CATEGORY_GROUP_ID = "A0007";
+    private static final String ADMIN_ROLE_CODE = "A00001";
 
     @Override
     public List<OptionDto> findBoardCategoryOptions() {
         return boardMapper.findBoardCategoryOptions();
+    }
+
+    public List<OptionDto> findInquiryCategoryOptions() {
+        return boardMapper.findCategoryOptionsByGroupId(INQUIRY_CATEGORY_GROUP_ID);
     }
 
     @Override
@@ -155,6 +166,73 @@ public class BoardServiceImpl implements BoardService {
         return b;
     }
 
+    public PageResponse<BoardDto> findInquiryBoards(BoardSearchCondition condition) {
+        if (condition == null) {
+            condition = new BoardSearchCondition();
+        }
+        boardBlindSupport.applyBlindParams(condition);
+        long totalCount = boardMapper.findInquiryBoardsCnt(condition);
+        List<BoardDto> items = boardMapper.findInquiryBoards(condition);
+        PageResponse<BoardDto> page = PagingUtils.toPageResponse(condition, totalCount, items);
+        for (BoardDto item : page.getItems()) {
+            if ("Y".equalsIgnoreCase(item.getAnonymousYn())) {
+                item.setWriterName("익명");
+                item.setWriterProfileImageUrl(null);
+            }
+        }
+        return page;
+    }
+
+    public BoardDto findInquiryBoardDetail(Long boardSeq, String password) {
+        BoardDto b = boardMapper.findInquiryBoardById(boardSeq);
+        if (b == null) {
+            return null;
+        }
+        if (boardBlindSupport.isBlind(b)) {
+            return null;
+        }
+        if (!"Y".equalsIgnoreCase(b.getSecretYn())) {
+            return b;
+        }
+        if (canReadSecretPostAsOwnerOrAdmin(b)) {
+            return b;
+        }
+        if (!StringUtils.hasText(password) || !StringUtils.hasText(b.getSecretPasswordHash())) {
+            throw new IllegalArgumentException("비밀글 비밀번호가 필요합니다.");
+        }
+        if (!passwordEncoder.matches(password, b.getSecretPasswordHash())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        return b;
+    }
+
+    public int createInquiryBoard(BoardSaveRequest condition) {
+        if (!isInquiryCategoryCode(condition == null ? null : condition.getCategoryCode())) {
+            throw new IllegalArgumentException("문의게시판 카테고리를 선택해주세요.");
+        }
+        return createBoard(condition);
+    }
+
+    public int updateInquiryBoard(BoardSaveRequest condition) {
+        if (!isInquiryCategoryCode(condition == null ? null : condition.getCategoryCode())) {
+            throw new IllegalArgumentException("문의게시판 카테고리를 선택해주세요.");
+        }
+        return updateBoard(condition);
+    }
+
+    private boolean isInquiryCategoryCode(String categoryCode) {
+        if (!StringUtils.hasText(categoryCode)) {
+            return false;
+        }
+        String req = categoryCode.trim();
+        for (OptionDto option : findInquiryCategoryOptions()) {
+            if (option != null && StringUtils.hasText(option.getValue()) && req.equals(option.getValue().trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     @Transactional
     public int createBoard(BoardSaveRequest condition) {
@@ -197,6 +275,7 @@ public class BoardServiceImpl implements BoardService {
         if (condition.getReportCount() == null) condition.setReportCount(0L);
 
         normalizeCommentReplyFlags(condition);
+        normalizeInquiryFlagsAndPassword(condition, true);
         condition.setTitle(contentFilterApplyService.applyField("제목", condition.getTitle()));
         condition.setContent(contentFilterApplyService.applyField("내용", condition.getContent()));
 
@@ -239,6 +318,7 @@ public class BoardServiceImpl implements BoardService {
         condition.setModifyIp(clientIp);
 
         normalizeCommentReplyFlags(condition);
+        normalizeInquiryFlagsAndPassword(condition, false);
         condition.setTitle(contentFilterApplyService.applyField("제목", condition.getTitle()));
         condition.setContent(contentFilterApplyService.applyField("내용", condition.getContent()));
 
@@ -270,6 +350,53 @@ public class BoardServiceImpl implements BoardService {
         if ("N".equals(condition.getCommentAllowedYn())) {
             condition.setReplyAllowedYn("N");
         }
+    }
+
+    private void normalizeInquiryFlagsAndPassword(BoardSaveRequest condition, boolean onCreate) {
+        if (condition == null) {
+            return;
+        }
+        condition.setAnonymousYn(normalizeYn(condition.getAnonymousYn(), "N"));
+        condition.setSecretYn(normalizeYn(condition.getSecretYn(), "N"));
+        boolean secret = "Y".equals(condition.getSecretYn());
+        if (!secret) {
+            condition.setSecretPassword(null);
+            return;
+        }
+        String raw = condition.getSecretPassword();
+        if (!StringUtils.hasText(raw)) {
+            if (onCreate) {
+                throw new IllegalArgumentException("비밀글 비밀번호를 입력해주세요.");
+            }
+            return;
+        }
+        condition.setSecretPassword(passwordEncoder.encode(raw.trim()));
+    }
+
+    private static String normalizeYn(String value, String defaultValue) {
+        if (!StringUtils.hasText(value)) {
+            return defaultValue;
+        }
+        return "Y".equalsIgnoreCase(value.trim()) ? "Y" : "N";
+    }
+
+    private boolean canReadSecretPostAsOwnerOrAdmin(BoardDto board) {
+        if (board == null) {
+            return false;
+        }
+        Optional<AuthenticatedMember> auth = currentMemberService.resolve();
+        if (auth.isPresent() && Objects.equals(auth.get().memberSeq(), board.getWriterMemberSeq())) {
+            return true;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof com.noonoo.prjtbackend.common.security.CustomUserDetails u) {
+            for (String code : u.getRoleCodes()) {
+                if (ADMIN_ROLE_CODE.equalsIgnoreCase(code) || "ADMIN".equalsIgnoreCase(code)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

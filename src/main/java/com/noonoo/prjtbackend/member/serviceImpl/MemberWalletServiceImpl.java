@@ -150,6 +150,12 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         }
         ensureWallet(memberSeq);
         int ironCost = WalletConstants.IRON_PER_SILVER * times;
+        MemberWalletBalance bal = memberWalletMapper.selectWalletByMemberSeq(memberSeq);
+        int ironQty = bal != null && bal.getIronQty() != null ? bal.getIronQty() : 0;
+        if (ironQty < ironCost) {
+            throw new IllegalArgumentException(
+                    "아이언 티켓이 부족합니다. (보유: " + ironQty + "장, 필요: " + ironCost + "장 → 실버 " + times + "장)");
+        }
         int n = memberWalletMapper.exchangeIronToSilver(memberSeq, ironCost, times);
         if (n == 0) {
             throw new IllegalArgumentException(
@@ -177,6 +183,12 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         }
         ensureWallet(memberSeq);
         int silverCost = WalletConstants.SILVER_PER_GOLD * times;
+        MemberWalletBalance bal = memberWalletMapper.selectWalletByMemberSeq(memberSeq);
+        int silverQty = bal != null && bal.getSilverQty() != null ? bal.getSilverQty() : 0;
+        if (silverQty < silverCost) {
+            throw new IllegalArgumentException(
+                    "실버 티켓이 부족합니다. (보유: " + silverQty + "장, 필요: " + silverCost + "장 → 골드 " + times + "장)");
+        }
         int n = memberWalletMapper.exchangeSilverToGold(memberSeq, silverCost, times);
         if (n == 0) {
             throw new IllegalArgumentException(
@@ -204,6 +216,12 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         }
         ensureWallet(memberSeq);
         int goldCost = WalletConstants.GOLD_PER_DIAMOND * times;
+        MemberWalletBalance bal = memberWalletMapper.selectWalletByMemberSeq(memberSeq);
+        int goldQty = bal != null && bal.getGoldQty() != null ? bal.getGoldQty() : 0;
+        if (goldQty < goldCost) {
+            throw new IllegalArgumentException(
+                    "골드 티켓이 부족합니다. (보유: " + goldQty + "장, 필요: " + goldCost + "장 → 다이아 " + times + "장)");
+        }
         int n = memberWalletMapper.exchangeGoldToDiamond(memberSeq, goldCost, times);
         if (n == 0) {
             throw new IllegalArgumentException(

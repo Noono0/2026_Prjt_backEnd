@@ -35,6 +35,15 @@ public class Board {
     @Column(name = "writer_name")
     private String writerName;
 
+    @Column(name = "secret_yn")
+    private String secretYn;
+
+    @Column(name = "secret_password_hash")
+    private String secretPasswordHash;
+
+    @Column(name = "anonymous_yn")
+    private String anonymousYn;
+
     @Column(name = "view_count")
     private Long viewCount;
 

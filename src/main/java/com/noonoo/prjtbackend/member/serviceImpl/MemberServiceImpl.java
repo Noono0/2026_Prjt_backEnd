@@ -3,6 +3,7 @@ package com.noonoo.prjtbackend.member.serviceImpl;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
+import com.noonoo.prjtbackend.common.security.CustomUserDetails;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.dto.MemberStreamerProfileDto;
 import com.noonoo.prjtbackend.member.dto.MemberStreamerProfileSaveRequest;
@@ -17,6 +18,8 @@ import com.noonoo.prjtbackend.member.service.MemberService;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,8 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
+
+    private static final String ADMIN_ROLE_CODE = "A00001";
 
     private final MemberMapper memberMapper;
     private final MemberRoleMapper memberRoleMapper;
@@ -117,6 +122,9 @@ public class MemberServiceImpl implements MemberService {
         condition.setModifyIp(clientIp);
 
         if (StringUtils.hasText(condition.getMemberPwd())) {
+            if (!isCurrentUserAdmin()) {
+                throw new IllegalArgumentException("비밀번호 초기화는 관리자(ADMIN)만 가능합니다.");
+            }
             condition.setMemberPwd(passwordEncoder.encode(condition.getMemberPwd()));
         } else {
             condition.setMemberPwd(null);
@@ -276,5 +284,26 @@ public class MemberServiceImpl implements MemberService {
                 && !StringUtils.hasText(p.getCompanyCategoryCode())
                 && !StringUtils.hasText(p.getBloodType())
                 && !StringUtils.hasText(p.getCareerHistory());
+    }
+
+    private static boolean isCurrentUserAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof CustomUserDetails u)) {
+            return false;
+        }
+        List<String> roleCodes = u.getRoleCodes();
+        if (roleCodes == null) {
+            return false;
+        }
+        for (String code : roleCodes) {
+            if (ADMIN_ROLE_CODE.equalsIgnoreCase(code == null ? null : code.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

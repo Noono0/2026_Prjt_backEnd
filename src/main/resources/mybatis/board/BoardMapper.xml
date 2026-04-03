@@ -15,6 +15,19 @@
           AND (cd.status IS NULL OR cd.status = 'ACTIVE')
         ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
     </select>
+    <select id="findCategoryOptionsByGroupId" resultType="com.noonoo.prjtbackend.codeGroup.dto.OptionDto">
+        SELECT cd.code_value AS value,
+               cd.code_name AS label
+        FROM code_group cg
+        INNER JOIN code_detail cd
+            ON cd.code_group_seq = cg.code_group_seq
+        WHERE cg.code_group_id = #{groupId}
+          AND cg.use_yn = 'Y'
+          AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+          AND cd.use_yn = 'Y'
+          AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        ORDER BY cd.sort_order ASC, cd.code_detail_seq ASC
+    </select>
 
     <!-- 대분류: code_group.code_group_id = A0001, 중분류: code_detail.code_id = A00017 -->
     <select id="findBoardPopularCodeDetail" resultType="com.noonoo.prjtbackend.board.dto.BoardPopularCodeRawDto">
@@ -59,6 +72,32 @@
             AND b.highlight_yn = #{highlightYn}
         </if>
     </sql>
+    <sql id="inquiryWhere">
+        WHERE 1 = 1
+        AND b.use_yn = 'Y'
+        AND cg.code_group_id = 'A0007'
+        <if test="minLikeCount != null">
+            AND IFNULL(b.like_count, 0) &gt;= #{minLikeCount}
+        </if>
+        <if test="categoryCode != null and categoryCode != ''">
+            AND b.category_code = #{categoryCode}
+        </if>
+        <if test="title != null and title != ''">
+            AND b.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="writerName != null and writerName != ''">
+            AND b.writer_name LIKE CONCAT('%', #{writerName}, '%')
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (b.title LIKE CONCAT('%', #{keyword}, '%') OR b.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="showYn != null and showYn != ''">
+            AND b.show_yn = #{showYn}
+        </if>
+        <if test="highlightYn != null and highlightYn != ''">
+            AND b.highlight_yn = #{highlightYn}
+        </if>
+    </sql>
 
     <select id="findBoards" resultType="com.noonoo.prjtbackend.board.dto.BoardDto">
         SELECT b.board_seq,
@@ -75,6 +114,9 @@
                b.writer_member_seq,
                wm.member_id AS writerMemberId,
                COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(b.writer_name), ''), wm.member_id) AS writer_name,
+               b.secret_yn AS secretYn,
+               b.anonymous_yn AS anonymousYn,
+               b.secret_password_hash AS secretPasswordHash,
                COALESCE(
                    CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
                    wm.profile_image_url
@@ -118,6 +160,69 @@
         FROM board b
         <include refid="boardWhere"/>
     </select>
+    <select id="findInquiryBoards" resultType="com.noonoo.prjtbackend.board.dto.BoardDto">
+        SELECT b.board_seq,
+               b.category_code,
+               cd.code_name AS category_name,
+               CASE
+                   WHEN IFNULL(b.report_count, 0) &gt;= #{blindReportThreshold} THEN #{blindListTitle}
+                   ELSE b.title
+               END AS title,
+               CASE
+                   WHEN IFNULL(b.report_count, 0) &gt;= #{blindReportThreshold} THEN ''
+                   ELSE b.content
+               END AS content,
+               b.writer_member_seq,
+               wm.member_id AS writerMemberId,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(b.writer_name), ''), wm.member_id) AS writer_name,
+               b.secret_yn AS secretYn,
+               b.anonymous_yn AS anonymousYn,
+               b.secret_password_hash AS secretPasswordHash,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writer_profile_image_url,
+               b.view_count,
+               b.like_count,
+               b.dislike_count,
+               b.comment_count,
+               b.comment_like_count,
+               b.comment_report_count,
+               b.report_count,
+               b.show_yn,
+               b.highlight_yn,
+               b.comment_allowed_yn AS commentAllowedYn,
+               b.reply_allowed_yn AS replyAllowedYn,
+               DATE_FORMAT(b.create_dt, '%Y-%m-%d %H:%i:%s') AS create_dt,
+               DATE_FORMAT(b.modify_dt, '%Y-%m-%d %H:%i:%s') AS modify_dt
+        FROM board b
+        INNER JOIN code_detail cd
+          ON cd.code_value = b.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        INNER JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        LEFT JOIN member wm
+          ON wm.member_seq = b.writer_member_seq
+        <include refid="inquiryWhere"/>
+        ORDER BY b.highlight_yn DESC, b.board_seq DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="findInquiryBoardsCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM board b
+        INNER JOIN code_detail cd
+          ON cd.code_value = b.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        INNER JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        <include refid="inquiryWhere"/>
+    </select>
 
     <select id="findBoardById" resultType="com.noonoo.prjtbackend.board.dto.BoardDto">
         SELECT b.board_seq,
@@ -128,6 +233,9 @@
                b.writer_member_seq,
                wm.member_id AS writerMemberId,
                COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(b.writer_name), ''), wm.member_id) AS writer_name,
+               b.secret_yn AS secretYn,
+               b.anonymous_yn AS anonymousYn,
+               b.secret_password_hash AS secretPasswordHash,
                COALESCE(
                    CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
                    wm.profile_image_url
@@ -160,16 +268,62 @@
         WHERE b.board_seq = #{boardSeq}
           AND b.use_yn = 'Y'
     </select>
+    <select id="findInquiryBoardById" resultType="com.noonoo.prjtbackend.board.dto.BoardDto">
+        SELECT b.board_seq,
+               b.category_code,
+               cd.code_name AS category_name,
+               b.title,
+               b.content,
+               b.writer_member_seq,
+               wm.member_id AS writerMemberId,
+               COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(b.writer_name), ''), wm.member_id) AS writer_name,
+               b.secret_yn AS secretYn,
+               b.anonymous_yn AS anonymousYn,
+               b.secret_password_hash AS secretPasswordHash,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writer_profile_image_url,
+               b.view_count,
+               b.like_count,
+               b.dislike_count,
+               b.comment_count,
+               b.comment_like_count,
+               b.comment_report_count,
+               b.report_count,
+               b.show_yn,
+               b.highlight_yn,
+               b.comment_allowed_yn AS commentAllowedYn,
+               b.reply_allowed_yn AS replyAllowedYn,
+               DATE_FORMAT(b.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(b.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM board b
+        INNER JOIN code_detail cd
+          ON cd.code_value = b.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        INNER JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.code_group_id = 'A0007'
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
+        LEFT JOIN member wm
+          ON wm.member_seq = b.writer_member_seq
+        WHERE b.board_seq = #{boardSeq}
+          AND b.use_yn = 'Y'
+    </select>
 
     <insert id="insertBoard" parameterType="com.noonoo.prjtbackend.board.dto.BoardSaveRequest" useGeneratedKeys="true" keyProperty="boardSeq" keyColumn="board_seq">
         INSERT INTO board (
             category_code, title, content, writer_member_seq, writer_name,
+            secret_yn, secret_password_hash, anonymous_yn,
             view_count, like_count, dislike_count, comment_count, comment_like_count, comment_report_count, report_count,
             show_yn, highlight_yn, comment_allowed_yn, reply_allowed_yn,
             use_yn,
             create_dt, create_id, create_ip, modify_dt, modify_id, modify_ip
         ) VALUES (
             #{categoryCode}, #{title}, #{content}, #{writerMemberSeq}, #{writerName},
+            #{secretYn}, #{secretPassword}, #{anonymousYn},
             #{viewCount}, #{likeCount}, #{dislikeCount}, #{commentCount}, #{commentLikeCount}, #{commentReportCount}, #{reportCount},
             #{showYn}, #{highlightYn}, #{commentAllowedYn}, #{replyAllowedYn},
             'Y',
@@ -182,6 +336,9 @@
            SET category_code = #{categoryCode},
                title = #{title},
                content = #{content},
+               secret_yn = #{secretYn},
+               secret_password_hash = #{secretPassword},
+               anonymous_yn = #{anonymousYn},
                show_yn = #{showYn},
                highlight_yn = #{highlightYn},
                comment_allowed_yn = #{commentAllowedYn},

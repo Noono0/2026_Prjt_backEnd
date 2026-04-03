@@ -5,10 +5,10 @@
     <insert id="insertEvent" parameterType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleSaveRequest"
             useGeneratedKeys="true" keyProperty="eventBattleSeq" keyColumn="event_battle_seq">
         INSERT INTO event_battle (
-            title, status, creator_member_seq, use_yn,
+            title, status, vote_limit_per_member, vote_only_yn, creator_member_seq, use_yn,
             create_id, create_ip, create_dt, modify_dt
         ) VALUES (
-            #{title}, 'OPEN', #{creatorMemberSeq}, 'Y',
+            #{title}, 'OPEN', #{voteLimitPerMember}, #{voteOnlyYn}, #{creatorMemberSeq}, 'Y',
             #{createId}, #{createIp}, NOW(), NOW()
         )
     </insert>
@@ -22,10 +22,17 @@
         SELECT e.event_battle_seq AS eventBattleSeq,
                e.title AS title,
                e.status AS status,
+               e.vote_limit_per_member AS voteLimitPerMember,
+               e.vote_only_yn AS voteOnlyYn,
                e.winner_option_seq AS winnerOptionSeq,
                wl.label AS winnerLabel,
                e.creator_member_seq AS creatorMemberSeq,
+               c.member_id AS creatorMemberId,
                COALESCE(NULLIF(TRIM(c.NICKNAME), ''), NULLIF(TRIM(c.MEMBER_NAME), ''), c.MEMBER_ID) AS creatorDisplayName,
+               COALESCE(
+                   CASE WHEN c.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', c.profile_image_file_seq) END,
+                   c.profile_image_url
+               ) AS creatorProfileImageUrl,
                DATE_FORMAT(e.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
                DATE_FORMAT(e.settle_dt, '%Y-%m-%d %H:%i:%s') AS settleDt
         FROM event_battle e
@@ -40,7 +47,8 @@
                event_battle_seq AS eventBattleSeq,
                sort_order AS sortOrder,
                label AS label,
-               points_total AS pointsTotal
+               points_total AS pointsTotal,
+               (SELECT COUNT(1) FROM event_battle_vote v WHERE v.event_battle_option_seq = event_battle_option.event_battle_option_seq) AS voteCount
         FROM event_battle_option
         WHERE event_battle_seq = #{eventBattleSeq}
         ORDER BY sort_order ASC
@@ -69,10 +77,17 @@
         SELECT e.event_battle_seq AS eventBattleSeq,
                e.title AS title,
                e.status AS status,
+               e.vote_limit_per_member AS voteLimitPerMember,
+               e.vote_only_yn AS voteOnlyYn,
                e.winner_option_seq AS winnerOptionSeq,
                wl.label AS winnerLabel,
                e.creator_member_seq AS creatorMemberSeq,
+               c.member_id AS creatorMemberId,
                COALESCE(NULLIF(TRIM(c.NICKNAME), ''), NULLIF(TRIM(c.MEMBER_NAME), ''), c.MEMBER_ID) AS creatorDisplayName,
+               COALESCE(
+                   CASE WHEN c.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', c.profile_image_file_seq) END,
+                   c.profile_image_url
+               ) AS creatorProfileImageUrl,
                (SELECT GROUP_CONCAT(o.label ORDER BY o.sort_order SEPARATOR ' · ')
                 FROM event_battle_option o WHERE o.event_battle_seq = e.event_battle_seq) AS optionLabelsPreview,
                DATE_FORMAT(e.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
@@ -103,6 +118,22 @@
         INSERT INTO event_battle_bet (event_battle_seq, event_battle_option_seq, member_seq, point_amount, create_dt)
         VALUES (#{eventBattleSeq}, #{eventBattleOptionSeq}, #{memberSeq}, #{pointAmount}, NOW())
     </insert>
+    <insert id="insertVote">
+        INSERT INTO event_battle_vote (event_battle_seq, event_battle_option_seq, member_seq, create_dt)
+        VALUES (#{eventBattleSeq}, #{eventBattleOptionSeq}, #{memberSeq}, NOW())
+    </insert>
+    <delete id="deleteMyVotes">
+        DELETE FROM event_battle_vote
+        WHERE event_battle_seq = #{eventBattleSeq}
+          AND member_seq = #{memberSeq}
+    </delete>
+    <select id="selectMyVoteOptionSeqs" resultType="long">
+        SELECT event_battle_option_seq
+        FROM event_battle_vote
+        WHERE event_battle_seq = #{eventBattleSeq}
+          AND member_seq = #{memberSeq}
+        ORDER BY event_battle_option_seq ASC
+    </select>
 
     <select id="selectMyBet" resultType="com.noonoo.prjtbackend.eventbattle.dto.EventBattleMyBetDto">
         SELECT b.event_battle_option_seq AS eventBattleOptionSeq,
@@ -240,6 +271,19 @@
         UPDATE event_battle
         SET status = 'SETTLED',
             winner_option_seq = #{winnerOptionSeq},
+            settle_dt = NOW(),
+            modify_id = #{modifyId},
+            modify_ip = #{modifyIp},
+            modify_dt = NOW()
+        WHERE event_battle_seq = #{eventBattleSeq}
+          AND status = 'OPEN'
+          AND use_yn = 'Y'
+    </update>
+
+    <update id="updateCancelled">
+        UPDATE event_battle
+        SET status = 'CANCELLED',
+            winner_option_seq = NULL,
             settle_dt = NOW(),
             modify_id = #{modifyId},
             modify_ip = #{modifyIp},

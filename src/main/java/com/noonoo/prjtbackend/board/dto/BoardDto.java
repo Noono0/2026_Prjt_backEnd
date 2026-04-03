@@ -1,6 +1,7 @@
 package com.noonoo.prjtbackend.board.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -18,6 +19,10 @@ public class BoardDto {
     /** 회원 로그인 ID (member.member_id) */
     private String writerMemberId;
     private String writerName;
+    private String secretYn;
+    private String anonymousYn;
+    @JsonIgnore
+    private String secretPasswordHash;
     private String writerProfileImageUrl;
     private Long viewCount;
     private Long likeCount;

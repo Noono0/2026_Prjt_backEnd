@@ -10,7 +10,9 @@ import com.noonoo.prjtbackend.eventbattle.dto.EventBattleDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSaveRequest;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSearchCondition;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSettleRequest;
+import com.noonoo.prjtbackend.eventbattle.dto.EventBattleVoteRequest;
 import com.noonoo.prjtbackend.eventbattle.service.EventBattleService;
+import com.noonoo.prjtbackend.eventbattle.sse.EventBattleActivitySseBroadcaster;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -29,6 +32,7 @@ import java.util.List;
 public class EventBattleController {
 
     private final EventBattleService eventBattleService;
+    private final EventBattleActivitySseBroadcaster sseBroadcaster;
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.EVENT_BATTLE + "')")
@@ -53,6 +57,16 @@ public class EventBattleController {
             @RequestParam(required = false, defaultValue = "20") int recentLimit
     ) {
         return ApiResponse.ok("활동 조회 완료", eventBattleService.activity(eventBattleSeq, sinceBetSeq, recentLimit));
+    }
+
+    /**
+     * activity 변경을 SSE로 푸시합니다.
+     * OPEN일 때 연결 유지 후, SETTLED/CANCELLED로 바뀌면 브라우저/프록시가 끊습니다.
+     */
+    @GetMapping(value = "/{eventBattleSeq}/activity/stream")
+    @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.EVENT_BATTLE + "')")
+    public SseEmitter activityStream(@PathVariable long eventBattleSeq) {
+        return sseBroadcaster.subscribe(eventBattleSeq);
     }
 
     /**
@@ -81,10 +95,34 @@ public class EventBattleController {
         return ApiResponse.ok("베팅이 반영되었습니다.", "OK");
     }
 
+    @PostMapping("/{eventBattleSeq}/votes")
+    @PreAuthorize("@securityExpressions.isAuthenticatedOrPermitAll()")
+    public ApiResponse<String> vote(@PathVariable long eventBattleSeq, @RequestBody EventBattleVoteRequest request) {
+        eventBattleService.vote(eventBattleSeq, request);
+        return ApiResponse.ok("투표가 반영되었습니다.", "OK");
+    }
+
     @PostMapping("/{eventBattleSeq}/settle")
     @PreAuthorize("@securityExpressions.isAuthenticatedOrPermitAll()")
     public ApiResponse<String> settle(@PathVariable long eventBattleSeq, @RequestBody EventBattleSettleRequest request) {
         eventBattleService.settle(eventBattleSeq, request);
         return ApiResponse.ok("정산이 완료되었습니다.", "OK");
+    }
+
+    @PostMapping("/{eventBattleSeq}/cancel")
+    @PreAuthorize("@securityExpressions.isAuthenticatedOrPermitAll()")
+    public ApiResponse<String> cancel(@PathVariable long eventBattleSeq) {
+        eventBattleService.cancel(eventBattleSeq);
+        return ApiResponse.ok("이벤트가 취소되었습니다.", "OK");
+    }
+
+    /**
+     * 투표 전용 이벤트: 투표 마감(종료). 승리 주제는 지정하지 않습니다.
+     */
+    @PostMapping("/{eventBattleSeq}/close-voting")
+    @PreAuthorize("@securityExpressions.isAuthenticatedOrPermitAll()")
+    public ApiResponse<String> closeVoting(@PathVariable long eventBattleSeq) {
+        eventBattleService.closeVoteOnly(eventBattleSeq);
+        return ApiResponse.ok("투표가 마감되었습니다.", "OK");
     }
 }

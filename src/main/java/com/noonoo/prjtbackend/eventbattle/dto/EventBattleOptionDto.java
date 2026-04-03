@@ -17,4 +17,5 @@ public class EventBattleOptionDto {
     private Integer sortOrder;
     private String label;
     private Long pointsTotal;
+    private Long voteCount;
 }
