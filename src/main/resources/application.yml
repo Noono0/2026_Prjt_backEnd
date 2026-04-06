@@ -1,12 +1,14 @@
 # ============================================================
-# 프로필
-#   - 기본: local (아래 spring.profiles.default)
-#   - local: PC 개발용 (localhost MySQL)
-#   - dev: 스테이징 등 (DB 는 환경변수로, 미설정 시 local 과 동일한 기본 JDBC)
-#   - prod: 운영 (SPRING_DATASOURCE_* 필수)
-#   - docker / Lightsail 컨테이너: application-docker.yml 참고 (프로필명 docker)
+# 공통 설정 + 기본 프로필: local
 #
-# 실행 예: SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+# 프로필별 파일 (같은 디렉터리):
+#   application-local.yml  — PC + 로컬 MySQL
+#   application-dev.yml    — 스테이징·공용 DB 등 (환경변수 우선)
+#   application-prod.yml   — 운영·Docker(Lightsail) — SPRING_DATASOURCE_* 필수
+#
+# 실행 예:
+#   SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+#   docker compose → SPRING_PROFILES_ACTIVE=prod (.env.docker)
 # ============================================================
 
 spring:
@@ -14,23 +16,13 @@ spring:
     default: local
   servlet:
     multipart:
-      # 네트워크로 받을 수 있는 한 파일·요청 상한 (자동 압축과 무관). 초과 시 업로드 거절.
       max-file-size: 5MB
       max-request-size: 12MB
-  # 비밀번호 찾기 메일: 운영 시 환경변수로 설정 예)
-  # MAIL_HOST, MAIL_PORT(587), MAIL_USER, MAIL_PASS, MAIL_FROM
-  # 그리고 아래 spring.mail.* 주석 해제:
+  # 비밀번호 찾기 메일: 운영 시 환경변수 + spring.mail.* 설정
   # mail:
   #   host: ${MAIL_HOST}
   #   port: ${MAIL_PORT:587}
-  #   username: ${MAIL_USER}
-  #   password: ${MAIL_PASS}
-  #   properties:
-  #     mail:
-  #       smtp:
-  #         auth: true
-  #         starttls:
-  #           enable: true
+  #   ...
 
 mybatis:
   mapper-locations: classpath:/mybatis/**/*.xml
@@ -44,7 +36,6 @@ server:
     session:
       timeout: 24h
 
-# 헬스 체크(LB·모니터링). 노출은 health 만, 상세는 비노출
 management:
   endpoints:
     web:
@@ -82,130 +73,3 @@ app:
         max-edge-px: 512
         target-min-bytes: 102400
         target-max-bytes: 307200
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  datasource:
-    url: jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul
-    username: prjt
-    password: prjt1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-  sql:
-    init:
-      encoding: UTF-8
-      mode: always
-
-app:
-  mail:
-    log-code-in-dev: true
-  security:
-    permit-all: true
-  file:
-    upload-dir: upload-data/files
-    public-base-url: ""
-
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: true
-
-logging:
-  level:
-    p6spy: info
-
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul}
-    username: ${SPRING_DATASOURCE_USERNAME:prjt}
-    password: ${SPRING_DATASOURCE_PASSWORD:prjt1234}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-    defer-datasource-initialization: true
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-  sql:
-    init:
-      encoding: UTF-8
-      mode: ${SPRING_SQL_INIT_MODE:always}
-
-app:
-  mail:
-    log-code-in-dev: true
-  security:
-    permit-all: true
-  file:
-    upload-dir: ${APP_FILE_UPLOAD_DIR:upload-data/files}
-    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
-
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: true
-
-logging:
-  level:
-    root: INFO
-    p6spy: info
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
-    hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
-    show-sql: false
-    defer-datasource-initialization: true
-    properties:
-      hibernate:
-        format_sql: false
-        show_sql: false
-  sql:
-    init:
-      encoding: UTF-8
-      mode: ${SPRING_SQL_INIT_MODE:never}
-
-app:
-  mail:
-    log-code-in-dev: false
-  security:
-    permit-all: false
-  file:
-    upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
-    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
-
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: false
-
-logging:
-  level:
-    root: INFO
-    com.noonoo.prjtbackend: INFO

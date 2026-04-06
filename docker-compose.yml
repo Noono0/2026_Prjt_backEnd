@@ -13,8 +13,8 @@ services:
     env_file:
       - .env.docker
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      # 볼륨과 동일 경로로 맞춤 (application-docker.yml 기본)
+      SPRING_PROFILES_ACTIVE: prod
+      # 볼륨과 동일 경로로 맞춤 (application-prod.yml)
       APP_FILE_UPLOAD_DIR: /data/uploads
       # JDBC 연결 전 단계에서도 Hibernate 가 방언을 잡도록 compose 로 고정 (프로필/yml 미반영 JAR 대비)
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect

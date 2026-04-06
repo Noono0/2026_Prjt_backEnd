@@ -1,0 +1,41 @@
+# dev — 프론트 .env.development(또는 스테이징 URL) 과 쌍: DB는 환경변수 우선
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul}
+    username: ${SPRING_DATASOURCE_USERNAME:prjt}
+    password: ${SPRING_DATASOURCE_PASSWORD:prjt1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+  sql:
+    init:
+      encoding: UTF-8
+      mode: ${SPRING_SQL_INIT_MODE:always}
+
+app:
+  mail:
+    log-code-in-dev: true
+  security:
+    permit-all: true
+  file:
+    upload-dir: ${APP_FILE_UPLOAD_DIR:upload-data/files}
+    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+
+logging:
+  level:
+    root: INFO
+    p6spy: info
