@@ -18,6 +18,9 @@ public interface MemberMapper {
 
     MemberDto findLoginMember(String memberId);
 
+    MemberDto findMemberByOauth(@Param("oauthProvider") String oauthProvider,
+                                @Param("oauthSubject") String oauthSubject);
+
     /** 아이디·이메일 일치 회원 (비밀번호 찾기 등). 이메일은 DB와 LOWER(TRIM) 비교 */
     MemberDto findMemberByMemberIdAndEmail(@Param("memberId") String memberId, @Param("email") String email);
 
@@ -27,11 +30,15 @@ public interface MemberMapper {
 
     int updateMember(MemberSaveRequest condition);
 
+    int updateMemberOauthLoginProfile(MemberSaveRequest condition);
+
     int updateMemberPassword(@Param("memberSeq") Long memberSeq,
                              @Param("memberPwd") String memberPwd,
                              @Param("modifyId") String modifyId,
                              @Param("modifyIp") String modifyIp);
 
     int deleteMember(Long memberSeq);
+
+    int updateMemberLastLogin(@Param("memberSeq") Long memberSeq, @Param("loginIp") String loginIp);
 
 }

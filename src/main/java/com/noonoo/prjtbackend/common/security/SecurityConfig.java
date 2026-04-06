@@ -62,6 +62,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/files/view/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/files/download/**").permitAll()
                     .requestMatchers("/api/analytics/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated()
             );
@@ -85,7 +86,11 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:3001",
                 "http://127.0.0.1:3000",
-                "http://127.0.0.1:3001"
+                "http://127.0.0.1:3001",
+                // 프로덕션 프론트 (Cloudflare Pages 등) — 도메인 변경 시 수정
+                "https://gamcompany.kr",
+                "https://www.gamcompany.kr",
+                "https://admin.gamcompany.kr"
         ));
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"

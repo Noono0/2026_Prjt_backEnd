@@ -850,3 +850,60 @@ CREATE TABLE IF NOT EXISTS member_wallet_ledger (
     KEY idx_mwl_member_dt (member_seq, ledger_seq),
     CONSTRAINT fk_mwl_member FOREIGN KEY (member_seq) REFERENCES member (member_seq) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- OAuth(google/naver/kakao) 연동 회원 식별
+SET @prjt_schema := DATABASE();
+
+SET @sql_mem_oauth_p := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND COLUMN_NAME = 'oauth_provider') = 0,
+    'ALTER TABLE member ADD COLUMN oauth_provider VARCHAR(20) NULL COMMENT ''GOOGLE | NAVER | KAKAO''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_oauth_p;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_mem_oauth_s := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND COLUMN_NAME = 'oauth_subject') = 0,
+    'ALTER TABLE member ADD COLUMN oauth_subject VARCHAR(255) NULL COMMENT ''제공자 쪽 고유 ID (sub 등)''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_oauth_s;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_mem_oauth_dt := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND COLUMN_NAME = 'oauth_sync_dt') = 0,
+    'ALTER TABLE member ADD COLUMN oauth_sync_dt DATETIME NULL COMMENT ''마지막 OAuth 프로필 동기화''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_oauth_dt;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_mem_oauth_uk := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.statistics
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND INDEX_NAME = 'uk_member_oauth') = 0,
+    'ALTER TABLE member ADD UNIQUE KEY uk_member_oauth (oauth_provider, oauth_subject)',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_oauth_uk;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_mem_last_login_dt := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND COLUMN_NAME = 'last_login_dt') = 0,
+    'ALTER TABLE member ADD COLUMN last_login_dt DATETIME NULL COMMENT ''마지막 로그인 시각''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_last_login_dt;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;
+
+SET @sql_mem_last_login_ip := (SELECT IF(
+    (SELECT COUNT(*) FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = @prjt_schema AND TABLE_NAME = 'member' AND COLUMN_NAME = 'last_login_ip') = 0,
+    'ALTER TABLE member ADD COLUMN last_login_ip VARCHAR(45) NULL COMMENT ''마지막 로그인 IP''',
+    'SELECT 1'));
+PREPARE _prjt_stmt FROM @sql_mem_last_login_ip;
+EXECUTE _prjt_stmt;
+DEALLOCATE PREPARE _prjt_stmt;

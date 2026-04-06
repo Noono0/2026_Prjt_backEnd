@@ -33,5 +33,15 @@ public interface BlacklistReportService {
 
     int reportBlacklistReport(Long blacklistReportSeq);
 
-    byte[] exportExcel(String blacklistTargetId, String keyword, String createDtFrom, String createDtTo) throws Exception;
+    /**
+     * @param columnsCsv 허용된 camelCase 필드명을 쉼표로 구분. null/공백이면 기본 칼럼 세트.
+     */
+    byte[] exportExcel(
+            String blacklistTargetId,
+            String keyword,
+            String createDtFrom,
+            String createDtTo,
+            String categoryCode,
+            String columnsCsv
+    ) throws Exception;
 }

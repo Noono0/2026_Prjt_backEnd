@@ -4,6 +4,7 @@ import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.file.dto.AttachFileDto;
 import com.noonoo.prjtbackend.file.dto.FileUploadResponse;
 import com.noonoo.prjtbackend.file.mapper.AttachFileMapper;
+import com.noonoo.prjtbackend.file.model.ImageUploadPurpose;
 import com.noonoo.prjtbackend.file.service.AttachFileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +47,12 @@ public class AttachFileController {
     public ApiResponse<FileUploadResponse> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "menuUrl", required = false) String menuUrl,
+            @RequestParam(value = "uploadPurpose", required = false, defaultValue = "board") String uploadPurposeRaw,
             HttpServletRequest request
     ) {
         String base = resolvePublicBaseUrl(request);
-        FileUploadResponse data = attachFileService.store(file, menuUrl, base);
+        ImageUploadPurpose purpose = ImageUploadPurpose.fromParam(uploadPurposeRaw);
+        FileUploadResponse data = attachFileService.store(file, menuUrl, base, purpose);
         return ApiResponse.ok("파일이 업로드되었습니다.", data);
     }
 

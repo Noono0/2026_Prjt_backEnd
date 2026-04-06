@@ -267,13 +267,33 @@
                br.title,
                br.content,
                br.writer_member_seq AS writerMemberSeq,
+               wm.member_id AS writerMemberId,
+               COALESCE(
+                   CASE WHEN wm.profile_image_file_seq IS NOT NULL THEN CONCAT('/api/files/view/', wm.profile_image_file_seq) END,
+                   wm.profile_image_url
+               ) AS writerProfileImageUrl,
                COALESCE(NULLIF(TRIM(wm.nickname), ''), NULLIF(TRIM(br.writer_name), ''), wm.member_id) AS writerName,
+               br.category_code AS categoryCode,
+               CASE WHEN cg.code_group_seq IS NOT NULL THEN cd.code_name END AS categoryName,
                br.view_count AS viewCount,
                br.like_count AS likeCount,
                br.dislike_count AS dislikeCount,
+               br.comment_count AS commentCount,
+               br.report_count AS reportCount,
+               br.comment_allowed_yn AS commentAllowedYn,
+               br.reply_allowed_yn AS replyAllowedYn,
                DATE_FORMAT(br.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
                DATE_FORMAT(br.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
         FROM blacklist_report_board br
+        LEFT JOIN code_detail cd
+          ON cd.code_value = br.category_code
+         AND cd.use_yn = 'Y'
+         AND (cd.status IS NULL OR cd.status = 'ACTIVE')
+        LEFT JOIN code_group cg
+          ON cg.code_group_seq = cd.code_group_seq
+         AND cg.code_group_id = 'A0005'
+         AND cg.use_yn = 'Y'
+         AND (cg.status IS NULL OR cg.status = 'ACTIVE')
         LEFT JOIN member wm ON wm.member_seq = br.writer_member_seq
         <include refid="blacklistWhere"/>
         ORDER BY br.blacklist_target_id ASC, br.blacklist_report_seq DESC

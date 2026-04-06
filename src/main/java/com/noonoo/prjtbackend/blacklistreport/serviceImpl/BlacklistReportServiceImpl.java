@@ -320,7 +320,14 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
     }
 
     @Override
-    public byte[] exportExcel(String blacklistTargetId, String keyword, String createDtFrom, String createDtTo) throws Exception {
+    public byte[] exportExcel(
+            String blacklistTargetId,
+            String keyword,
+            String createDtFrom,
+            String createDtTo,
+            String categoryCode,
+            String columnsCsv
+    ) throws Exception {
         BlacklistReportSearchCondition c = new BlacklistReportSearchCondition();
         if (StringUtils.hasText(blacklistTargetId)) {
             c.setBlacklistTargetId(blacklistTargetId.trim());
@@ -334,7 +341,10 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
         if (StringUtils.hasText(createDtTo)) {
             c.setCreateDtTo(createDtTo.trim());
         }
+        if (StringUtils.hasText(categoryCode)) {
+            c.setCategoryCode(categoryCode.trim());
+        }
         List<BlacklistReportDto> rows = blacklistReportMapper.findBlacklistReportsForExport(c);
-        return BlacklistReportExcelExporter.toXlsx(rows);
+        return BlacklistReportExcelExporter.toXlsx(rows, BlacklistReportExcelExporter.parseKeysQuery(columnsCsv));
     }
 }

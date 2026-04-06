@@ -1,4 +1,93 @@
+# ============================================================
+# 프로필
+#   - 기본: local (아래 spring.profiles.default)
+#   - local: PC 개발용 (localhost MySQL)
+#   - dev: 스테이징 등 (DB 는 환경변수로, 미설정 시 local 과 동일한 기본 JDBC)
+#   - prod: 운영 (SPRING_DATASOURCE_* 필수)
+#   - docker / Lightsail 컨테이너: application-docker.yml 참고 (프로필명 docker)
+#
+# 실행 예: SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+# ============================================================
+
 spring:
+  profiles:
+    default: local
+  servlet:
+    multipart:
+      # 네트워크로 받을 수 있는 한 파일·요청 상한 (자동 압축과 무관). 초과 시 업로드 거절.
+      max-file-size: 5MB
+      max-request-size: 12MB
+  # 비밀번호 찾기 메일: 운영 시 환경변수로 설정 예)
+  # MAIL_HOST, MAIL_PORT(587), MAIL_USER, MAIL_PASS, MAIL_FROM
+  # 그리고 아래 spring.mail.* 주석 해제:
+  # mail:
+  #   host: ${MAIL_HOST}
+  #   port: ${MAIL_PORT:587}
+  #   username: ${MAIL_USER}
+  #   password: ${MAIL_PASS}
+  #   properties:
+  #     mail:
+  #       smtp:
+  #         auth: true
+  #         starttls:
+  #           enable: true
+
+mybatis:
+  mapper-locations: classpath:/mybatis/**/*.xml
+  type-aliases-package: com.noonoo.prjtbackend
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 24h
+
+# 헬스 체크(LB·모니터링). 노출은 health 만, 상세는 비노출
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+app:
+  oauth-sync:
+    secret: ${OAUTH_SYNC_SECRET:prjt-dev-oauth-sync-7f3a9b2c1d4e8e0f}
+  mail:
+    from: ${MAIL_FROM:noreply@localhost}
+  board:
+    blind-report-threshold: 10
+    blind-list-title: "다수의 신고로 블라인드 처리된 게시글 입니다."
+    blind-comment-content: "<p>다수의 신고로 블라인드 처리된 댓글입니다.</p>"
+  wallet:
+    free-board-post-points: 100
+  content-filter:
+    mode: reject
+  file:
+    image:
+      optimize-enabled: true
+      preferred-raster-format: jpeg
+      png-keep-alpha-as-png: true
+      board:
+        max-width-px: 1600
+        target-min-bytes: 524288
+        target-max-bytes: 1048576
+      profile:
+        max-edge-px: 512
+        target-min-bytes: 102400
+        target-max-bytes: 307200
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
   datasource:
     url: jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul
     username: prjt
@@ -16,60 +105,14 @@ spring:
     init:
       encoding: UTF-8
       mode: always
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 12MB
-  # 비밀번호 찾기 메일: 운영 시 환경변수로 설정 예)
-  # MAIL_HOST, MAIL_PORT(587), MAIL_USER, MAIL_PASS, MAIL_FROM
-  # 그리고 아래 spring.mail.* 주석 해제:
-  # mail:
-  #   host: ${MAIL_HOST}
-  #   port: ${MAIL_PORT:587}
-  #   username: ${MAIL_USER}
-  #   password: ${MAIL_PASS}
-  #   properties:
-  #     mail:
-  #       smtp:
-  #         auth: true
-  #         starttls:
-  #           enable: true
-mybatis:
-  mapper-locations: classpath:/mybatis/**/*.xml
-  type-aliases-package: com.noonoo.prjtbackend
-  configuration:
-    map-underscore-to-camel-case: true
-server:
-  port: 8080
-  servlet:
-    session:
-      timeout: 24h
 
-# 보안: false 로 두면 로그인 세션 + DB 역할–메뉴 권한(MEMBER_READ 등) 검사. 로컬 개발은 true 권장.
 app:
   mail:
-    # 발신 주소(SMTP From). MAIL_FROM 환경변수 권장
-    from: ${MAIL_FROM:noreply@localhost}
-    # SMTP 미구성 시 개발: 서버 로그에 인증코드 출력. 운영에서는 false + spring.mail.* 필수
     log-code-in-dev: true
   security:
     permit-all: true
-  board:
-    # 신고 수가 이 값 이상이면 목록 제목 치환·상세 차단·글/댓글 작성 포인트 회수(1회)
-    blind-report-threshold: 10
-    blind-list-title: "다수의 신고로 블라인드 처리된 게시글 입니다."
-    # 자유게시판·공지 댓글/답글 목록에서 본문 치환(HTML). 댓글 블라인드 시 포인트 차감액은 free-board-post-points 와 동일.
-    blind-comment-content: "<p>다수의 신고로 블라인드 처리된 댓글입니다.</p>"
-  wallet:
-    # 자유게시판 글 작성 시 지급 포인트(카테고리 무관). 블라인드 시 동일 금액 회수.
-    free-board-post-points: 100
-  # 금칙어: replace=* 치환 저장 | reject=포함 시 400(BAD_REQUEST)로 저장 거부
-  content-filter:
-    mode: reject
   file:
-    # 업로드 파일 저장 루트 (상대 경로는 애플리케이션 작업 디렉터리 기준)
     upload-dir: upload-data/files
-    # 비우면 요청 Host 기준으로 view/download URL 생성. 리버스 프록시 뒤면 http(s)://도메인 으로 지정
     public-base-url: ""
 
 decorator:
@@ -81,3 +124,88 @@ logging:
   level:
     p6spy: info
 
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/prjt01?serverTimezone=Asia/Seoul}
+    username: ${SPRING_DATASOURCE_USERNAME:prjt}
+    password: ${SPRING_DATASOURCE_PASSWORD:prjt1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+  sql:
+    init:
+      encoding: UTF-8
+      mode: ${SPRING_SQL_INIT_MODE:always}
+
+app:
+  mail:
+    log-code-in-dev: true
+  security:
+    permit-all: true
+  file:
+    upload-dir: ${APP_FILE_UPLOAD_DIR:upload-data/files}
+    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+
+logging:
+  level:
+    root: INFO
+    p6spy: info
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+  sql:
+    init:
+      encoding: UTF-8
+      mode: ${SPRING_SQL_INIT_MODE:never}
+
+app:
+  mail:
+    log-code-in-dev: false
+  security:
+    permit-all: false
+  file:
+    upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
+    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: false
+
+logging:
+  level:
+    root: INFO
+    com.noonoo.prjtbackend: INFO

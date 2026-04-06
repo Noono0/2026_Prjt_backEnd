@@ -1,0 +1,45 @@
+# Lightsail/로컬 공통: .env.docker 를 채운 뒤 실행
+#   docker compose up -d --build
+#
+# MySQL 은 Lightsail 관리형 DB URL 을 SPRING_DATASOURCE_URL 에 넣거나,
+# 아래 db 서비스 주석을 해제해 로컬만 DB 컨테이너를 띄울 수 있습니다.
+
+services:
+  app:
+    build: .
+    image: prjt-backend:0.1.0
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.docker
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # 볼륨과 동일 경로로 맞춤 (application-docker.yml 기본)
+      APP_FILE_UPLOAD_DIR: /data/uploads
+      # JDBC 연결 전 단계에서도 Hibernate 가 방언을 잡도록 compose 로 고정 (프로필/yml 미반영 JAR 대비)
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+    volumes:
+      - upload-data:/data/uploads
+    restart: unless-stopped
+    # 로컬 개발: 같은 compose 안의 MySQL 을 쓸 때
+    # depends_on:
+    #   - db
+
+  # 로컬 테스트용 (운영 Lightsail DB 쓰면 비활성)
+  # db:
+  #   image: mysql:8.0
+  #   command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=+09:00
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_DATABASE: prjt01
+  #     MYSQL_USER: prjt
+  #     MYSQL_PASSWORD: prjt1234
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+
+volumes:
+  upload-data: {}
+  # mysql-data: {}

@@ -38,7 +38,14 @@ public class MemberDto {
     private String roleCodesDisplay;
     private String createDt;
     private String modifyDt;
+    /** DATE_FORMAT(last_login_dt) */
     private String lastLoginAt;
+    private String lastLoginIp;
     /** 스트리머·컴퍼니 확장 프로필 (없으면 null) */
     private MemberStreamerProfileDto streamerProfile;
+
+    /** GOOGLE | NAVER | KAKAO */
+    private String oauthProvider;
+    private String oauthSubject;
+    private String oauthSyncDt;
 }

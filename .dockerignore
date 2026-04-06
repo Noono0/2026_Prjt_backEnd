@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dockerignore
+.idea
+*.iml
+.gradle
+build
+out
+*.md
+.env
+.env.*
+!.env.docker.example
+**/.DS_Store
+upload-data
+upload-data/files
+**/node_modules

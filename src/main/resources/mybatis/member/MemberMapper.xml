@@ -22,6 +22,11 @@
         <result property="roleCodesDisplay" column="roleCodesDisplay"/>
         <result property="createDt" column="createDt"/>
         <result property="modifyDt" column="modifyDt"/>
+        <result property="oauthProvider" column="oauthProvider"/>
+        <result property="oauthSubject" column="oauthSubject"/>
+        <result property="oauthSyncDt" column="oauthSyncDt"/>
+        <result property="lastLoginAt" column="lastLoginAt"/>
+        <result property="lastLoginIp" column="lastLoginIp"/>
     </resultMap>
 
     <sql id="memberColumns">
@@ -45,7 +50,12 @@
          FROM MEMBER_ROLE MR
          WHERE MR.MEMBER_SEQ = M.MEMBER_SEQ) AS roleCodesDisplay,
         DATE_FORMAT(M.CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt,
-        DATE_FORMAT(M.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        DATE_FORMAT(M.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt,
+        M.OAUTH_PROVIDER AS oauthProvider,
+        M.OAUTH_SUBJECT AS oauthSubject,
+        DATE_FORMAT(M.OAUTH_SYNC_DT, '%Y-%m-%d %H:%i:%s') AS oauthSyncDt,
+        DATE_FORMAT(M.LAST_LOGIN_DT, '%Y-%m-%d %H:%i:%s') AS lastLoginAt,
+        M.LAST_LOGIN_IP AS lastLoginIp
     </sql>
 
     <sql id="memberWhere">
@@ -123,6 +133,16 @@
           AND M.USE_YN = 'Y'
     </select>
 
+    <select id="findMemberByOauth" resultMap="memberResultMap">
+        SELECT
+        <include refid="memberColumns"/>
+        FROM MEMBER M
+        WHERE M.OAUTH_PROVIDER = #{oauthProvider}
+          AND M.OAUTH_SUBJECT = #{oauthSubject}
+          AND M.USE_YN = 'Y'
+        LIMIT 1
+    </select>
+
     <select id="findMemberByMemberIdAndEmail" resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
@@ -168,6 +188,9 @@
             PHONE,
             GRADE_CODE,
             STATUS_CODE,
+            OAUTH_PROVIDER,
+            OAUTH_SUBJECT,
+            OAUTH_SYNC_DT,
             USE_YN
         ) VALUES (
                      #{birthYmd},
@@ -188,6 +211,9 @@
                      #{phone},
                      #{gradeCode},
                      #{statusCode},
+                     #{oauthProvider},
+                     #{oauthSubject},
+                     NOW(),
                      'Y'
                  )
     </insert>
@@ -215,6 +241,22 @@
           AND USE_YN = 'Y'
     </update>
 
+    <update id="updateMemberOauthLoginProfile" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
+        UPDATE MEMBER
+        <set>
+            <if test="email != null and email != ''">EMAIL = #{email},</if>
+            <if test="memberName != null and memberName != ''">MEMBER_NAME = #{memberName},</if>
+            <if test="nickname != null and nickname != ''">NICKNAME = #{nickname},</if>
+            <if test="profileImageUrl != null and profileImageUrl != ''">PROFILE_IMAGE_URL = #{profileImageUrl},</if>
+            OAUTH_SYNC_DT = NOW(),
+            MODIFY_DT = NOW(),
+            MODIFY_ID = #{modifyId},
+            MODIFY_IP = #{modifyIp}
+        </set>
+        WHERE MEMBER_SEQ = #{memberSeq}
+          AND USE_YN = 'Y'
+    </update>
+
     <update id="updateMemberPassword">
         UPDATE MEMBER
         SET
@@ -232,6 +274,14 @@
             STATUS_CODE = 'WITHDRAWN',
             USE_YN = 'N',
             MODIFY_DT = NOW()
+        WHERE MEMBER_SEQ = #{memberSeq}
+          AND USE_YN = 'Y'
+    </update>
+
+    <update id="updateMemberLastLogin">
+        UPDATE MEMBER
+        SET LAST_LOGIN_DT = NOW(),
+            LAST_LOGIN_IP = #{loginIp}
         WHERE MEMBER_SEQ = #{memberSeq}
           AND USE_YN = 'Y'
     </update>

@@ -1,0 +1,17 @@
+package com.noonoo.prjtbackend.auth.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class OauthMemberSyncResponse {
+    private long memberSeq;
+    private String memberId;
+    private String oauthProvider;
+    private boolean newlyRegistered;
+}

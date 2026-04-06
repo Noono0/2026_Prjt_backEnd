@@ -1,0 +1,46 @@
+# Docker / 운영 배포용 프로필 (SPRING_PROFILES_ACTIVE=docker)
+# ─ .env.docker 의 SPRING_DATASOURCE_* 로만 DB 연결 (컨테이너의 localhost 는 MySQL 이 아님)
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+  sql:
+    init:
+      # 운영 첫 기동에만 data.sql 필요하면 never 대신 embedded 등으로 조절
+      mode: ${SPRING_SQL_INIT_MODE:never}
+
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:5MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:12MB}
+
+app:
+  file:
+    upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
+    public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+  security:
+    permit-all: ${APP_SECURITY_PERMIT_ALL:false}
+
+# p6spy 래핑이 일부 환경에서 Hibernate JDBC 메타데이터(dialect) 조회를 깨뜨릴 수 있어 docker 에서는 장식 비활성
+decorator:
+  datasource:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.noonoo.prjtbackend: INFO

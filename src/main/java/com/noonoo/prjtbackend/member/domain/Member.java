@@ -84,4 +84,20 @@ public class Member {
     /** 공통코드 MEMBER_STATUS (계정 상태) */
     @Column(name = "status_code", length = 50)
     private String statusCode = "ACTIVE";
+
+    /** GOOGLE | NAVER | KAKAO — 비 OAuth 가입자는 null */
+    @Column(name = "oauth_provider", length = 20)
+    private String oauthProvider;
+
+    @Column(name = "oauth_subject", length = 255)
+    private String oauthSubject;
+
+    @Column(name = "oauth_sync_dt")
+    private LocalDateTime oauthSyncDt;
+
+    @Column(name = "last_login_dt")
+    private LocalDateTime lastLoginDt;
+
+    @Column(name = "last_login_ip", length = 45)
+    private String lastLoginIp;
 }

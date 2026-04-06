@@ -113,8 +113,11 @@ public class BlacklistReportController {
             @RequestParam(required = false) String blacklistTargetId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String createDtFrom,
-            @RequestParam(required = false) String createDtTo) throws Exception {
-        byte[] bytes = blacklistReportService.exportExcel(blacklistTargetId, keyword, createDtFrom, createDtTo);
+            @RequestParam(required = false) String createDtTo,
+            @RequestParam(required = false) String categoryCode,
+            @RequestParam(required = false) String columns) throws Exception {
+        byte[] bytes = blacklistReportService.exportExcel(
+                blacklistTargetId, keyword, createDtFrom, createDtTo, categoryCode, columns);
         String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
         // ASCII 파일명만 사용 (UTF-8 filename* 는 프록시/브라우저에서 깨지는 경우가 있음)
         String filename = "blacklist-report-" + ts + ".xlsx";
