@@ -15,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -62,7 +63,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/files/view/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/files/download/**").permitAll()
                     .requestMatchers("/api/analytics/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                    // Actuator health(및 하위 프로브) — 경로 문자열보다 EndpointRequest 가 서블릿 매칭과 맞는 경우가 많음
+                    .requestMatchers(EndpointRequest.to("health")).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                    .requestMatchers(HttpMethod.HEAD, "/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated()
             );
