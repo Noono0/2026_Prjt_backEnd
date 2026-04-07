@@ -37,7 +37,7 @@ app:
     upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
     public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
 
-# SQL: p6spy 기본 — 바인딩 치환된 문장 한 줄(spy.properties 의 %(effectiveSqlSingleLine)).
+# SQL: p6spy 기본 — 바인딩 치환 한 줄은 spy.properties 의 %(sqlSingleLine)(effective 아님).
 # 장식 비활성 시: DECORATOR_DATASOURCE_ENABLED=false 후 LOGGING_* 로 Hibernate/MyBatis 로그를 DEBUG로 올리기.
 decorator:
   datasource:
