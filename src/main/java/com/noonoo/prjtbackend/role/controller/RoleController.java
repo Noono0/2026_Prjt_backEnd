@@ -35,7 +35,6 @@ public class RoleController {
     @GetMapping
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.ROLE + "')")
     public Map<String, Object> findRoles() {
-        System.out.println("=============> findRoles");
         List<RoleDto> items = roleService.findAllActiveRoles();
 
         Map<String, Object> result = new HashMap<>();

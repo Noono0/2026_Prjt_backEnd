@@ -10,9 +10,11 @@ import com.noonoo.prjtbackend.role.service.RoleService;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
@@ -21,7 +23,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<RoleDto> findAllActiveRoles() {
-        System.out.println("=============> RoleServiceImpl findAllActiveRoles");
+        log.debug("findAllActiveRoles");
         return roleMapper.findAllActiveRoles();
     }
 

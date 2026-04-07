@@ -1,14 +1,21 @@
 package com.noonoo.prjtbackend.common.exception;
 
 import com.noonoo.prjtbackend.common.api.ApiResponse;
+import com.noonoo.prjtbackend.common.security.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+import java.util.stream.Collectors;
 
 /**
  * 전역 예외 처리기
@@ -34,6 +41,40 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(
                         "AUTH_FAILED",
                         e.getMessage() != null ? e.getMessage() : "로그인에 실패했습니다."
+                ));
+    }
+
+    /**
+     * {@code @PreAuthorize} 메서드 인가 실패 (@code SecurityExpressions} 등).
+     * 상세는 SecurityExpressions 의 WARN 로그(필요 authority)를 우선 확인.
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(AuthorizationDeniedException e) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String authorities = "";
+        String extra = "";
+        if (auth != null) {
+            authorities = auth.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+            if (auth.getPrincipal() instanceof CustomUserDetails cud) {
+                extra = " memberSeq=" + cud.getMemberSeq() + " roleCodes=" + cud.getRoleCodes();
+            }
+        }
+        log.warn(
+                "접근 거부(인가): principal={} authenticated={} authorities=[{}]{}",
+                auth != null ? auth.getName() : null,
+                auth != null && auth.isAuthenticated(),
+                authorities,
+                extra,
+                e
+        );
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.fail(
+                        "FORBIDDEN",
+                        "이 작업을 수행할 권한이 없습니다. 메뉴(ROLE) 권한을 확인하세요."
                 ));
     }
 

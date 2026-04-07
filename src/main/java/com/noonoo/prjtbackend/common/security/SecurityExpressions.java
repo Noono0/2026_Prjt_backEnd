@@ -1,10 +1,13 @@
 package com.noonoo.prjtbackend.common.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import java.util.stream.Collectors;
 
 /**
  * {@code @PreAuthorize} 에서 사용하는 SpEL 헬퍼.
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Component;
  *     <li>{@code false}: DB 기반 GrantedAuthority ({@code MENU_READ} 등) 검사</li>
  * </ul>
  */
+@Slf4j
 @Component("securityExpressions")
 public class SecurityExpressions {
 
@@ -25,6 +29,11 @@ public class SecurityExpressions {
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
+            log.warn(
+                    "[권한검사] 거부: 필요 authority={} (비인증 또는 SecurityContext 없음, principal={})",
+                    authority,
+                    auth != null ? auth.getName() : "null"
+            );
             return false;
         }
         for (GrantedAuthority ga : auth.getAuthorities()) {
@@ -32,6 +41,13 @@ public class SecurityExpressions {
                 return true;
             }
         }
+        log.warn(
+                "[권한검사] 거부: 필요 authority={} principal={} memberRoleCodes={} 현재 authorities={}",
+                authority,
+                auth.getName(),
+                auth.getPrincipal() instanceof CustomUserDetails cud ? cud.getRoleCodes() : "(n/a)",
+                auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).sorted().collect(Collectors.joining(", "))
+        );
         return false;
     }
 
