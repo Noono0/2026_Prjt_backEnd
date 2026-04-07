@@ -89,7 +89,7 @@
             resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         <include refid="memberWhere"/>
 
         ORDER BY
@@ -113,14 +113,14 @@
     <select id="findMembersCnt" parameterType="com.noonoo.prjtbackend.member.dto.MemberSearchCondition"
             resultType="long">
         SELECT COUNT(*)
-        FROM MEMBER M
+        FROM member M
         <include refid="memberWhere"/>
     </select>
 
     <select id="findMemberById" parameterType="long" resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         WHERE M.MEMBER_SEQ = #{memberSeq}
           AND M.USE_YN = 'Y'
     </select>
@@ -128,7 +128,7 @@
     <select id="findLoginMember" parameterType="string" resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         WHERE M.MEMBER_ID = #{memberId}
           AND M.USE_YN = 'Y'
     </select>
@@ -136,7 +136,7 @@
     <select id="findMemberByOauth" resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         WHERE M.OAUTH_PROVIDER = #{oauthProvider}
           AND M.OAUTH_SUBJECT = #{oauthSubject}
           AND M.USE_YN = 'Y'
@@ -146,7 +146,7 @@
     <select id="findMemberByMemberIdAndEmail" resultMap="memberResultMap">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         WHERE M.MEMBER_ID = #{memberId}
           AND LOWER(TRIM(M.EMAIL)) = LOWER(TRIM(#{email}))
           AND M.USE_YN = 'Y'
@@ -158,7 +158,7 @@
             resultType="com.noonoo.prjtbackend.member.dto.MemberDto">
         SELECT
         <include refid="memberColumns"/>
-        FROM MEMBER M
+        FROM member M
         WHERE M.MEMBER_ID = #{memberId}
           AND M.USE_YN = 'Y'
         <if test="memberSeq != null">
@@ -169,7 +169,7 @@
 
     <insert id="insertMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest"
             useGeneratedKeys="true" keyProperty="memberSeq" keyColumn="MEMBER_SEQ">
-        INSERT INTO MEMBER (
+        INSERT INTO member (
             BIRTH_YMD,
             CREATE_DT,
             CREATE_ID,
@@ -219,7 +219,7 @@
     </insert>
 
     <update id="updateMember" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
-        UPDATE MEMBER
+        UPDATE member
         SET
         MEMBER_NAME = #{memberName},
         NICKNAME = #{nickname},
@@ -242,7 +242,7 @@
     </update>
 
     <update id="updateMemberOauthLoginProfile" parameterType="com.noonoo.prjtbackend.member.dto.MemberSaveRequest">
-        UPDATE MEMBER
+        UPDATE member
         <set>
             <if test="email != null and email != ''">EMAIL = #{email},</if>
             <if test="memberName != null and memberName != ''">MEMBER_NAME = #{memberName},</if>
@@ -258,7 +258,7 @@
     </update>
 
     <update id="updateMemberPassword">
-        UPDATE MEMBER
+        UPDATE member
         SET
             MEMBER_PWD = #{memberPwd},
             MODIFY_DT = NOW(),
@@ -269,7 +269,7 @@
     </update>
 
     <update id="deleteMember" parameterType="long">
-        UPDATE MEMBER
+        UPDATE member
         SET
             STATUS_CODE = 'WITHDRAWN',
             USE_YN = 'N',
@@ -279,7 +279,7 @@
     </update>
 
     <update id="updateMemberLastLogin">
-        UPDATE MEMBER
+        UPDATE member
         SET LAST_LOGIN_DT = NOW(),
             LAST_LOGIN_IP = #{loginIp}
         WHERE MEMBER_SEQ = #{memberSeq}

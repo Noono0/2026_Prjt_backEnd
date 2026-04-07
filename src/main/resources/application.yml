@@ -48,6 +48,9 @@ management:
         enabled: true
 
 app:
+  # 쉼표 구분 — 프론트 실제 오리진(예: http://공인IP:3001). 운영 .env.docker 의 APP_CORS_EXTRA_ORIGINS
+  cors:
+    extra-allowed-origins: ${APP_CORS_EXTRA_ORIGINS:}
   oauth-sync:
     secret: ${OAUTH_SYNC_SECRET:prjt-dev-oauth-sync-7f3a9b2c1d4e8e0f}
   mail:

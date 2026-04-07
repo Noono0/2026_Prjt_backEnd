@@ -108,7 +108,7 @@
                COALESCE(NULLIF(TRIM(m.NICKNAME), ''), m.MEMBER_NAME) AS memberName,
                COALESCE(SUM(l.point_delta), 0) AS pointsEarned
         FROM member_wallet_ledger l
-        INNER JOIN MEMBER m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN member m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
         WHERE l.point_delta &gt; 0
           AND l.create_dt &gt;= #{fromInclusive}
           AND l.create_dt &lt; #{toExclusive}
@@ -124,7 +124,7 @@
                l.reason_code AS reasonCode,
                COALESCE(SUM(l.point_delta), 0) AS pointsEarned
         FROM member_wallet_ledger l
-        INNER JOIN MEMBER m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
+        INNER JOIN member m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
         WHERE l.point_delta &gt; 0
           AND l.create_dt &gt;= #{fromInclusive}
           AND l.create_dt &lt; #{toExclusive}

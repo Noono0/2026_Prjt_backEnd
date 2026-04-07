@@ -20,6 +20,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -39,6 +41,10 @@ public class SecurityConfig {
 
     @Value("${app.security.permit-all:true}")
     private boolean permitAll;
+
+    /** 쉼표로 여러 값 — 예: {@code http://13.124.250.113:3001,https://admin.example.com} */
+    @Value("${app.cors.extra-allowed-origins:}")
+    private String extraAllowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -86,16 +92,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
+        var patterns = new ArrayList<>(List.of(
                 "http://localhost:3000",
                 "http://localhost:3001",
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:3001",
-                // 프로덕션 프론트 (Cloudflare Pages 등) — 도메인 변경 시 수정
                 "https://gamcompany.kr",
                 "https://www.gamcompany.kr",
                 "https://admin.gamcompany.kr"
         ));
+        if (extraAllowedOrigins != null && !extraAllowedOrigins.isBlank()) {
+            Arrays.stream(extraAllowedOrigins.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(patterns::add);
+        }
+        configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
