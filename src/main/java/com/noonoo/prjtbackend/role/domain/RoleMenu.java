@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(
-        name = "ROLE_MENU",
+        name = "role_menu",
         uniqueConstraints = {
                 @UniqueConstraint(name = "UK_ROLE_MENU", columnNames = {"ROLE_ID", "MENU_ID"})
         }

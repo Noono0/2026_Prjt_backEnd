@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * 예: ADMIN, CS, MD
  */
 @Entity
-@Table(name = "ROLE")
+@Table(name = "role")
 @Getter
 @Setter
 public class Role {

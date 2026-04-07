@@ -7,29 +7,29 @@
 
     <select id="findRoleCodesByMemberSeq" resultType="string">
         SELECT MR.ROLE_CODE
-        FROM MEMBER_ROLE MR
+        FROM member_role MR
         WHERE MR.MEMBER_SEQ = #{memberSeq}
         ORDER BY MR.ROLE_CODE ASC
     </select>
 
     <insert id="insertMemberRole">
-        INSERT INTO MEMBER_ROLE (MEMBER_SEQ, ROLE_CODE, CRT_DT, CRT_ID, CRT_IP)
+        INSERT INTO member_role (MEMBER_SEQ, ROLE_CODE, CRT_DT, CRT_ID, CRT_IP)
         VALUES (#{memberSeq}, #{roleCode}, NOW(), #{crtId}, #{crtIp})
     </insert>
 
     <delete id="deleteByMemberSeq">
-        DELETE FROM MEMBER_ROLE WHERE MEMBER_SEQ = #{memberSeq}
+        DELETE FROM member_role WHERE MEMBER_SEQ = #{memberSeq}
     </delete>
 
     <delete id="deleteByMemberSeqAndRoleCode">
-        DELETE FROM MEMBER_ROLE
+        DELETE FROM member_role
         WHERE MEMBER_SEQ = #{memberSeq}
           AND ROLE_CODE = #{roleCode}
     </delete>
 
     <select id="countByMemberSeqAndRoleCode" resultType="long">
         SELECT COUNT(*)
-        FROM MEMBER_ROLE
+        FROM member_role
         WHERE MEMBER_SEQ = #{memberSeq}
           AND ROLE_CODE = #{roleCode}
     </select>

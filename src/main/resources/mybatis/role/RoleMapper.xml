@@ -12,7 +12,7 @@
              , ROLE_NAME AS roleName
              , ROLE_CODE AS roleCode
              , USE_YN    AS useYn
-        FROM ROLE
+        FROM role
         WHERE USE_YN = 'Y'
         ORDER BY ROLE_ID ASC
     </select>
@@ -35,7 +35,7 @@
 
     <select id="selectListCnt" parameterType="com.noonoo.prjtbackend.role.dto.RoleSearchCondition" resultType="long">
         SELECT COUNT(*)
-        FROM ROLE R
+        FROM role R
         <include refid="roleWhere"/>
     </select>
 
@@ -46,7 +46,7 @@
              , R.ROLE_CODE AS roleCode
              , R.ROLE_NAME AS roleName
              , R.USE_YN    AS useYn
-        FROM ROLE R
+        FROM role R
         <include refid="roleWhere"/>
         ORDER BY
         <choose>
@@ -69,13 +69,13 @@
              , R.ROLE_CODE AS roleCode
              , R.ROLE_NAME AS roleName
              , R.USE_YN    AS useYn
-        FROM ROLE R
+        FROM role R
         WHERE R.ROLE_ID = #{roleId}
     </select>
 
     <select id="countByRoleCode" resultType="long">
         SELECT COUNT(*)
-        FROM ROLE R
+        FROM role R
         WHERE R.ROLE_CODE = #{roleCode}
         <if test="excludeRoleId != null">
             AND R.ROLE_ID != #{excludeRoleId}
@@ -84,12 +84,12 @@
 
     <insert id="insertData" parameterType="com.noonoo.prjtbackend.role.dto.RoleSaveRequest"
             useGeneratedKeys="true" keyProperty="roleId" keyColumn="ROLE_ID">
-        INSERT INTO ROLE (ROLE_CODE, ROLE_NAME, USE_YN, CRT_DT, UPD_DT)
+        INSERT INTO role (ROLE_CODE, ROLE_NAME, USE_YN, CRT_DT, UPD_DT)
         VALUES (#{roleCode}, #{roleName}, #{useYn}, NOW(), NOW())
     </insert>
 
     <update id="updateData" parameterType="com.noonoo.prjtbackend.role.dto.RoleSaveRequest">
-        UPDATE ROLE
+        UPDATE role
         SET ROLE_CODE = #{roleCode}
           , ROLE_NAME = #{roleName}
           , USE_YN    = #{useYn}
@@ -98,7 +98,7 @@
     </update>
 
     <update id="deleteData" parameterType="com.noonoo.prjtbackend.role.dto.RoleSaveRequest">
-        UPDATE ROLE
+        UPDATE role
         SET USE_YN = 'N'
           , UPD_DT = NOW()
         WHERE ROLE_ID = #{roleId}

@@ -82,7 +82,7 @@
             resultMap="codeDetailResultMap">
         SELECT
         <include refid="baseColumns"/>
-        FROM CODE_DETAIL CD
+        FROM code_detail CD
         <include refid="whereClause"/>
         ORDER BY
         <choose>
@@ -104,7 +104,7 @@
             parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition"
             resultType="long">
         SELECT COUNT(*)
-        FROM CODE_DETAIL CD
+        FROM code_detail CD
         <include refid="whereClause"/>
     </select>
 
@@ -113,7 +113,7 @@
             resultMap="codeDetailResultMap">
         SELECT
         <include refid="baseColumns"/>
-        FROM CODE_DETAIL CD
+        FROM code_detail CD
         WHERE CD.CODE_DETAIL_SEQ = #{codeDetailSeq}
           AND CD.USE_YN = 'Y'
     </select>
@@ -123,7 +123,7 @@
             resultMap="codeDetailResultMap">
         SELECT
         <include refid="baseColumns"/>
-        FROM CODE_DETAIL CD
+        FROM code_detail CD
         WHERE CD.CODE_GROUP_SEQ = #{codeGroupSeq}
           AND CD.CODE_ID = #{codeId}
           AND CD.USE_YN = 'Y'
@@ -134,7 +134,7 @@
     </select>
 
     <insert id="insertData" parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest">
-        INSERT INTO CODE_DETAIL (
+        INSERT INTO code_detail (
             CODE_GROUP_SEQ,
             PARENT_DETAIL_SEQ,
             CODE_ID,
@@ -178,7 +178,7 @@
     </insert>
 
     <update id="updateData" parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest">
-        UPDATE CODE_DETAIL
+        UPDATE code_detail
         SET
             CODE_ID = #{codeId},
             CODE_NAME = #{codeName},
@@ -199,7 +199,7 @@
     </update>
 
     <update id="deleteData">
-        UPDATE CODE_DETAIL
+        UPDATE code_detail
         SET USE_YN = 'N',
             MODIFY_DT = NOW(),
             MODIFY_ID = #{modifyId},

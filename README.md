@@ -94,3 +94,12 @@ spring boot 로 하거나
 $env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'; 
 # 일반실행
 .\gradlew.bat bootRun
+
+
+
+배포방법
+내 소스 git push후
+서버에서 
+cd ~/prjt-backend-operational
+git pull origin main    # 브랜치명은 본인 것
+docker compose up -d --build

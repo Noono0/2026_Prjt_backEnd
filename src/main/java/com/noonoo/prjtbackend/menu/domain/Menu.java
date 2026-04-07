@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * 예: MEMBER, ORDER, PRODUCT
  */
 @Entity
-@Table(name = "MENU")
+@Table(name = "menu")
 @Getter
 @Setter
 public class Menu {

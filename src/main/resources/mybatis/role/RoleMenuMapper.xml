@@ -16,9 +16,9 @@
              , RM.CAN_CREATE  AS canCreate
              , RM.CAN_UPDATE  AS canUpdate
              , RM.CAN_DELETE  AS canDelete
-        FROM ROLE_MENU RM
-                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
-                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        FROM role_menu RM
+                 INNER JOIN role R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN menu M ON RM.MENU_ID = M.MENU_ID
         WHERE R.ROLE_ID = #{roleId}
           AND R.USE_YN = 'Y'
           AND M.USE_YN = 'Y'
@@ -37,9 +37,9 @@
              , RM.CAN_CREATE  AS canCreate
              , RM.CAN_UPDATE  AS canUpdate
              , RM.CAN_DELETE  AS canDelete
-        FROM ROLE_MENU RM
-                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
-                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        FROM role_menu RM
+                 INNER JOIN role R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN menu M ON RM.MENU_ID = M.MENU_ID
         WHERE R.ROLE_CODE = #{roleCode}
           AND R.USE_YN = 'Y'
           AND M.USE_YN = 'Y'
@@ -57,9 +57,9 @@
              , RM.CAN_CREATE  AS canCreate
              , RM.CAN_UPDATE  AS canUpdate
              , RM.CAN_DELETE  AS canDelete
-        FROM ROLE_MENU RM
-                 INNER JOIN ROLE R ON RM.ROLE_ID = R.ROLE_ID
-                 INNER JOIN MENU M ON RM.MENU_ID = M.MENU_ID
+        FROM role_menu RM
+                 INNER JOIN role R ON RM.ROLE_ID = R.ROLE_ID
+                 INNER JOIN menu M ON RM.MENU_ID = M.MENU_ID
         WHERE R.USE_YN = 'Y'
           AND M.USE_YN = 'Y'
           AND RM.USE_YN = 'Y'
@@ -91,8 +91,8 @@
              , COALESCE(RM.CAN_CREATE, 'N') AS canCreate
              , COALESCE(RM.CAN_UPDATE, 'N') AS canUpdate
              , COALESCE(RM.CAN_DELETE, 'N') AS canDelete
-        FROM MENU M
-                 LEFT JOIN ROLE_MENU RM
+        FROM menu M
+                 LEFT JOIN role_menu RM
                            ON RM.MENU_ID = M.MENU_ID
                                AND RM.ROLE_ID = #{roleId}
                                AND RM.USE_YN = 'Y'
@@ -102,12 +102,12 @@
 
     <delete id="deleteByRoleId">
         DELETE
-        FROM ROLE_MENU
+        FROM role_menu
         WHERE ROLE_ID = #{roleId}
     </delete>
 
     <insert id="insertRoleMenu" parameterType="com.noonoo.prjtbackend.role.dto.RoleMenuInsertParam">
-        INSERT INTO ROLE_MENU (
+        INSERT INTO role_menu (
             ROLE_ID
         , MENU_ID
         , CAN_READ

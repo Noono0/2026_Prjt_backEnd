@@ -92,7 +92,7 @@
              , MODIFY_ID AS modifyId
              , MODIFY_IP AS modifyIp
              , DATE_FORMAT(MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt
-        FROM CODE_GROUP
+        FROM code_group
         WHERE CODE_GROUP_SEQ = #{codeGroupSeq}
     </select>
 
@@ -159,7 +159,7 @@
 
     <update id="deleteData"
             parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest">
-        UPDATE CODE_GROUP
+        UPDATE code_group
         SET
             STATUS = 'DELETED'
           , MODIFY_ID = #{modifyId}

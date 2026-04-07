@@ -9,12 +9,13 @@ import java.time.LocalDateTime;
 /**
  * 회원별 시스템 권한(ROLE) 다중 부여.
  * ROLE_CODE는 공통코드 그룹 MEMBER_ROLE 및 ROLE 테이블과 정합성 유지.
+ * 테이블명은 Linux MySQL·MyBatis와 맞추기 위해 소문자 snake_case.
  */
 @Getter
 @Setter
 @Entity
 @Table(
-        name = "MEMBER_ROLE",
+        name = "member_role",
         uniqueConstraints = @UniqueConstraint(name = "UK_MEMBER_ROLE", columnNames = {"MEMBER_SEQ", "ROLE_CODE"})
 )
 public class MemberRole {

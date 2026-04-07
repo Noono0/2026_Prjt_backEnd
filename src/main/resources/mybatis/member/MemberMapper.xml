@@ -47,7 +47,7 @@
         M.GRADE_CODE AS gradeCode,
         M.STATUS_CODE AS statusCode,
         (SELECT GROUP_CONCAT(DISTINCT MR.ROLE_CODE ORDER BY MR.ROLE_CODE SEPARATOR ',')
-         FROM MEMBER_ROLE MR
+         FROM member_role MR
          WHERE MR.MEMBER_SEQ = M.MEMBER_SEQ) AS roleCodesDisplay,
         DATE_FORMAT(M.CREATE_DT, '%Y-%m-%d %H:%i:%s') AS createDt,
         DATE_FORMAT(M.MODIFY_DT, '%Y-%m-%d %H:%i:%s') AS modifyDt,
@@ -72,7 +72,7 @@
             </if>
             <if test="roleCode != null and roleCode != ''">
                 AND EXISTS (
-                    SELECT 1 FROM MEMBER_ROLE MR
+                    SELECT 1 FROM member_role MR
                     WHERE MR.MEMBER_SEQ = M.MEMBER_SEQ AND MR.ROLE_CODE = #{roleCode}
                 )
             </if>

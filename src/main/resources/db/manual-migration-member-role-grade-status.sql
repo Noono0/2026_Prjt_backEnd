@@ -9,8 +9,8 @@
 -- ALTER TABLE member ADD COLUMN grade_code VARCHAR(50) DEFAULT 'NORMAL';
 -- ALTER TABLE member ADD COLUMN status_code VARCHAR(50) DEFAULT 'ACTIVE';
 
--- 2) 예: 예전 단일 role_code 컬럼이 남아 있을 때 → MEMBER_ROLE 로 이관
--- INSERT IGNORE INTO MEMBER_ROLE (MEMBER_SEQ, ROLE_CODE, CRT_DT, CRT_ID, CRT_IP)
+-- 2) 예: 예전 단일 role_code 컬럼이 남아 있을 때 → member_role 로 이관
+-- INSERT IGNORE INTO member_role (MEMBER_SEQ, ROLE_CODE, CRT_DT, CRT_ID, CRT_IP)
 -- SELECT m.member_seq, m.role_code, NOW(), 'MIGRATE', '127.0.0.1'
 -- FROM member m
 -- WHERE m.role_code IS NOT NULL AND TRIM(m.role_code) <> '';
