@@ -66,7 +66,10 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getMemberId(), request.getMemberPwd())
         );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
         CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
         session.setAttribute(LOGIN_MEMBER_SEQ, principal.getMemberSeq());
