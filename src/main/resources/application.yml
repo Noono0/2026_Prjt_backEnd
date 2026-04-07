@@ -29,6 +29,8 @@ mybatis:
   type-aliases-package: com.noonoo.prjtbackend
   configuration:
     map-underscore-to-camel-case: true
+    # 로그 레벨은 logging.level.com.noonoo.prjtbackend 등으로 제어
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 server:
   port: 8080

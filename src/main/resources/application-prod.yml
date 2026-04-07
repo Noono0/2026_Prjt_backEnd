@@ -17,7 +17,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: false
+        format_sql: ${HIBERNATE_FORMAT_SQL:true}
         show_sql: false
   sql:
     init:
@@ -37,12 +37,34 @@ app:
     upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
     public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
 
-# p6spy 래핑이 일부 환경에서 Hibernate JDBC 메타데이터 조회와 충돌 → 운영은 장식 끔
+# SQL: p6spy 기본 — 바인딩 치환된 문장 한 줄(spy.properties 의 %(effectiveSqlSingleLine)).
+# 장식 비활성 시: DECORATOR_DATASOURCE_ENABLED=false 후 LOGGING_* 로 Hibernate/MyBatis 로그를 DEBUG로 올리기.
 decorator:
   datasource:
-    enabled: false
+    enabled: ${DECORATOR_DATASOURCE_ENABLED:true}
+    p6spy:
+      enable-logging: ${DECORATOR_DATASOURCE_P6SPY_ENABLE_LOGGING:true}
 
 logging:
   level:
     root: INFO
-    com.noonoo.prjtbackend: INFO
+    com.noonoo.prjtbackend: ${LOGGING_APP_PKG_LEVEL:INFO}
+    # p6spy 사용 시 중복 방지(기본 WARN). 장식 끄고 디버깅할 때만 DEBUG/TRACE
+    com.noonoo.prjtbackend.board.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.member.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.eventbattle.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.blacklistreport.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.noticeBoard.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.calendarschedule.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.contentfilter.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.file.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.sitePopup.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.role.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.menu.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.codeGroup.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.product.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    com.noonoo.prjtbackend.order.mapper: ${LOGGING_MYBATIS_LEVEL:WARN}
+    org.springframework.jdbc.core: ${LOGGING_JDBC_TEMPLATE_LEVEL:WARN}
+    org.hibernate.SQL: ${LOGGING_HIBERNATE_SQL_LEVEL:WARN}
+    org.hibernate.orm.jdbc.bind: ${LOGGING_HIBERNATE_BIND_LEVEL:WARN}
+    p6spy: ${LOGGING_P6SPY_LEVEL:info}
