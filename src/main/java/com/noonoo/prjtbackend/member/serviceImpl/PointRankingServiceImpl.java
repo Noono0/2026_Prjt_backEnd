@@ -79,7 +79,7 @@ public class PointRankingServiceImpl implements PointRankingService {
                     .rank(rank++)
                     .memberSeq(r.getMemberSeq())
                     .memberId(r.getMemberId())
-                    .memberName(r.getMemberName())
+                    .displayLabel(r.getDisplayLabel())
                     .pointsEarned(r.getPointsEarned())
                     .breakdown(breakdown)
                     .build());

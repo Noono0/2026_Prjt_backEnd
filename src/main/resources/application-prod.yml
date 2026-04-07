@@ -1,4 +1,6 @@
-# prod — 프론트 .env.production 과 쌍: Docker/Lightsail(.env.docker), SPRING_DATASOURCE_* 필수
+# prod — 프론트 .env.production.example / .env.production.local 과 쌍
+#   OAUTH_SYNC_SECRET 은 프론트와 동일해야 /api/auth/oauth/sync 가 동작합니다.
+#   CORS: APP_CORS_EXTRA_ORIGINS 에 NEXTAUTH_URL 오리진 포함
 spring:
   config:
     activate:
@@ -29,6 +31,9 @@ spring:
       max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:12MB}
 
 app:
+  oauth-sync:
+    # 환경변수 미설정 시 프론트 .env.production.example 의 OAUTH_SYNC_SECRET 기본값과 동일
+    secret: ${OAUTH_SYNC_SECRET:b60509677d0f13c9ccf01034dafefee4b0679878278033a1815397e787e3932f}
   mail:
     log-code-in-dev: false
   security:

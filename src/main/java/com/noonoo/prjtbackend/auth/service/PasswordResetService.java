@@ -87,7 +87,9 @@ public class PasswordResetService {
             throw new IllegalArgumentException("등록된 이메일이 없습니다.");
         }
 
-        sendCodeEmail(to, memberId, member.getMemberName(), code);
+        String greeting =
+                StringUtils.hasText(member.getNickname()) ? member.getNickname().trim() : memberId;
+        sendCodeEmail(to, memberId, greeting, code);
 
         log.info("password reset code issued memberSeq={}", memberSeq);
     }
@@ -106,9 +108,9 @@ public class PasswordResetService {
         return cnt != null && cnt > 0;
     }
 
-    private void sendCodeEmail(String to, String memberId, String memberName, String code) {
+    private void sendCodeEmail(String to, String memberId, String greetingName, String code) {
         String subject = "[PRJT] 비밀번호 재설정 인증코드";
-        String displayName = StringUtils.hasText(memberName) ? memberName : memberId;
+        String displayName = StringUtils.hasText(greetingName) ? greetingName : memberId;
         String html = """
                 <div style="font-family:sans-serif;line-height:1.6;color:#111;">
                   <p>안녕하세요, %s 님.</p>

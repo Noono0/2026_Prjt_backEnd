@@ -366,29 +366,6 @@ PREPARE _prjt_stmt FROM @sql_nb_pop_e;
 EXECUTE _prjt_stmt;
 DEALLOCATE PREPARE _prjt_stmt;
 
--- 사이트 팝업(공지와 분리)
-CREATE TABLE IF NOT EXISTS site_popup (
-    site_popup_seq BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title            VARCHAR(500) NOT NULL,
-    content          LONGTEXT     NULL,
-    show_yn          CHAR(1)      NOT NULL DEFAULT 'Y',
-    use_yn           CHAR(1)      NOT NULL DEFAULT 'Y' COMMENT '행 삭제 여부 소프트삭제',
-    popup_type       VARCHAR(20)  NOT NULL DEFAULT 'MODAL' COMMENT 'MODAL | WINDOW',
-    popup_width      INT          NOT NULL DEFAULT 600,
-    popup_height     INT          NOT NULL DEFAULT 600,
-    popup_pos_x      INT          NULL COMMENT 'NULL 이면 가로 중앙',
-    popup_pos_y      INT          NULL COMMENT 'NULL 이면 세로 중앙',
-    popup_start_dt   DATETIME     NULL COMMENT 'NULL이면 즉시',
-    popup_end_dt     DATETIME     NULL COMMENT 'NULL이면 무기한',
-    sort_order       INT          NOT NULL DEFAULT 0,
-    create_dt        DATETIME     NULL,
-    create_id        VARCHAR(50)  NULL,
-    create_ip        VARCHAR(45)  NULL,
-    modify_dt        DATETIME     NULL,
-    modify_id        VARCHAR(50)  NULL,
-    modify_ip        VARCHAR(45)  NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- 기존 DB: site_popup/board/notice_board/member_emoticon/member 에 use_yn 추가 (이관 INSERT보다 먼저)
 SET @prjt_schema := DATABASE();
 
@@ -463,19 +440,7 @@ WHERE r.ROLE_CODE = 'ADMIN'
     WHERE rm.ROLE_ID = r.ROLE_ID AND rm.MENU_ID = m.MENU_ID
   );
 
--- 비속어·광고 필터 단어 (게시글·댓글·팝업 저장 시 치환)
-CREATE TABLE IF NOT EXISTS content_filter_word (
-    content_filter_word_seq BIGINT AUTO_INCREMENT PRIMARY KEY,
-    category     VARCHAR(20)  NOT NULL COMMENT 'PROFANITY | AD',
-    keyword      VARCHAR(200) NOT NULL,
-    use_yn       CHAR(1)      NOT NULL DEFAULT 'Y',
-    sort_order   INT          NOT NULL DEFAULT 0,
-    remark       VARCHAR(500) NULL,
-    create_dt    DATETIME     NULL,
-    modify_dt    DATETIME     NULL,
-    KEY idx_cfw_category (category),
-    KEY idx_cfw_use (use_yn)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 INSERT INTO menu (MENU_CODE, MENU_NAME, MENU_PATH, PARENT_MENU_ID, SORT_ORDER, USE_YN, CRT_DT, UPD_DT)
 SELECT 'CONTENT_FILTER', '비속어·광고 필터', '/content-filter', NULL, 26, 'Y', NOW(), NOW()
@@ -492,31 +457,6 @@ WHERE r.ROLE_CODE = 'ADMIN'
     WHERE rm.ROLE_ID = r.ROLE_ID AND rm.MENU_ID = m.MENU_ID
   );
 
--- 일정·생일 달력 (자유게시판과 별도)
-CREATE TABLE IF NOT EXISTS calendar_schedule (
-    calendar_schedule_seq BIGINT AUTO_INCREMENT PRIMARY KEY,
-    event_kind          VARCHAR(20)  NOT NULL COMMENT 'GENERAL | BIRTHDAY',
-    title               VARCHAR(500) NOT NULL,
-    category_code       VARCHAR(100) NULL COMMENT '공통코드 그룹 A0003 code_value',
-    event_color         VARCHAR(20)  NULL COMMENT '달력 표시용 #RGB 또는 #RRGGBB',
-    content             LONGTEXT     NULL,
-    start_date          DATE         NULL COMMENT '일정 시작일',
-    end_date            DATE         NULL COMMENT '일정 종료일(포함)',
-    start_time          TIME         NULL COMMENT '시작 시각(선택, 일정만)',
-    end_time            TIME         NULL COMMENT '종료 시각(선택, 일정만)',
-    birth_month         TINYINT      NULL COMMENT '생일 월 1-12',
-    birth_day           TINYINT      NULL COMMENT '생일 일 1-31',
-    use_yn              CHAR(1)      NOT NULL DEFAULT 'Y',
-    create_id           VARCHAR(50)  NULL,
-    create_ip           VARCHAR(45)  NULL,
-    create_dt           DATETIME     NULL,
-    modify_id           VARCHAR(50)  NULL,
-    modify_ip           VARCHAR(45)  NULL,
-    modify_dt           DATETIME     NULL,
-    KEY idx_cs_kind (event_kind),
-    KEY idx_cs_range (start_date, end_date),
-    KEY idx_cs_use (use_yn)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 이미 calendar_schedule이 있고 위 컬럼이 없을 때만 수동 실행 (중복 시 오류)
 -- ALTER TABLE calendar_schedule ADD COLUMN start_time TIME NULL COMMENT '시작 시각(선택)' AFTER end_date;
@@ -568,27 +508,7 @@ WHERE r.ROLE_CODE = 'ADMIN'
     WHERE rm.ROLE_ID = r.ROLE_ID AND rm.MENU_ID = m.MENU_ID
   );
 
--- 이벤트 대결: 주제 2~5개(event_battle_option), 유저당 이벤트당 1회 베팅(UNIQUE)
-CREATE TABLE IF NOT EXISTS event_battle (
-    event_battle_seq       BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title                  VARCHAR(500) NOT NULL,
-    status                 VARCHAR(20)  NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN | SETTLED | CANCELLED',
-    vote_limit_per_member  INT          NOT NULL DEFAULT 1 COMMENT '1인당 선택 가능한 주제 수',
-    vote_only_yn           CHAR(1)      NOT NULL DEFAULT 'N' COMMENT 'Y=투표 전용(베팅 불가)',
-    winner_option_seq      BIGINT       NULL COMMENT 'event_battle_option.event_battle_option_seq',
-    creator_member_seq     BIGINT       NOT NULL,
-    use_yn                 CHAR(1)      NOT NULL DEFAULT 'Y',
-    create_id              VARCHAR(50)  NULL,
-    create_ip              VARCHAR(45)  NULL,
-    create_dt              DATETIME     NULL,
-    modify_id              VARCHAR(50)  NULL,
-    modify_ip              VARCHAR(45)  NULL,
-    modify_dt              DATETIME     NULL,
-    settle_dt              DATETIME     NULL,
-    KEY idx_eb_status (status),
-    KEY idx_eb_creator (creator_member_seq),
-    CONSTRAINT fk_eb_creator FOREIGN KEY (creator_member_seq) REFERENCES member (member_seq)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- 기존 DB에 event_battle 테이블만 있고 컬럼이 없는 경우: CREATE IF NOT EXISTS는 테이블을 갱신하지 않음
 SET @prjt_schema := DATABASE();
@@ -782,6 +702,27 @@ FROM role r
 CROSS JOIN menu m
 WHERE r.ROLE_CODE = 'USER'
   AND m.MENU_CODE = 'EVENT_BATTLE'
+  AND NOT EXISTS (
+    SELECT 1 FROM role_menu rm
+    WHERE rm.ROLE_ID = r.ROLE_ID AND rm.MENU_ID = m.MENU_ID
+  );
+
+-- 공통코드(코드그룹/코드상세): MenuAuthorities.CODE_GROUP · CODE_DETAIL → *_READ 등
+-- 역할 코드가 ADMIN 또는 A00001 인 관리자 모두에 매핑 (기존 DB 호환)
+INSERT INTO menu (MENU_CODE, MENU_NAME, MENU_PATH, PARENT_MENU_ID, SORT_ORDER, USE_YN, CRT_DT, UPD_DT)
+SELECT 'CODE_GROUP', '코드그룹', '/common-codes', NULL, 38, 'Y', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM menu WHERE MENU_CODE = 'CODE_GROUP' LIMIT 1);
+
+INSERT INTO menu (MENU_CODE, MENU_NAME, MENU_PATH, PARENT_MENU_ID, SORT_ORDER, USE_YN, CRT_DT, UPD_DT)
+SELECT 'CODE_DETAIL', '코드상세', '/common-codes', NULL, 39, 'Y', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM menu WHERE MENU_CODE = 'CODE_DETAIL' LIMIT 1);
+
+INSERT INTO role_menu (ROLE_ID, MENU_ID, CAN_READ, CAN_CREATE, CAN_UPDATE, CAN_DELETE, USE_YN, CRT_DT, UPD_DT)
+SELECT r.ROLE_ID, m.MENU_ID, 'Y', 'Y', 'Y', 'Y', 'Y', NOW(), NOW()
+FROM role r
+CROSS JOIN menu m
+WHERE r.ROLE_CODE IN ('ADMIN', 'A00001')
+  AND m.MENU_CODE IN ('CODE_GROUP', 'CODE_DETAIL')
   AND NOT EXISTS (
     SELECT 1 FROM role_menu rm
     WHERE rm.ROLE_ID = r.ROLE_ID AND rm.MENU_ID = m.MENU_ID

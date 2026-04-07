@@ -105,7 +105,7 @@
     <select id="selectPointRanking" resultType="com.noonoo.prjtbackend.member.dto.PointRankingRowDto">
         SELECT m.MEMBER_SEQ AS memberSeq,
                m.MEMBER_ID AS memberId,
-               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), m.MEMBER_NAME) AS memberName,
+               COALESCE(NULLIF(TRIM(m.NICKNAME), ''), m.MEMBER_ID) AS displayLabel,
                COALESCE(SUM(l.point_delta), 0) AS pointsEarned
         FROM member_wallet_ledger l
         INNER JOIN member m ON m.MEMBER_SEQ = l.member_seq AND m.USE_YN = 'Y'
@@ -113,7 +113,7 @@
           AND l.create_dt &gt;= #{fromInclusive}
           AND l.create_dt &lt; #{toExclusive}
           AND l.reason_code NOT IN ('POINT_GIFT_SENT', 'POINT_GIFT_RECEIVED')
-        GROUP BY m.MEMBER_SEQ, m.MEMBER_ID, m.MEMBER_NAME, m.NICKNAME
+        GROUP BY m.MEMBER_SEQ, m.MEMBER_ID, m.NICKNAME
         HAVING SUM(l.point_delta) &gt; 0
         ORDER BY SUM(l.point_delta) DESC, m.MEMBER_SEQ ASC
         LIMIT 100
