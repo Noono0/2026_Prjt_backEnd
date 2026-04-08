@@ -32,8 +32,8 @@ spring:
 
 app:
   oauth-sync:
-    # 환경변수 미설정 시 프론트 .env.production.example 의 OAUTH_SYNC_SECRET 기본값과 동일
-    secret: ${OAUTH_SYNC_SECRET:b60509677d0f13c9ccf01034dafefee4b0679878278033a1815397e787e3932f}
+    # 운영: .env.docker 등에 반드시 설정 (YAML 폴백 없음 — 미설정 시 기동 단계에서 실패)
+    secret: ${OAUTH_SYNC_SECRET}
   mail:
     log-code-in-dev: false
   security:
@@ -41,6 +41,13 @@ app:
   file:
     upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
     public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+
+# 운영 노출 방지 — 필요 시 내부망 전용 프로필로만 켜기
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 # SQL: p6spy 기본 — 바인딩 치환 한 줄은 spy.properties 의 %(sqlSingleLine)(effective 아님).
 # 장식 비활성 시: DECORATOR_DATASOURCE_ENABLED=false 후 LOGGING_* 로 Hibernate/MyBatis 로그를 DEBUG로 올리기.

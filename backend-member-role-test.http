@@ -1,60 +1,113 @@
 ### =====================================================================
 ### backend-member-role-test.http
-### 실제 Controller 기준 테스트용 HTTP 파일
-### - IntelliJ HTTP Client / VS Code REST Client 실행 가능
-### - 현재 프로젝트 컨트롤러 기준으로 endpoint / method / parameter 맞춤
+### 회원 / 공통코드 / 메뉴 / 역할-메뉴 매핑 — Controller·DTO 기준 샘플
 ###
-### 반영 기준 Controller
-### - MemberController      : /api/members/search, /detail/{memberSeq}, /create, /update, /delete/{memberSeq}
-### - CodeGroupController   : /api/code-groups/search, /detail, /create, /update, /delete, /options
-### - CodeDetailController  : /api/code-details/search, /detail, /create, /update, /delete
-### - MenuController        : /api/menus?roleCode=...
+### 사용 도구
+### - IntelliJ HTTP Client / VS Code REST Client / Cursor REST Client
 ###
-### 주의
-### - 메뉴 API는 단순 GET /api/menus 가 아니라 roleCode 필수 파라미터 필요
-### - code-group / code-detail 의 detail, delete 는 path variable 이 아니라 RequestBody 방식
-### - 검색 API는 대부분 GET 이 아니라 POST /search
-### - 실제 DTO validation 조건은 서비스/DTO 정의에 따라 더 있을 수 있음
+### 실행 전 확인
+### 1) 백엔드 기동: http://localhost:8080 (또는 아래 @baseUrl 변경)
+### 2) app.security.permit-all=false 이면 대부분 API에 세션(쿠키) 필요 → 섹션 0 로그인 후 진행
+### 3) role_code / member_role / role 테이블 값은 반드시 동일 코드 체계
+###    (ADMIN, USER, STREAMER, 레거시 A00001 등 — DB `role` 테이블에 실제로 있는 값만 사용)
+### 4) 로그인·하트비트 등은 IP당 rate limit 적용될 수 있음 (429 + Retry-After)
 ### =====================================================================
 
+### ---------------------------------------------------------------------
+### 전역 변수 — 환경에 맞게 수정
+### ---------------------------------------------------------------------
 @baseUrl = http://localhost:8080
 @json = application/json
 
-### ---------------------------------------------------------------------
-### 공통 샘플 변수
-### ---------------------------------------------------------------------
+### 회원·코드 PK 샘플 (실제 DB sequence 에 맞게 바꿀 것)
 @memberSeq = 1
-@roleCode = ADMIN
-@codeGroupSeq = 1
-@codeDetailSeq = 1
+### role 테이블의 ROLE_CODE 와 동일해야 함. 예: ADMIN, USER, A00001, STREAMER
+@roleCodeForSearch = ADMIN
 @menuRoleCode = ADMIN
 
+@codeGroupSeq = 1
+@codeDetailSeq = 1
+
+### 역할-메뉴 매핑 API 용 — DB `role`.ROLE_ID (숫자 PK)
+@roleId = 1
+
+### 메뉴 PK — DB `menu`.MENU_ID. 저장 샘플에서만 사용
+@sampleMenuId = 1
+
+### ---------------------------------------------------------------------
+### 인증 (permit-all=false 일 때 필수)
+### ---------------------------------------------------------------------
+### 방법 A) 아래 로그인 요청 실행 후, 응답 헤더 Set-Cookie 전체를 복사해 @sessionCookie 에 붙인다.
+### 방법 B) IntelliJ 라면 로그인 요청 아래의 `> {% ... %}` 블록이 @sessionCookie 를 채워 줄 수 있다(도구 버전에 따라 동작 확인).
+###
+### 예: JSESSIONID=ABC123... 만 있으면
+### @sessionCookie = JSESSIONID=ABC123...
+### 여러 쿠키가 있으면 세미콜론으로 이어 붙임:  JSESSIONID=...; OTHER=...
+@sessionCookie =
+
 
 ### =====================================================================
-### 0. 서버 확인
+### 0. 헬스 / 로그인 (세션 확보)
 ### =====================================================================
 
-### 0-1. 헬스체크 (있으면 응답, 없으면 무시)
+### 0-1. Actuator 헬스 (Security 에서 permit-all=false 여도 보통 허용)
 GET {{baseUrl}}/actuator/health
 Accept: {{json}}
 
-
-### =====================================================================
-### 1. Member API
-### Controller: /api/members
-### =====================================================================
-
-### 1-1. 회원 목록 검색
-### 설명:
-### - 단순 GET /api/members 아님
-### - POST /api/members/search 로 검색조건 JSON 전달
-POST {{baseUrl}}/api/members/search
+### 0-2. 로그인 — 성공 시 Set-Cookie: JSESSIONID=...
+### Body (LoginRequest)
+### - memberId : 회원 로그인 ID (필수)
+### - memberPwd : 비밀번호 (필수)
+### 주의: 분당 IP당 시도 제한이 있을 수 있음.
+POST {{baseUrl}}/api/auth/login
 Content-Type: {{json}}
 Accept: {{json}}
 
 {
+  "memberId": "admin",
+  "memberPwd": "your-password"
+}
+
+### IntelliJ HTTP Client: 로그인 응답에서 Set-Cookie 를 @sessionCookie 로 넣기 (선택)
+#> {%
+#    const h = response.headers.valueOf("Set-Cookie");
+#    if (h) { client.global.set("sessionCookie", h); }
+#%}
+
+### =====================================================================
+### 공통 헤더 참고 (보호 API 호출 시)
+### 아래 요청들에 다음 두 줄을 복사해 넣을 수 있음:
+### Cookie: {{sessionCookie}}
+### Accept: {{json}}
+### =====================================================================
+
+
+### =====================================================================
+### 1. Member API — MemberController  `/api/members`
+### @PreAuthorize: MEMBER 메뉴 권한(MEMBER_READ/CREATE/…) 필요 (permit-all=false 시)
+### =====================================================================
+
+### 1-1. 회원 목록 검색 (POST + JSON)
+### Body: MemberSearchCondition (PageRequest 상속)
+### - page       : 페이지 (1부터, 기본 1)
+### - size       : 페이지 크기 (기본 20, 최대 200)
+### - sortBy     : 정렬 컬럼 (예: memberSeq — 기본값은 MemberSearchCondition 생성자에서 memberSeq)
+### - sortDir    : asc | desc (기본 desc)
+### - memberId   : 부분 검색용 로그인 ID (빈 문자열이면 조건 제외에 가깝게 동작)
+### - memberName : 이름 (운영 정책상 표시 최소화 — DTO/화면과 동일하게 사용)
+### - roleCode   : MEMBER_ROLE 에 해당 코드가 있는 회원만 (role.role_code 와 일치하는 문자열)
+### - gradeCode  : 등급 코드 (공통코드 MEMBER_GRADE 와 연동)
+### - statusCode : 상태 코드 (공통코드 MEMBER_STATUS 와 연동, 예: ACTIVE)
+POST {{baseUrl}}/api/members/search
+Content-Type: {{json}}
+Accept: {{json}}
+Cookie: {{sessionCookie}}
+
+{
   "page": 1,
   "size": 20,
+  "sortBy": "memberSeq",
+  "sortDir": "desc",
   "memberId": "",
   "memberName": "",
   "roleCode": "",
@@ -62,60 +115,70 @@ Accept: {{json}}
   "statusCode": ""
 }
 
-### 1-2. 회원 목록 검색 - ADMIN 권한 회원만
+### 1-2. 검색 — 특정 시스템 권한 + 상태
+### roleCode 에는 DB role.role_code 와 동일한 값 (ADMIN / USER / A00001 등)
 POST {{baseUrl}}/api/members/search
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "page": 1,
   "size": 20,
-  "memberId": "",
-  "memberName": "",
-  "roleCode": "ADMIN",
+  "roleCode": "{{roleCodeForSearch}}",
   "gradeCode": "",
   "statusCode": "ACTIVE"
 }
 
-### 1-3. 회원 상세 조회
+### 1-3. 회원 상세
+### Path: memberSeq (Long)
 GET {{baseUrl}}/api/members/detail/{{memberSeq}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 ### 1-4. 회원 등록
-### 주의:
-### - 실제 필수값은 DTO/서비스 기준으로 더 있을 수 있음
-### - memberPwd / gradeCode / statusCode / roleCodes[] (시스템 권한 다중)
+### Body: MemberSaveRequest
+### - memberId, memberPwd, memberName, email, phone, gender, birthYmd : 기본 프로필
+### - nickname : 닉네임 (선택, DTO 필드 있음)
+### - gradeCode, statusCode : 공통코드와 일치하는 코드
+### - roleCodes[] : 저장 시 member_role 전체 교체에 사용 — 반드시 role.role_code 와 일치
+### - profileImageFileSeq : 첨부 업로드 후 file_seq (선택)
+### - createId, createIp : 감사용
 POST {{baseUrl}}/api/members/create
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "memberId": "testuser01",
   "memberPwd": "1234",
   "memberName": "테스트사용자",
+  "nickname": "테스트닉",
   "email": "testuser01@example.com",
   "phone": "010-1111-2222",
   "gender": "M",
   "birthYmd": "19900101",
   "gradeCode": "NORMAL",
   "statusCode": "ACTIVE",
-  "roleCodes": ["ADMIN"],
+  "roleCodes": ["USER"],
   "createId": "system",
   "createIp": "127.0.0.1"
 }
 
 ### 1-5. 회원 수정
-### 주의:
-### - 수정은 memberSeq 포함해서 보내는 구조일 가능성이 높음
+### Body: MemberSaveRequest — memberSeq 필수
+### memberPwd 는 비우거나 생략 정책은 서비스 구현 따름 (필요 시 실제 API 문서·코드 확인)
 PUT {{baseUrl}}/api/members/update
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "memberSeq": {{memberSeq}},
   "memberId": "testuser01",
-  "memberPwd": "1234",
+  "memberPwd": "",
   "memberName": "테스트사용자수정",
+  "nickname": "닉변경",
   "email": "testuser01_updated@example.com",
   "phone": "010-9999-8888",
   "gender": "M",
@@ -130,17 +193,18 @@ Accept: {{json}}
 ### 1-6. 회원 삭제
 DELETE {{baseUrl}}/api/members/delete/{{memberSeq}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 
 ### =====================================================================
-### 2. Code Group API
-### Controller: /api/code-groups
+### 2. Code Group API — `/api/code-groups`
 ### =====================================================================
 
 ### 2-1. 코드그룹 목록 검색
 POST {{baseUrl}}/api/code-groups/search
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "page": 1,
@@ -151,12 +215,11 @@ Accept: {{json}}
   "status": ""
 }
 
-### 2-2. 코드그룹 상세 조회
-### 주의:
-### - GET /{id} 형태가 아니라 POST /detail + body 구조
+### 2-2. 코드그룹 상세 — POST + body (path variable 아님)
 POST {{baseUrl}}/api/code-groups/detail
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeGroupSeq": {{codeGroupSeq}}
@@ -166,11 +229,12 @@ Accept: {{json}}
 POST {{baseUrl}}/api/code-groups/create
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
-  "codeGroupId": "MEMBER_STATUS",
-  "codeGroupName": "회원상태",
-  "description": "회원 상태 코드 그룹",
+  "codeGroupId": "SAMPLE_GROUP",
+  "codeGroupName": "샘플그룹",
+  "description": "HTTP 샘플",
   "sortOrder": 1,
   "useYn": "Y",
   "status": "ACTIVE",
@@ -182,12 +246,13 @@ Accept: {{json}}
 PUT {{baseUrl}}/api/code-groups/update
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeGroupSeq": {{codeGroupSeq}},
-  "codeGroupId": "MEMBER_STATUS",
-  "codeGroupName": "회원상태수정",
-  "description": "회원 상태 코드 그룹 수정",
+  "codeGroupId": "SAMPLE_GROUP",
+  "codeGroupName": "샘플그룹수정",
+  "description": "수정 설명",
   "sortOrder": 2,
   "useYn": "Y",
   "status": "ACTIVE",
@@ -195,12 +260,11 @@ Accept: {{json}}
   "modifyIp": "127.0.0.1"
 }
 
-### 2-5. 코드그룹 삭제
-### 주의:
-### - DELETE 이지만 body 로 식별값 전달
+### 2-5. 코드그룹 삭제 — DELETE + JSON body
 DELETE {{baseUrl}}/api/code-groups/delete
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeGroupSeq": {{codeGroupSeq}},
@@ -208,20 +272,22 @@ Accept: {{json}}
   "modifyIp": "127.0.0.1"
 }
 
-### 2-6. 코드그룹 옵션 조회
+### 2-6. 코드그룹 옵션 (드롭다운용)
 GET {{baseUrl}}/api/code-groups/options
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 
 ### =====================================================================
-### 3. Code Detail API
-### Controller: /api/code-details
+### 3. Code Detail API — `/api/code-details`
 ### =====================================================================
 
 ### 3-1. 코드디테일 목록 검색
+### codeGroupSeq : 소속 그룹 PK
 POST {{baseUrl}}/api/code-details/search
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "page": 1,
@@ -233,10 +299,11 @@ Accept: {{json}}
   "status": ""
 }
 
-### 3-2. 코드디테일 상세 조회
+### 3-2. 코드디테일 상세
 POST {{baseUrl}}/api/code-details/detail
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeDetailSeq": {{codeDetailSeq}}
@@ -246,21 +313,22 @@ Accept: {{json}}
 POST {{baseUrl}}/api/code-details/create
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeGroupSeq": {{codeGroupSeq}},
   "parentDetailSeq": null,
-  "codeId": "ACTIVE",
-  "codeValue": "ACTIVE",
-  "codeName": "정상",
+  "codeId": "SAMPLE",
+  "codeValue": "SAMPLE",
+  "codeName": "샘플코드",
   "codeLevel": 1,
-  "description": "정상 회원 상태",
+  "description": "설명",
   "sortOrder": 1,
   "useYn": "Y",
   "status": "ACTIVE",
-  "attr1": "회원",
-  "attr2": "사용가능",
-  "attr3": "기본",
+  "attr1": "",
+  "attr2": "",
+  "attr3": "",
   "createId": "system",
   "createIp": "127.0.0.1"
 }
@@ -269,32 +337,32 @@ Accept: {{json}}
 PUT {{baseUrl}}/api/code-details/update
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeDetailSeq": {{codeDetailSeq}},
   "codeGroupSeq": {{codeGroupSeq}},
   "parentDetailSeq": null,
-  "codeId": "ACTIVE",
-  "codeValue": "ACTIVE",
-  "codeName": "정상수정",
+  "codeId": "SAMPLE",
+  "codeValue": "SAMPLE",
+  "codeName": "샘플코드수정",
   "codeLevel": 1,
-  "description": "정상 회원 상태 수정",
+  "description": "설명 수정",
   "sortOrder": 1,
   "useYn": "Y",
   "status": "ACTIVE",
-  "attr1": "회원",
-  "attr2": "사용가능",
-  "attr3": "수정",
+  "attr1": "",
+  "attr2": "",
+  "attr3": "",
   "modifyId": "admin",
   "modifyIp": "127.0.0.1"
 }
 
-### 3-5. 코드디테일 삭제
-### 주의:
-### - DELETE 이지만 body 로 식별값 전달
+### 3-5. 코드디테일 삭제 — DELETE + JSON body
 DELETE {{baseUrl}}/api/code-details/delete
 Content-Type: {{json}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "codeDetailSeq": {{codeDetailSeq}},
@@ -305,69 +373,81 @@ Accept: {{json}}
 
 
 ### =====================================================================
-### 4. Menu API
-### Controller: /api/menus
+### 4. Menu API — MenuController `/api/menus`
+### =====================================================================
+### 참고
+### - GET /api/menus?roleCode= : roleCode 필수 (@RequestParam String)
+### - 메뉴는 DB 의 role 과 조인되므로, 존재하지 않는 코드면 빈 리스트·오류 가능
+### - data.sql·실DB 예: ADMIN, USER, STREAMER, A00001 등 — MANAGER 는 기본 시드에 없을 수 있음
 ### =====================================================================
 
-### 4-1. 메뉴 조회 - roleCode 필수
-### 중요:
-### - 이 API는 /api/menus?roleCode=ADMIN 형태여야 함
-### - 그냥 GET /api/menus 호출하면 MissingServletRequestParameterException 또는 500/400 발생 가능
+### 4-1. 역할별 메뉴 트리 조회 (roleCode 쿼리 필수)
 GET {{baseUrl}}/api/menus?roleCode={{menuRoleCode}}
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
-### 4-2. 메뉴 조회 - USER 권한 기준
+### 4-2. USER 기준
 GET {{baseUrl}}/api/menus?roleCode=USER
 Accept: {{json}}
+Cookie: {{sessionCookie}}
 
-### 4-3. 메뉴 조회 - MANAGER 권한 기준
-GET {{baseUrl}}/api/menus?roleCode=MANAGER
+### 4-3. STREAMER 기준 (시드에 role 있음)
+GET {{baseUrl}}/api/menus?roleCode=STREAMER
+Accept: {{json}}
+Cookie: {{sessionCookie}}
+
+### 4-4. 레거시 관리자 코드 (DB 에 A00001 행이 있을 때)
+GET {{baseUrl}}/api/menus?roleCode=A00001
+Accept: {{json}}
+Cookie: {{sessionCookie}}
+
+### 4-5. 공개 사이드바 (인증 없이 허용 — SecurityConfig 에서 permitAll)
+GET {{baseUrl}}/api/menus/sidebar
 Accept: {{json}}
 
-
-### =====================================================================
-### 5. 자주 하는 실수 정리
-### =====================================================================
-
-### [실수1] 아래 요청은 잘못된 호출
-### GET {{baseUrl}}/api/members
-### 이유: members 는 GET 목록 조회가 아니라 POST /search 구조
-
-### [실수2] 아래 요청은 잘못된 호출
-### GET {{baseUrl}}/api/menus
-### 이유: roleCode 파라미터가 필수
-
-### [실수3] 아래 요청은 잘못된 호출
-### GET {{baseUrl}}/api/code-groups
-### 이유: code-groups 는 POST /search 구조
-
-### [실수4] 아래 요청은 잘못된 호출
-### GET {{baseUrl}}/api/code-details
-### 이유: code-details 는 POST /search 구조
+### 4-6. 메뉴 관리용 트리 (MENU_READ 필요)
+GET {{baseUrl}}/api/menus/tree
+Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 
 ### =====================================================================
-### 5-b. 역할–메뉴 매핑 (RoleMenuMappingController)
+### 5. 역할–메뉴 매핑 — RoleMenuMappingController
+### POST /api/roles/menu-mappings  : 조회
+### PUT  /api/roles/menu-mappings  : 해당 roleId 매핑 전체 교체 저장
+### @PreAuthorize: ROLE 메뉴 READ / UPDATE
 ### =====================================================================
-@roleId = 1
 
-### 역할별 전체 메뉴 + 현재 ROLE_MENU 매핑 조회
+### 5-1. 역할별 전체 메뉴 + 현재 ROLE_MENU 매핑
+### Body: RoleMenuMappingQueryRequest — roleId 만 필요 (role 테이블 PK)
 POST {{baseUrl}}/api/roles/menu-mappings
 Content-Type: {{json}}
+Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "roleId": {{roleId}}
 }
 
-### 역할–메뉴 매핑 저장 (해당 역할 기존 매핑 삭제 후 재등록)
+### 5-2. 역할–메뉴 매핑 저장 (기존 삭제 후 items 재등록)
+### Body: RoleMenuMappingSaveRequest
+### - roleId : 역할 PK
+### - items[] :
+###     - menuId    : menu.menu_id
+###     - canRead   : Y | N
+###     - canCreate : Y | N
+###     - canUpdate : Y | N
+###     - canDelete : Y | N
 PUT {{baseUrl}}/api/roles/menu-mappings
 Content-Type: {{json}}
+Accept: {{json}}
+Cookie: {{sessionCookie}}
 
 {
   "roleId": {{roleId}},
   "items": [
     {
-      "menuId": 1,
+      "menuId": {{sampleMenuId}},
       "canRead": "Y",
       "canCreate": "N",
       "canUpdate": "N",
@@ -378,13 +458,30 @@ Content-Type: {{json}}
 
 
 ### =====================================================================
-### 6. 빠른 테스트 순서 추천
+### 6. 자주 하는 실수
 ### =====================================================================
+### [실수1] GET /api/members
+###   → 목록은 POST /api/members/search + JSON Body
+###
+### [실수2] GET /api/menus (쿼리 없음)
+###   → 반드시 ?roleCode=코드 (DB role.role_code 와 동일)
+###
+### [실수3] roleCodes / roleCode 에 ADMIN 문자열을 쓰는데 DB 는 A00001 만 있는 경우
+###   → 권한·메뉴·검색이 어긋남. member_role.role_code = role.role_code 로 맞출 것
+###
+### [실수4] permit-all=false 인데 Cookie 없이 Member API 호출
+###   → 401 Unauthorized
+###
+### [실수5] code-group / code-detail 의 detail·delete 를 path variable 로 호출
+###   → POST /detail, DELETE /delete + JSON body 구조임
 
-### 1) 코드그룹 등록
-### 2) 코드디테일 등록
-### 3) 회원 등록
-### 4) 회원 검색
-### 5) 메뉴 조회(roleCode=ADMIN)
-### 6) 상세조회 / 수정 / 삭제 순서로 확인
+
+### =====================================================================
+### 7. 추천 호출 순서 (로컬 데이터 맞춤 후)
+### =====================================================================
+### 1) 0-2 로그인 → sessionCookie 설정
+### 2) 2-x 코드그룹 / 3-x 코드디테일 (필요 시)
+### 3) 1-x 회원 CRUD
+### 4) 4-x 메뉴 조회(roleCode 일치 확인)
+### 5) 5-x 역할-메뉴 매핑 (roleId·menuId 실제 PK 확인)
 ### =====================================================================

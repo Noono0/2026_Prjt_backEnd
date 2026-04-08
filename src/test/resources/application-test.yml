@@ -1,0 +1,4 @@
+# 테스트 프로필 — 전체 컨텍스트 기동 시에만 사용. @WebMvcTest 는 대부분 슬라이스만 로드합니다.
+app:
+  rate-limit:
+    enabled: false

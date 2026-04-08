@@ -1,5 +1,6 @@
 package com.noonoo.prjtbackend.common.security;
 
+import com.noonoo.prjtbackend.common.ratelimit.IpRateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -38,6 +40,7 @@ public class SecurityConfig {
 
     private final JsonAuthenticationEntryPoint jsonAuthenticationEntryPoint;
     private final JsonAccessDeniedHandler jsonAccessDeniedHandler;
+    private final IpRateLimitFilter ipRateLimitFilter;
 
     @Value("${app.security.permit-all:true}")
     private boolean permitAll;
@@ -51,6 +54,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                .addFilterBefore(ipRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jsonAuthenticationEntryPoint)
@@ -74,6 +78,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers(HttpMethod.HEAD, "/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/error").permitAll()
+                    // 로컬·스테이징: 프론트 openapi-typescript 용 (/v3/api-docs). 운영 prod 프로필에서는 springdoc 비활성.
+                    .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .anyRequest().authenticated()
             );
         }

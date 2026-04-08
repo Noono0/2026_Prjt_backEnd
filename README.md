@@ -98,8 +98,38 @@ $env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,ad
 
 
 배포방법
+
+### GitHub Actions → Lightsail (자동)
+- 워크플로: `.github/workflows/deploy-lightsail.yml` — `main` 에 push 시 Gradle `test` 후 SSH 로 서버에서 `git pull` + `docker compose up -d --build`.
+- GitHub 저장소 **Settings → Secrets and variables → Actions** 에 등록:
+  - `LIGHTSAIL_HOST`, `LIGHTSAIL_USER`, `LIGHTSAIL_SSH_KEY`(개인키 전체 PEM), `LIGHTSAIL_PORT`(대부분 `22`)
+- (선택) **Variables** 에 `LIGHTSAIL_DEPLOY_PATH` — 서버上的 clone 경로(기본 `/home/ubuntu/prjt-backend-operational`).
+- Lightsail 인스턴스에 clone 된 저장소가 GitHub 에서 `git pull` 할 수 있어야 함(Deploy key 또는 저장된 자격 증명). `.env.docker` 는 기존처럼 서버에만 둠.
+
+### 수동 배포
 내 소스 git push후
+
+ssh -i "C:\Users\khe90\Downloads\sideprojectSSH_KEY.pem"  ubuntu@13.124.250.113 // 이걸로 서버접속
 서버에서 
 cd ~/prjt-backend-operational
 git pull origin main    # 브랜치명은 본인 것
 docker compose up -d --build
+
+
+
+.env.docker 수정배포시
+PowerShell에서 한 줄:
+cd "C:\dev\2026 new prjt\real\prjt-backend-operational"; .\scripts\scp-env-docker.ps1 -PemPath "C:\Users\khe90\Downloads\sideprojectSSH_KEY.pem" -ServerHost "13.124.250.113"
+
+스크립트 없이 scp만 쓰려면:
+scp -i "C:\Users\khe90\Downloads\sideprojectSSH_KEY.pem" "C:\dev\2026 new prjt\real\prjt-backend-operational\.env.docker" ubuntu@13.124.250.113:/home/ubuntu/prjt-backend-operational/.env.docker
+
+전송후 서버에서
+cd ~/prjt-backend-operational
+docker compose up -d --build
+
+혹은 force로
+docker compose up -d --force-recreate app 
+
+서버 쿼리 log보는법 
+docker logs -f prjt-backend-operational-app-1
