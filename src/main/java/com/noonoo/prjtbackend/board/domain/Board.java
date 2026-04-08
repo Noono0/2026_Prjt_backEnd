@@ -71,6 +71,16 @@ public class Board {
     @Column(name = "highlight_yn")
     private String highlightYn;
 
+    /** 행(소프트) 삭제 여부 — MyBatis 게시글 API와 동일 */
+    @Column(name = "use_yn")
+    private String useYn;
+
+    @Column(name = "comment_allowed_yn")
+    private String commentAllowedYn;
+
+    @Column(name = "reply_allowed_yn")
+    private String replyAllowedYn;
+
     @Column(name = "create_dt")
     private LocalDateTime createDt;
 
