@@ -2,20 +2,18 @@ package com.noonoo.prjtbackend.common.exception;
 
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.security.CustomUserDetails;
+import com.noonoo.prjtbackend.common.security.SecurityLogFormatting;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-
-import java.util.stream.Collectors;
 
 /**
  * 전역 예외 처리기
@@ -51,23 +49,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(AuthorizationDeniedException e) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String authorities = "";
-        String extra = "";
-        if (auth != null) {
-            authorities = auth.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .sorted()
-                    .collect(Collectors.joining(", "));
-            if (auth.getPrincipal() instanceof CustomUserDetails cud) {
-                extra = " memberSeq=" + cud.getMemberSeq() + " roleCodes=" + cud.getRoleCodes();
-            }
+        Long memberSeq = null;
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails cud) {
+            memberSeq = cud.getMemberSeq();
         }
-        log.warn(
-                "접근 거부(인가): principal={} authenticated={} authorities=[{}]{}",
+        String springMsg = e.getMessage() != null ? e.getMessage() : "(예외 메시지 없음)";
+        log.warn("""
+                [접근 거부 · 인가]
+                  · Spring 메시지: {}
+                  · principal: {} (authenticated={})
+                  · memberSeq: {}
+                  · 회원 역할 코드(DB role): {}
+                  · 현재 부여 권한(GrantedAuthority):
+                      {}""",
+                springMsg,
                 auth != null ? auth.getName() : null,
                 auth != null && auth.isAuthenticated(),
-                authorities,
-                extra,
+                memberSeq != null ? String.valueOf(memberSeq) : "(n/a)",
+                SecurityLogFormatting.roleCodesLineFromPrincipal(
+                        auth != null ? auth.getPrincipal() : null
+                ),
+                SecurityLogFormatting.sortedAuthoritiesMultiline(auth, 5),
                 e
         );
         return ResponseEntity

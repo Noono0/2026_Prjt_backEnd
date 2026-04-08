@@ -7,8 +7,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.stream.Collectors;
-
 /**
  * {@code @PreAuthorize} 에서 사용하는 SpEL 헬퍼.
  * <ul>
@@ -29,8 +27,11 @@ public class SecurityExpressions {
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            log.warn(
-                    "[권한검사] 거부: 필요 authority={} (비인증 또는 SecurityContext 없음, principal={})",
+            log.warn("""
+                    [권한검사] 거부
+                      · 필요 권한: {}
+                      · 사유: 비인증 또는 SecurityContext 없음
+                      · principal(참고): {}""",
                     authority,
                     auth != null ? auth.getName() : "null"
             );
@@ -41,12 +42,17 @@ public class SecurityExpressions {
                 return true;
             }
         }
-        log.warn(
-                "[권한검사] 거부: 필요 authority={} principal={} memberRoleCodes={} 현재 authorities={}",
+        log.warn("""
+                [권한검사] 거부
+                  · 필요 권한: {}
+                  · 로그인 principal: {}
+                  · 회원 역할 코드(DB role): {}
+                  · 현재 부여 권한(GrantedAuthority):
+                      {}""",
                 authority,
                 auth.getName(),
-                auth.getPrincipal() instanceof CustomUserDetails cud ? cud.getRoleCodes() : "(n/a)",
-                auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).sorted().collect(Collectors.joining(", "))
+                SecurityLogFormatting.roleCodesLineFromPrincipal(auth.getPrincipal()),
+                SecurityLogFormatting.sortedAuthoritiesMultiline(auth, 5)
         );
         return false;
     }
