@@ -39,8 +39,17 @@ app:
   security:
     permit-all: ${APP_SECURITY_PERMIT_ALL:false}
   file:
+    storage-type: ${APP_FILE_STORAGE_TYPE:local}
     upload-dir: ${APP_FILE_UPLOAD_DIR:/data/uploads}
     public-base-url: ${APP_FILE_PUBLIC_BASE_URL:}
+    s3:
+      region: ${APP_FILE_S3_REGION:ap-northeast-2}
+      bucket: ${APP_FILE_S3_BUCKET:}
+      endpoint: ${APP_FILE_S3_ENDPOINT:}
+      key-prefix: ${APP_FILE_S3_KEY_PREFIX:}
+      path-style-access: ${APP_FILE_S3_PATH_STYLE_ACCESS:false}
+      access-key: ${APP_FILE_S3_ACCESS_KEY:}
+      secret-key: ${APP_FILE_S3_SECRET_KEY:}
 
 # 운영 노출 방지 — 필요 시 내부망 전용 프로필로만 켜기
 springdoc:

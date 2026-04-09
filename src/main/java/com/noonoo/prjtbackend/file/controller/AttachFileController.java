@@ -6,10 +6,11 @@ import com.noonoo.prjtbackend.file.dto.FileUploadResponse;
 import com.noonoo.prjtbackend.file.mapper.AttachFileMapper;
 import com.noonoo.prjtbackend.file.model.ImageUploadPurpose;
 import com.noonoo.prjtbackend.file.service.AttachFileService;
+import com.noonoo.prjtbackend.file.storage.FileBinaryStorage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -23,11 +24,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.NoSuchFileException;
 
 @RestController
 @RequestMapping("/api/files")
@@ -36,9 +37,7 @@ public class AttachFileController {
 
     private final AttachFileService attachFileService;
     private final AttachFileMapper attachFileMapper;
-
-    @Value("${app.file.upload-dir:upload-data/files}")
-    private String uploadDir;
+    private final FileBinaryStorage fileBinaryStorage;
 
     @Value("${app.file.public-base-url:}")
     private String configuredPublicBaseUrl;
@@ -71,15 +70,15 @@ public class AttachFileController {
         if (meta == null) {
             return ResponseEntity.notFound().build();
         }
-        Path base = Paths.get(uploadDir).toAbsolutePath().normalize();
-        Path filePath = base.resolve(meta.getStoredPath()).normalize();
-        if (!filePath.startsWith(base)) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (!Files.isReadable(filePath)) {
+        final byte[] data;
+        try {
+            data = fileBinaryStorage.load(meta.getStoredPath());
+        } catch (NoSuchFileException | FileNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
         }
-        FileSystemResource resource = new FileSystemResource(filePath.toFile());
+        ByteArrayResource resource = new ByteArrayResource(data);
         String contentType = StringUtils.hasText(meta.getContentType())
                 ? meta.getContentType()
                 : MediaType.APPLICATION_OCTET_STREAM_VALUE;

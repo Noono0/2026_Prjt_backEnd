@@ -44,6 +44,10 @@ dependencies {
     // ImageIO 기본 JDK는 WebP 디코드 미지원 — 클라이언트(canvas) WebP·webp 업로드 시 필요
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
 
+    // S3 호환 객체 스토리지 (AWS S3, Cloudflare R2, Lightsail Object Storage 등 — endpoint 로 전환)
+    implementation platform('software.amazon.awssdk:bom:2.29.51')
+    implementation 'software.amazon.awssdk:s3'
+
 }
 
 tasks.named('test') {
