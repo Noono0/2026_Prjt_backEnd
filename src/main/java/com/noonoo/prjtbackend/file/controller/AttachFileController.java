@@ -9,6 +9,7 @@ import com.noonoo.prjtbackend.file.service.AttachFileService;
 import com.noonoo.prjtbackend.file.storage.FileBinaryStorage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -30,6 +31,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
@@ -68,15 +70,41 @@ public class AttachFileController {
     private ResponseEntity<Resource> buildFileResponse(Long fileSeq, boolean attachment) {
         AttachFileDto meta = attachFileMapper.selectByFileSeq(fileSeq);
         if (meta == null) {
+            log.warn(
+                    "[attach-file] 조회 실패 | reason=attach_file_메타_없음_DB | fileSeq={} 힌트=fileSeq_오타_또는_DB_롤백 ",
+                    fileSeq
+            );
             return ResponseEntity.notFound().build();
         }
         final byte[] data;
         try {
             data = fileBinaryStorage.load(meta.getStoredPath());
         } catch (NoSuchFileException | FileNotFoundException e) {
+            log.warn(
+                    "[attach-file] 조회 실패 | reason=저장소_객체_없음_경로불일치_또는_S3키누락 | fileSeq={} storedPath={} err={} 힌트=로컬이면_upload-dir_운영이면_S3_버킷키_prefix ",
+                    fileSeq,
+                    meta.getStoredPath(),
+                    e.getMessage()
+            );
             return ResponseEntity.notFound().build();
         } catch (IOException e) {
+            log.warn(
+                    "[attach-file] 조회 실패 | reason=저장소_읽기_IO | fileSeq={} storedPath={} err={} ",
+                    fileSeq,
+                    meta.getStoredPath(),
+                    e.getMessage(),
+                    e
+            );
             return ResponseEntity.internalServerError().build();
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "[attach-file] 조회 성공 | fileSeq={} storedPath={} bytes={} attachment={} ",
+                    fileSeq,
+                    meta.getStoredPath(),
+                    data.length,
+                    attachment
+            );
         }
         ByteArrayResource resource = new ByteArrayResource(data);
         String contentType = StringUtils.hasText(meta.getContentType())

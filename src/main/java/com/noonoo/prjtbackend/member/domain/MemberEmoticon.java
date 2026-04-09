@@ -28,6 +28,10 @@ public class MemberEmoticon {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
 
+    /** 사용 여부(소프트 삭제: N이면 목록·조인에서 제외) */
+    @Column(name = "use_yn", length = 1, nullable = false)
+    private String useYn;
+
     @Column(name = "create_dt")
     private LocalDateTime createDt;
 }

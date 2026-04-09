@@ -11,6 +11,7 @@ import com.noonoo.prjtbackend.file.service.AttachFileService;
 import com.noonoo.prjtbackend.file.service.ImageProcessingService;
 import com.noonoo.prjtbackend.file.storage.FileBinaryStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AttachFileServiceImpl implements AttachFileService {
@@ -106,6 +108,14 @@ public class AttachFileServiceImpl implements AttachFileService {
         try {
             fileBinaryStorage.save(relativePath, storedBytes);
         } catch (IOException e) {
+            log.error(
+                    "[attach-file] 저장소_쓰기_실패 | relativePath={} bytes={} storage={} err={} 힌트=디스크용량_S3 creds_put_권한 ",
+                    relativePath,
+                    storedSize,
+                    fileBinaryStorage.getClass().getSimpleName(),
+                    e.getMessage(),
+                    e
+            );
             throw new IllegalStateException("파일 저장에 실패했습니다.", e);
         }
 
@@ -133,6 +143,17 @@ public class AttachFileServiceImpl implements AttachFileService {
         String baseUrl = publicBaseUrl.endsWith("/") ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1) : publicBaseUrl;
         String fileUrl = baseUrl + "/api/files/view/" + fileSeq;
         String downloadUrl = baseUrl + "/api/files/download/" + fileSeq;
+
+        log.info(
+                "[attach-file] 업로드_완료 | fileSeq={} storedPath={} size={} memberSeq={} purpose={} publicBaseUrl={} fileUrl={} 힌트=X박스면_fileUrl_호스트가_브라우저주소와_다르면_APP_FILE_PUBLIC_BASE_URL_설정 ",
+                fileSeq,
+                relativePath,
+                storedSize,
+                memberSeq,
+                purpose,
+                publicBaseUrl,
+                fileUrl
+        );
 
         return FileUploadResponse.builder()
                 .fileSeq(fileSeq)
