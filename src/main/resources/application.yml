@@ -38,12 +38,17 @@ server:
     session:
       timeout: 24h
 
-# OpenAPI UI — 로컬/개발용. 운영(prod)에서는 springdoc 비활성.
+# OpenAPI — Swagger UI: /swagger-ui.html , Scalar: /scalar/index.html (정적)
+# 운영(prod)에서는 springdoc 비활성(application-prod.yml).
 springdoc:
   api-docs:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+    display-request-duration: true
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
 
 management:
   endpoints:

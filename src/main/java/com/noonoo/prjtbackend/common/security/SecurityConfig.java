@@ -78,8 +78,14 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers(HttpMethod.HEAD, "/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/error").permitAll()
-                    // 로컬·스테이징: 프론트 openapi-typescript 용 (/v3/api-docs). 운영 prod 프로필에서는 springdoc 비활성.
-                    .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    // 로컬·스테이징: OpenAPI JSON·Swagger UI·Scalar(/scalar/**). 운영 prod에서는 springdoc 비활성.
+                    .requestMatchers(
+                            "/v3/api-docs",
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/scalar/**"
+                    ).permitAll()
                     .anyRequest().authenticated()
             );
         }

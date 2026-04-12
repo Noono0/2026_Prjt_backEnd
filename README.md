@@ -1,6 +1,55 @@
-# 2026_Prjt_Backend 리팩터링 샘플
+# prjt-backend-operational
 
-이 파일은 공개 리포지토리의 현재 보이는 구조를 기준으로 재정리한 **서비스별 디렉토리 구조 샘플 프로젝트**입니다.
+Spring Boot 기반 운영 API 서버입니다. MyBatis·JPA 혼용, Spring Security(세션 + DB 역할·메뉴), springdoc으로 OpenAPI를 노출합니다.
+
+## 기술 스택
+
+| 구분 | 내용 |
+|------|------|
+| 언어·런타임 | Java 17 (Gradle toolchain) |
+| 프레임워크 | Spring Boot 3.3.x (Web, Security, Validation, Data JPA, Mail, Actuator) |
+| 데이터 | MySQL, MyBatis 3.x, Hibernate(JPA) |
+| API 문서 | [springdoc-openapi](https://springdoc.org/) (OpenAPI 3) — Swagger UI + 정적 Scalar 페이지 |
+| 기타 | p6spy(개발 SQL 로그), Bucket4j·Caffeine(레이트 리밋), AWS SDK v2(S3 호환 스토리지) 등 |
+
+## 로컬 실행
+
+```bash
+# Windows
+.\gradlew.bat bootRun
+
+# macOS / Linux
+./gradlew bootRun
+```
+
+- 기본 포트: **8080** (`server.port`)
+- 기본 프로필: **local** (`spring.profiles.default`)
+- 다른 프로필: `SPRING_PROFILES_ACTIVE=dev` 등
+
+### 디버그 포트(선택)
+
+Windows PowerShell 예시 — 포트는 5005 대신 5006 등으로 바꿔도 됩니다.
+
+```powershell
+$env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+.\gradlew.bat bootRun
+```
+
+### API 문서 (springdoc이 켜진 환경)
+
+| 구분 | 경로 |
+|------|------|
+| OpenAPI JSON | `GET /v3/api-docs` |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| Scalar | `http://localhost:8080/scalar/index.html` |
+
+`application-prod.yml` 등에서 `springdoc.api-docs.enabled` / `swagger-ui.enabled` 가 `false` 이면 스펙·Swagger UI는 비활성화됩니다. Scalar 정적 HTML은 남아 있어도 스펙 URL을 불러오지 못할 수 있습니다.
+
+---
+
+## (참고) 리팩터링 샘플 메모
+
+아래는 공개 리포지토리 구조를 기준으로 재정리한 **서비스별 디렉토리 구조 샘플** 설명입니다.
 
 ## 분석 요약
 원본 리포지토리에서는 다음 구조가 확인됐습니다.
@@ -88,16 +137,7 @@
 - `false` 일 때: 미인증 → JSON 401, 권한 부족 → JSON 403 (`JsonAuthenticationEntryPoint`, `JsonAccessDeniedHandler`).
 - 로그인은 `AuthenticationManager` 로 `SecurityContext` 를 세팅합니다. 프론트는 `credentials: 'include'` 로 JSESSIONID 를 보내도록 `defaultApiRequestInit` 을 사용합니다.
 
-## 실행
-spring boot 로 하거나
-# port 만 5005 에서 5006이나 바꿔줘도됨
-$env:JAVA_TOOL_OPTIONS='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'; 
-# 일반실행
-.\gradlew.bat bootRun
-
-
-
-배포방법
+## 배포방법
 
 ### GitHub Actions → Lightsail (자동)
 - 워크플로: `.github/workflows/deploy-lightsail.yml` — `main` 에 push 시 Gradle `test` 후 SSH 로 서버에서 `git pull` + `docker compose up -d --build`.
