@@ -9,8 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * 기존 DB에 calendar_schedule 확장 컬럼이 없을 수 있음(data.sql은 CREATE IF NOT EXISTS만 수행).
- * 부팅 시 누락 컬럼을 ALTER 로 추가한다.
+ * 기존 DB에 calendar_schedule 확장 컬럼이 없을 수 있음(data.sql은 CREATE IF NOT EXISTS만 수행). 부팅 시 누락 컬럼을 ALTER 로
+ * 추가한다.
  */
 @Slf4j
 @Component
@@ -61,15 +61,16 @@ public class CalendarScheduleCategoryColumnMigration implements ApplicationRunne
     }
 
     private boolean columnExists(String columnName) {
-        Integer count = jdbcTemplate.queryForObject(
-                """
+        Integer count =
+                jdbcTemplate.queryForObject(
+                        """
                         SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
                         WHERE TABLE_SCHEMA = DATABASE()
                           AND TABLE_NAME = 'calendar_schedule'
                           AND COLUMN_NAME = ?
                         """,
-                Integer.class,
-                columnName);
+                        Integer.class,
+                        columnName);
         return count != null && count > 0;
     }
 }

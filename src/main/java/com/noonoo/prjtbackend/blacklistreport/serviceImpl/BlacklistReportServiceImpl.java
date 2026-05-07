@@ -18,15 +18,14 @@ import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.member.MemberDisplayNames;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -50,21 +49,23 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
     }
 
     /**
-     * 요청 categoryCode가 목록 조회 그룹(A0006) 내 A00052/A00053 행의 code_value 또는 code_name과 같으면
-     * 카테고리 필터 대신 attr1 추천 수 이상만 조회한다.
+     * 요청 categoryCode가 목록 조회 그룹(A0006) 내 A00052/A00053 행의 code_value 또는 code_name과 같으면 카테고리 필터 대신
+     * attr1 추천 수 이상만 조회한다.
      */
     private void applyPopularCategoryAsMinLikes(BlacklistReportSearchCondition c) {
         if (c == null || !StringUtils.hasText(c.getCategoryCode())) {
             return;
         }
-        List<BlacklistPopularLikeRuleRow> rows = blacklistReportMapper.findBlacklistPopularLikeRules();
+        List<BlacklistPopularLikeRuleRow> rows =
+                blacklistReportMapper.findBlacklistPopularLikeRules();
         if (rows == null || rows.isEmpty()) {
             return;
         }
         String req = c.getCategoryCode().trim();
         for (BlacklistPopularLikeRuleRow row : rows) {
             boolean matchValue =
-                    StringUtils.hasText(row.getCodeValue()) && req.equals(row.getCodeValue().trim());
+                    StringUtils.hasText(row.getCodeValue())
+                            && req.equals(row.getCodeValue().trim());
             boolean matchName =
                     StringUtils.hasText(row.getCodeName()) && req.equals(row.getCodeName().trim());
             if (matchValue || matchName) {
@@ -107,7 +108,8 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
     }
 
     @Override
-    public PageResponse<BlacklistReportDto> findBlacklistReports(BlacklistReportSearchCondition condition) {
+    public PageResponse<BlacklistReportDto> findBlacklistReports(
+            BlacklistReportSearchCondition condition) {
         boardBlindSupport.applyBlacklistReportBlindParams(condition);
         applyPopularCategoryAsMinLikes(condition);
         long total = blacklistReportMapper.findBlacklistReportsCnt(condition);
@@ -130,7 +132,8 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
     @Override
     @Transactional
     public int create(BlacklistReportSaveRequest req) {
-        if (!StringUtils.hasText(req.getBlacklistTargetId()) || !StringUtils.hasText(req.getTitle())) {
+        if (!StringUtils.hasText(req.getBlacklistTargetId())
+                || !StringUtils.hasText(req.getTitle())) {
             throw new IllegalArgumentException("블랙리스트 아이디와 제목은 필수입니다.");
         }
         String clientIp = RequestContext.getClientIp();
@@ -203,7 +206,8 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
             return 0;
         }
         long me = auth.get().memberSeq();
-        if (existing.getWriterMemberSeq() == null || !Objects.equals(existing.getWriterMemberSeq(), me)) {
+        if (existing.getWriterMemberSeq() == null
+                || !Objects.equals(existing.getWriterMemberSeq(), me)) {
             throw new IllegalArgumentException("본인이 작성한 글만 수정할 수 있습니다.");
         }
         String clientIp = RequestContext.getClientIp();
@@ -263,8 +267,12 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
         if (b == null || boardBlindSupport.isBlacklistReportBlind(b)) {
             return 0;
         }
-        return increaseWithActionLog("BLACKLIST_REPORT", "POST", blacklistReportSeq, "LIKE", () ->
-                blacklistReportMapper.increaseBlacklistReportLikeCount(blacklistReportSeq));
+        return increaseWithActionLog(
+                "BLACKLIST_REPORT",
+                "POST",
+                blacklistReportSeq,
+                "LIKE",
+                () -> blacklistReportMapper.increaseBlacklistReportLikeCount(blacklistReportSeq));
     }
 
     @Override
@@ -274,8 +282,14 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
         if (b == null || boardBlindSupport.isBlacklistReportBlind(b)) {
             return 0;
         }
-        return increaseWithActionLog("BLACKLIST_REPORT", "POST", blacklistReportSeq, "DISLIKE", () ->
-                blacklistReportMapper.increaseBlacklistReportDislikeCount(blacklistReportSeq));
+        return increaseWithActionLog(
+                "BLACKLIST_REPORT",
+                "POST",
+                blacklistReportSeq,
+                "DISLIKE",
+                () ->
+                        blacklistReportMapper.increaseBlacklistReportDislikeCount(
+                                blacklistReportSeq));
     }
 
     @Override
@@ -285,28 +299,33 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
         if (b == null || boardBlindSupport.isBlacklistReportBlind(b)) {
             return 0;
         }
-        return increaseWithActionLog("BLACKLIST_REPORT", "POST", blacklistReportSeq, "REPORT", () ->
-                blacklistReportMapper.increaseBlacklistReportReportCount(blacklistReportSeq));
+        return increaseWithActionLog(
+                "BLACKLIST_REPORT",
+                "POST",
+                blacklistReportSeq,
+                "REPORT",
+                () -> blacklistReportMapper.increaseBlacklistReportReportCount(blacklistReportSeq));
     }
 
-    private int increaseWithActionLog(String boardKind,
-                                      String targetKind,
-                                      Long targetSeq,
-                                      String actionType,
-                                      CounterUpdater counterUpdater) {
+    private int increaseWithActionLog(
+            String boardKind,
+            String targetKind,
+            Long targetSeq,
+            String actionType,
+            CounterUpdater counterUpdater) {
         Long memberSeq = RequestContext.getLoginMemberSeq();
         String memberId = RequestContext.getLoginMemberId();
         String clientIp = RequestContext.getClientIp();
 
-        int inserted = blacklistReportMapper.insertBlacklistReportActionLog(
-                boardKind,
-                targetKind,
-                targetSeq,
-                actionType,
-                memberSeq,
-                memberId,
-                clientIp
-        );
+        int inserted =
+                blacklistReportMapper.insertBlacklistReportActionLog(
+                        boardKind,
+                        targetKind,
+                        targetSeq,
+                        actionType,
+                        memberSeq,
+                        memberId,
+                        clientIp);
 
         if (inserted <= 0) {
             return 0;
@@ -326,8 +345,8 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
             String createDtFrom,
             String createDtTo,
             String categoryCode,
-            String columnsCsv
-    ) throws Exception {
+            String columnsCsv)
+            throws Exception {
         BlacklistReportSearchCondition c = new BlacklistReportSearchCondition();
         if (StringUtils.hasText(blacklistTargetId)) {
             c.setBlacklistTargetId(blacklistTargetId.trim());
@@ -345,6 +364,7 @@ public class BlacklistReportServiceImpl implements BlacklistReportService {
             c.setCategoryCode(categoryCode.trim());
         }
         List<BlacklistReportDto> rows = blacklistReportMapper.findBlacklistReportsForExport(c);
-        return BlacklistReportExcelExporter.toXlsx(rows, BlacklistReportExcelExporter.parseKeysQuery(columnsCsv));
+        return BlacklistReportExcelExporter.toXlsx(
+                rows, BlacklistReportExcelExporter.parseKeysQuery(columnsCsv));
     }
 }

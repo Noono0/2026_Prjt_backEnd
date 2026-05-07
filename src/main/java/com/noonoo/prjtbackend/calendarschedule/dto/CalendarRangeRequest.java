@@ -8,6 +8,7 @@ import lombok.Setter;
 public class CalendarRangeRequest {
     /** yyyy-MM-dd */
     private String from;
+
     /** yyyy-MM-dd */
     private String to;
 }

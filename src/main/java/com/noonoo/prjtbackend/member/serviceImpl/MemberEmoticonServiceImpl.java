@@ -7,12 +7,11 @@ import com.noonoo.prjtbackend.member.dto.MemberEmoticonSaveRequest;
 import com.noonoo.prjtbackend.member.mapper.MemberEmoticonMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.MemberEmoticonService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +37,8 @@ public class MemberEmoticonServiceImpl implements MemberEmoticonService {
         }
         int cnt = memberEmoticonMapper.countByMemberSeq(memberSeq);
         if (cnt >= MAX_EMOTICONS_PER_MEMBER) {
-            throw new IllegalArgumentException("이모티콘은 최대 " + MAX_EMOTICONS_PER_MEMBER + "개까지 등록할 수 있습니다.");
+            throw new IllegalArgumentException(
+                    "이모티콘은 최대 " + MAX_EMOTICONS_PER_MEMBER + "개까지 등록할 수 있습니다.");
         }
         return memberEmoticonMapper.insert(memberSeq, request.getImageUrl().trim(), cnt);
     }

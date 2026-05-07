@@ -146,7 +146,8 @@
             parameterType="com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest">
         UPDATE code_group
         SET
-            code_group_name = #{codeGroupName}
+            code_group_id   = #{codeGroupId}
+          , code_group_name = #{codeGroupName}
           , description     = #{description}
           , sort_order      = #{sortOrder}
           , use_yn          = #{useYn}

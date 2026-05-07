@@ -29,8 +29,7 @@ public class PointPolicyTableMigration implements ApplicationRunner {
                                 cap_int INT NULL COMMENT '댓글 추가적립 게시글당 합산 상한 등',
                                 modify_dt DATETIME NULL
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                            """
-            );
+                            """);
             jdbcTemplate.execute(
                     """
                             CREATE TABLE IF NOT EXISTS board_like_milestone_granted (
@@ -40,14 +39,12 @@ public class PointPolicyTableMigration implements ApplicationRunner {
                                 granted_dt DATETIME NOT NULL,
                                 KEY idx_blmg_writer (writer_member_seq)
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                            """
-            );
+                            """);
             jdbcTemplate.update(
                     """
                             INSERT IGNORE INTO point_policy_setting (policy_key, use_yn, threshold_int, reward_points, cap_int, modify_dt)
                             VALUES ('FREE_BOARD_LIKE', 'Y', 50, 100, NULL, NOW())
-                            """
-            );
+                            """);
             log.info("DB: point_policy_setting / board_like_milestone_granted 확인·시드");
         } catch (Exception e) {
             log.warn("포인트 정책 테이블 자동 생성 실패: {}", e.toString());

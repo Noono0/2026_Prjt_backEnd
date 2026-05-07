@@ -1,14 +1,11 @@
 package com.noonoo.prjtbackend.blacklistreport.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-/**
- * 블랙리스트 제보 게시판 (DDL용 엔티티, 조회는 MyBatis)
- */
+/** 블랙리스트 제보 게시판 (DDL용 엔티티, 조회는 MyBatis) */
 @Getter
 @Setter
 @Entity

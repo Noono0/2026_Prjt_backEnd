@@ -27,8 +27,10 @@ public class NoticeBoardDto {
     private String highlightYn;
     private String commentAllowedYn;
     private String replyAllowedYn;
+
     /** Y면 자유게시판 목록 상단에 고정 노출 */
     private String pinOnFreeBoardYn;
+
     private String createDt;
     private String modifyDt;
 }

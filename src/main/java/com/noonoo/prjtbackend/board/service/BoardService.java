@@ -6,7 +6,6 @@ import com.noonoo.prjtbackend.board.dto.BoardSaveRequest;
 import com.noonoo.prjtbackend.board.dto.BoardSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
-
 import java.util.List;
 
 public interface BoardService {

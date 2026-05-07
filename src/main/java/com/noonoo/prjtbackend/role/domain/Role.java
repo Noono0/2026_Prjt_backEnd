@@ -1,14 +1,11 @@
 package com.noonoo.prjtbackend.role.domain;
+
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-/**
- * 권한 그룹 테이블
- * 예: ADMIN, CS, MD
- */
+/** 권한 그룹 테이블 예: ADMIN, CS, MD */
 @Entity
 @Table(name = "role")
 @Getter
@@ -20,24 +17,15 @@ public class Role {
     @Column(name = "ROLE_ID")
     private Long roleId;
 
-    /**
-     * 권한 코드
-     * 예: ADMIN, CS
-     */
+    /** 권한 코드 예: ADMIN, CS */
     @Column(name = "ROLE_CODE", nullable = false, unique = true, length = 50)
     private String roleCode;
 
-    /**
-     * 권한명
-     * 예: 관리자, 고객센터
-     */
+    /** 권한명 예: 관리자, 고객센터 */
     @Column(name = "ROLE_NAME", nullable = false, length = 100)
     private String roleName;
 
-    /**
-     * 사용 여부
-     * Y / N
-     */
+    /** 사용 여부 Y / N */
     @Column(name = "USE_YN", nullable = false, length = 1)
     private String useYn = "Y";
 

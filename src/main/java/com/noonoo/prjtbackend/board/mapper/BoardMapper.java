@@ -5,30 +5,33 @@ import com.noonoo.prjtbackend.board.dto.BoardPopularCodeRawDto;
 import com.noonoo.prjtbackend.board.dto.BoardSaveRequest;
 import com.noonoo.prjtbackend.board.dto.BoardSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import java.util.List;
-
 @Mapper
 public interface BoardMapper {
     List<OptionDto> findBoardCategoryOptions();
+
     List<OptionDto> findCategoryOptionsByGroupId(@Param("groupId") String groupId);
 
     /**
-     * 대분류 그룹 ID A0001(code_group) + 중분류 코드 ID A00017(code_detail).
-     * 임계값은 ATTR1(우선), 없으면 CODE_VALUE / DESCRIPTION 중 숫자.
+     * 대분류 그룹 ID A0001(code_group) + 중분류 코드 ID A00017(code_detail). 임계값은 ATTR1(우선), 없으면 CODE_VALUE /
+     * DESCRIPTION 중 숫자.
      */
     BoardPopularCodeRawDto findBoardPopularCodeDetail();
 
     List<BoardDto> findBoards(BoardSearchCondition condition);
+
     List<BoardDto> findInquiryBoards(BoardSearchCondition condition);
 
     long findBoardsCnt(BoardSearchCondition condition);
+
     long findInquiryBoardsCnt(BoardSearchCondition condition);
 
     BoardDto findBoardById(Long boardSeq);
+
     BoardDto findInquiryBoardById(Long boardSeq);
 
     int insertBoard(BoardSaveRequest condition);
@@ -53,11 +56,12 @@ public interface BoardMapper {
 
     int adjustBoardCommentCount(@Param("boardSeq") Long boardSeq, @Param("delta") long delta);
 
-    int insertBoardActionLog(@Param("boardKind") String boardKind,
-                             @Param("targetKind") String targetKind,
-                             @Param("targetSeq") Long targetSeq,
-                             @Param("actionType") String actionType,
-                             @Param("memberSeq") Long memberSeq,
-                             @Param("memberId") String memberId,
-                             @Param("clientIp") String clientIp);
+    int insertBoardActionLog(
+            @Param("boardKind") String boardKind,
+            @Param("targetKind") String targetKind,
+            @Param("targetSeq") Long targetSeq,
+            @Param("actionType") String actionType,
+            @Param("memberSeq") Long memberSeq,
+            @Param("memberId") String memberId,
+            @Param("clientIp") String clientIp);
 }

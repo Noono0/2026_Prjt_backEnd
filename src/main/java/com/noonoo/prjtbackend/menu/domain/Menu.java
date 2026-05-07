@@ -1,15 +1,11 @@
 package com.noonoo.prjtbackend.menu.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-/**
- * 메뉴 테이블
- * 예: MEMBER, ORDER, PRODUCT
- */
+/** 메뉴 테이블 예: MEMBER, ORDER, PRODUCT */
 @Entity
 @Table(name = "menu")
 @Getter
@@ -21,43 +17,27 @@ public class Menu {
     @Column(name = "MENU_ID")
     private Long menuId;
 
-    /**
-     * 메뉴 코드
-     * 권한 문자열 생성 시 기준이 됨
-     * 예: MEMBER, ORDER
-     */
+    /** 메뉴 코드 권한 문자열 생성 시 기준이 됨 예: MEMBER, ORDER */
     @Column(name = "MENU_CODE", nullable = false, unique = true, length = 50)
     private String menuCode;
 
-    /**
-     * 메뉴명
-     */
+    /** 메뉴명 */
     @Column(name = "MENU_NAME", nullable = false, length = 100)
     private String menuName;
 
-    /**
-     * 프론트 경로
-     * 예: /members, /orders
-     */
+    /** 프론트 경로 예: /members, /orders */
     @Column(name = "MENU_PATH", length = 200)
     private String menuPath;
 
-    /**
-     * 상위 메뉴 ID
-     * 대메뉴/소메뉴 구조 필요 시 사용
-     */
+    /** 상위 메뉴 ID 대메뉴/소메뉴 구조 필요 시 사용 */
     @Column(name = "PARENT_MENU_ID")
     private Long parentMenuId;
 
-    /**
-     * 메뉴 정렬 순서
-     */
+    /** 메뉴 정렬 순서 */
     @Column(name = "SORT_ORDER")
     private Integer sortOrder = 0;
 
-    /**
-     * 사용 여부
-     */
+    /** 사용 여부 */
     @Column(name = "USE_YN", nullable = false, length = 1)
     private String useYn = "Y";
 

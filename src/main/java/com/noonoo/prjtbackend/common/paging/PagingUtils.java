@@ -4,10 +4,10 @@ import java.util.List;
 
 public final class PagingUtils {
 
-    private PagingUtils() {
-    }
+    private PagingUtils() {}
 
-    public static <T> PageResponse<T> toPageResponse(PageRequest request, long totalCount, List<T> items) {
+    public static <T> PageResponse<T> toPageResponse(
+            PageRequest request, long totalCount, List<T> items) {
         return PageResponse.<T>builder()
                 .items(items)
                 .page(request.getSafePage())

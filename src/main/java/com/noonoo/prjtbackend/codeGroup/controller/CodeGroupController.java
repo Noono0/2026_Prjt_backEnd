@@ -8,12 +8,11 @@ import com.noonoo.prjtbackend.codeGroup.service.CodeGroupService;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.security.MenuAuthorities;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -34,7 +33,8 @@ public class CodeGroupController {
 
     @PostMapping("/detail")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_GROUP + "')")
-    public ApiResponse<CodeGroupDto> findCodeGroupDetail(@RequestBody CodeGroupSearchCondition request) {
+    public ApiResponse<CodeGroupDto> findCodeGroupDetail(
+            @RequestBody CodeGroupSearchCondition request) {
         log.info("=======> /api/code-groups/detail param={}", request);
         CodeGroupDto detail = codeGroupService.selectDetail(request);
         return ApiResponse.ok("코드그룹 상세 조회 완료", detail);

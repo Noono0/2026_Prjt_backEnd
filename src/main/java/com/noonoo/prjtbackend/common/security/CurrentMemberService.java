@@ -15,8 +15,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
- * RequestContext(세션)와 SecurityContextHolder 를 합쳐 회원 seq/id 를 구합니다.
- * 인터셉터보다 먼저 실행되거나 RequestContext 가 비어 있어도 HttpSession 에서 직접 읽습니다.
+ * RequestContext(세션)와 SecurityContextHolder 를 합쳐 회원 seq/id 를 구합니다. 인터셉터보다 먼저 실행되거나 RequestContext 가
+ * 비어 있어도 HttpSession 에서 직접 읽습니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,7 +33,9 @@ public class CurrentMemberService {
         id = RequestContext.getLoginMemberId();
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails u) {
+        if (auth != null
+                && auth.isAuthenticated()
+                && auth.getPrincipal() instanceof CustomUserDetails u) {
             if (seq == null || seq <= 0) {
                 seq = u.getMemberSeq();
             }
@@ -62,7 +64,8 @@ public class CurrentMemberService {
         if (!needSeq && !needId) {
             return;
         }
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) {
             return;
         }

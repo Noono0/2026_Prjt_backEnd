@@ -1,10 +1,6 @@
 package com.noonoo.prjtbackend.blacklistreport.support;
 
 import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportDto;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,19 +10,22 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public final class BlacklistReportExcelExporter {
 
     /** 쿼리스트링 등: 쉼표로 구분된 camelCase 필드명. 비어 있으면 {@link #DEFAULT_COLUMN_KEYS} 사용 */
-    public static final List<String> DEFAULT_COLUMN_KEYS = List.of(
-            "blacklistReportSeq",
-            "blacklistTargetId",
-            "title",
-            "writerName",
-            "viewCount",
-            "createDt",
-            "content"
-    );
+    public static final List<String> DEFAULT_COLUMN_KEYS =
+            List.of(
+                    "blacklistReportSeq",
+                    "blacklistTargetId",
+                    "title",
+                    "writerName",
+                    "viewCount",
+                    "createDt",
+                    "content");
 
     private static final Map<String, String> HEADER_BY_KEY = new LinkedHashMap<>();
     private static final Set<String> ALLOWED_KEYS;
@@ -54,12 +53,13 @@ public final class BlacklistReportExcelExporter {
         ALLOWED_KEYS = Collections.unmodifiableSet(new LinkedHashSet<>(HEADER_BY_KEY.keySet()));
     }
 
-    private BlacklistReportExcelExporter() {
-    }
+    private BlacklistReportExcelExporter() {}
 
-    public static byte[] toXlsx(List<BlacklistReportDto> rows, List<String> requestedColumnKeys) throws IOException {
+    public static byte[] toXlsx(List<BlacklistReportDto> rows, List<String> requestedColumnKeys)
+            throws IOException {
         List<String> keys = normalizeColumnKeys(requestedColumnKeys);
-        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+        try (XSSFWorkbook wb = new XSSFWorkbook();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("블랙리스트 제보");
             Row head = sheet.createRow(0);
             for (int c = 0; c < keys.size(); c++) {
@@ -129,8 +129,13 @@ public final class BlacklistReportExcelExporter {
     private static void writeCell(Row row, int colIndex, String key, BlacklistReportDto d) {
         switch (key) {
             case "blacklistReportSeq" ->
-                    row.createCell(colIndex).setCellValue(d.getBlacklistReportSeq() != null ? d.getBlacklistReportSeq() : 0);
-            case "blacklistTargetId" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getBlacklistTargetId()));
+                    row.createCell(colIndex)
+                            .setCellValue(
+                                    d.getBlacklistReportSeq() != null
+                                            ? d.getBlacklistReportSeq()
+                                            : 0);
+            case "blacklistTargetId" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getBlacklistTargetId()));
             case "title" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getTitle()));
             case "content" -> {
                 String plain = stripHtml(d.getContent());
@@ -140,19 +145,39 @@ public final class BlacklistReportExcelExporter {
                 row.createCell(colIndex).setCellValue(plain);
             }
             case "writerMemberSeq" ->
-                    row.createCell(colIndex).setCellValue(d.getWriterMemberSeq() != null ? d.getWriterMemberSeq() : 0);
-            case "writerMemberId" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getWriterMemberId()));
-            case "writerName" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getWriterName()));
-            case "writerProfileImageUrl" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getWriterProfileImageUrl()));
-            case "categoryCode" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getCategoryCode()));
-            case "categoryName" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getCategoryName()));
-            case "viewCount" -> row.createCell(colIndex).setCellValue(d.getViewCount() != null ? d.getViewCount() : 0);
-            case "likeCount" -> row.createCell(colIndex).setCellValue(d.getLikeCount() != null ? d.getLikeCount() : 0);
-            case "dislikeCount" -> row.createCell(colIndex).setCellValue(d.getDislikeCount() != null ? d.getDislikeCount() : 0);
-            case "commentCount" -> row.createCell(colIndex).setCellValue(d.getCommentCount() != null ? d.getCommentCount() : 0);
-            case "reportCount" -> row.createCell(colIndex).setCellValue(d.getReportCount() != null ? d.getReportCount() : 0);
-            case "commentAllowedYn" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getCommentAllowedYn()));
-            case "replyAllowedYn" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getReplyAllowedYn()));
+                    row.createCell(colIndex)
+                            .setCellValue(
+                                    d.getWriterMemberSeq() != null ? d.getWriterMemberSeq() : 0);
+            case "writerMemberId" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getWriterMemberId()));
+            case "writerName" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getWriterName()));
+            case "writerProfileImageUrl" ->
+                    row.createCell(colIndex)
+                            .setCellValue(nullToEmpty(d.getWriterProfileImageUrl()));
+            case "categoryCode" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getCategoryCode()));
+            case "categoryName" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getCategoryName()));
+            case "viewCount" ->
+                    row.createCell(colIndex)
+                            .setCellValue(d.getViewCount() != null ? d.getViewCount() : 0);
+            case "likeCount" ->
+                    row.createCell(colIndex)
+                            .setCellValue(d.getLikeCount() != null ? d.getLikeCount() : 0);
+            case "dislikeCount" ->
+                    row.createCell(colIndex)
+                            .setCellValue(d.getDislikeCount() != null ? d.getDislikeCount() : 0);
+            case "commentCount" ->
+                    row.createCell(colIndex)
+                            .setCellValue(d.getCommentCount() != null ? d.getCommentCount() : 0);
+            case "reportCount" ->
+                    row.createCell(colIndex)
+                            .setCellValue(d.getReportCount() != null ? d.getReportCount() : 0);
+            case "commentAllowedYn" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getCommentAllowedYn()));
+            case "replyAllowedYn" ->
+                    row.createCell(colIndex).setCellValue(nullToEmpty(d.getReplyAllowedYn()));
             case "createDt" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getCreateDt()));
             case "modifyDt" -> row.createCell(colIndex).setCellValue(nullToEmpty(d.getModifyDt()));
             default -> row.createCell(colIndex).setCellValue("");
@@ -167,6 +192,9 @@ public final class BlacklistReportExcelExporter {
         if (html == null || html.isEmpty()) {
             return "";
         }
-        return html.replaceAll("<[^>]+>", " ").replaceAll("&nbsp;", " ").replaceAll("\\s+", " ").trim();
+        return html.replaceAll("<[^>]+>", " ")
+                .replaceAll("&nbsp;", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 }

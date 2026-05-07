@@ -35,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
                 "sample-refresh-token",
                 member.getProfileImageUrl(),
                 member.getNickname(),
-                member.getMemberName()
-        );
+                member.getMemberName());
     }
 }

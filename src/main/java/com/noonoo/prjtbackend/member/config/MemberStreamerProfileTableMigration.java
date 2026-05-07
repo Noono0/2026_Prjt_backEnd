@@ -8,9 +8,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * 기존 DB에 member_streamer_profile 이 없을 수 있음 — 부팅 시 CREATE IF NOT EXISTS.
- */
+/** 기존 DB에 member_streamer_profile 이 없을 수 있음 — 부팅 시 CREATE IF NOT EXISTS. */
 @Slf4j
 @Component
 @Order(2)

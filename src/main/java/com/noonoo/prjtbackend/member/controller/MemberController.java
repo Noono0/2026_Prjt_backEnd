@@ -2,15 +2,15 @@ package com.noonoo.prjtbackend.member.controller;
 
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
-import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
+import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
-import com.noonoo.prjtbackend.member.dto.PasswordChangeRequest;
 import com.noonoo.prjtbackend.member.dto.MemberEmoticonDto;
 import com.noonoo.prjtbackend.member.dto.MemberEmoticonSaveRequest;
 import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
+import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
+import com.noonoo.prjtbackend.member.dto.PasswordChangeRequest;
 import com.noonoo.prjtbackend.member.service.MemberEmoticonService;
 import com.noonoo.prjtbackend.member.service.MemberService;
-import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,20 +45,17 @@ public class MemberController {
         return ApiResponse.ok(n > 0 ? "삭제되었습니다." : "삭제할 항목이 없습니다.", n);
     }
 
-    /**
-     * 회원 목록 검색
-     */
+    /** 회원 목록 검색 */
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.MEMBER + "')")
-    public ApiResponse<PageResponse<MemberDto>> searchMembers(@RequestBody MemberSearchCondition request) {
+    public ApiResponse<PageResponse<MemberDto>> searchMembers(
+            @RequestBody MemberSearchCondition request) {
         log.info("=======> /api/members/search param={}", request);
         PageResponse<MemberDto> result = memberService.findMembers(request);
         return ApiResponse.ok("회원 목록 조회 완료", result);
     }
 
-    /**
-     * 회원 상세 조회
-     */
+    /** 회원 상세 조회 */
     @GetMapping("/detail/{memberSeq}")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<MemberDto> findMemberDetail(@PathVariable Long memberSeq) {
@@ -67,9 +64,7 @@ public class MemberController {
         return ApiResponse.ok("회원 상세 조회 완료", detail);
     }
 
-    /**
-     * 회원 등록
-     */
+    /** 회원 등록 */
     @PostMapping("/create")
     @PreAuthorize("@securityExpressions.canCreate('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> createMember(@RequestBody MemberSaveRequest request) {
@@ -78,9 +73,7 @@ public class MemberController {
         return ApiResponse.ok(result > 0 ? "회원 등록 완료" : "회원 등록 실패", result);
     }
 
-    /**
-     * 회원 수정
-     */
+    /** 회원 수정 */
     @PutMapping("/update")
     @PreAuthorize("@securityExpressions.canUpdate('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> updateMember(@RequestBody MemberSaveRequest request) {
@@ -96,9 +89,7 @@ public class MemberController {
         return ApiResponse.ok(result > 0 ? "비밀번호 변경 완료" : "비밀번호 변경 실패", result);
     }
 
-    /**
-     * 회원 삭제
-     */
+    /** 회원 삭제 */
     @DeleteMapping("/delete/{memberSeq}")
     @PreAuthorize("@securityExpressions.canDelete('" + MenuAuthorities.MEMBER + "')")
     public ApiResponse<Integer> deleteMember(@PathVariable Long memberSeq) {
@@ -107,5 +98,3 @@ public class MemberController {
         return ApiResponse.ok(result > 0 ? "회원 삭제 완료" : "회원 삭제 실패", result);
     }
 }
-
-

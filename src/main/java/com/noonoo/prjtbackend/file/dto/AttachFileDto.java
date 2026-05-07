@@ -17,8 +17,10 @@ public class AttachFileDto {
     private String storedPath;
     private String contentType;
     private Long fileSize;
+
     /** 업로드 시점 브라우저 경로(메뉴/화면 URL) */
     private String menuUrl;
+
     private Long memberSeq;
     private String createId;
     private String createIp;

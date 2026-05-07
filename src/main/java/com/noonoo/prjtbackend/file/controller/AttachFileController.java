@@ -8,6 +8,11 @@ import com.noonoo.prjtbackend.file.model.ImageUploadPurpose;
 import com.noonoo.prjtbackend.file.service.AttachFileService;
 import com.noonoo.prjtbackend.file.storage.FileBinaryStorage;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,12 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.NoSuchFileException;
 
 @Slf4j
 @RestController
@@ -48,9 +47,9 @@ public class AttachFileController {
     public ApiResponse<FileUploadResponse> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "menuUrl", required = false) String menuUrl,
-            @RequestParam(value = "uploadPurpose", required = false, defaultValue = "board") String uploadPurposeRaw,
-            HttpServletRequest request
-    ) {
+            @RequestParam(value = "uploadPurpose", required = false, defaultValue = "board")
+                    String uploadPurposeRaw,
+            HttpServletRequest request) {
         String base = resolvePublicBaseUrl(request);
         ImageUploadPurpose purpose = ImageUploadPurpose.fromParam(uploadPurposeRaw);
         FileUploadResponse data = attachFileService.store(file, menuUrl, base, purpose);
@@ -72,8 +71,7 @@ public class AttachFileController {
         if (meta == null) {
             log.warn(
                     "[attach-file] 조회 실패 | reason=attach_file_메타_없음_DB | fileSeq={} 힌트=fileSeq_오타_또는_DB_롤백 ",
-                    fileSeq
-            );
+                    fileSeq);
             return ResponseEntity.notFound().build();
         }
         final byte[] data;
@@ -84,8 +82,7 @@ public class AttachFileController {
                     "[attach-file] 조회 실패 | reason=저장소_객체_없음_경로불일치_또는_S3키누락 | fileSeq={} storedPath={} err={} 힌트=로컬이면_upload-dir_운영이면_S3_버킷키_prefix ",
                     fileSeq,
                     meta.getStoredPath(),
-                    e.getMessage()
-            );
+                    e.getMessage());
             return ResponseEntity.notFound().build();
         } catch (IOException e) {
             log.warn(
@@ -93,8 +90,7 @@ public class AttachFileController {
                     fileSeq,
                     meta.getStoredPath(),
                     e.getMessage(),
-                    e
-            );
+                    e);
             return ResponseEntity.internalServerError().build();
         }
         if (log.isDebugEnabled()) {
@@ -103,21 +99,22 @@ public class AttachFileController {
                     fileSeq,
                     meta.getStoredPath(),
                     data.length,
-                    attachment
-            );
+                    attachment);
         }
         ByteArrayResource resource = new ByteArrayResource(data);
-        String contentType = StringUtils.hasText(meta.getContentType())
-                ? meta.getContentType()
-                : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        String contentType =
+                StringUtils.hasText(meta.getContentType())
+                        ? meta.getContentType()
+                        : MediaType.APPLICATION_OCTET_STREAM_VALUE;
 
-        ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType));
+        ResponseEntity.BodyBuilder builder =
+                ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType));
 
         if (attachment) {
             String name = meta.getOriginalName() != null ? meta.getOriginalName() : "file";
             String encoded = URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20");
-            builder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encoded);
+            builder.header(
+                    HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encoded);
         } else {
             builder.header(HttpHeaders.CONTENT_DISPOSITION, "inline");
         }

@@ -5,8 +5,6 @@ import com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSaveRequest;
 import com.noonoo.prjtbackend.codeGroup.dto.CodeDetailSearchCondition;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 
-import java.util.Map;
-
 public interface CodeDetailService {
 
     PageResponse<CodeDetailDto> selectList(CodeDetailSearchCondition condition);

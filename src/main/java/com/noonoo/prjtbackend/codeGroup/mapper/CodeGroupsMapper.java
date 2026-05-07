@@ -4,9 +4,8 @@ import com.noonoo.prjtbackend.codeGroup.dto.CodeGroupDto;
 import com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest;
 import com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
-import org.apache.ibatis.annotations.Mapper;
-
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface CodeGroupsMapper {

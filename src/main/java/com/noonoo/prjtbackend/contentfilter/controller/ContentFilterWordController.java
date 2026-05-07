@@ -20,7 +20,8 @@ public class ContentFilterWordController {
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CONTENT_FILTER + "')")
-    public ApiResponse<PageResponse<ContentFilterWordDto>> search(@RequestBody ContentFilterWordSearchCondition request) {
+    public ApiResponse<PageResponse<ContentFilterWordDto>> search(
+            @RequestBody ContentFilterWordSearchCondition request) {
         return ApiResponse.ok("목록 조회 완료", contentFilterWordService.search(request));
     }
 

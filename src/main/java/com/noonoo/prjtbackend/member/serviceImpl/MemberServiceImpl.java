@@ -4,18 +4,22 @@ import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
 import com.noonoo.prjtbackend.common.security.CustomUserDetails;
+import com.noonoo.prjtbackend.file.mapper.AttachFileMapper;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
+import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
+import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
 import com.noonoo.prjtbackend.member.dto.MemberStreamerProfileDto;
 import com.noonoo.prjtbackend.member.dto.MemberStreamerProfileSaveRequest;
 import com.noonoo.prjtbackend.member.dto.PasswordChangeRequest;
-import com.noonoo.prjtbackend.member.dto.MemberSaveRequest;
-import com.noonoo.prjtbackend.member.dto.MemberSearchCondition;
-import com.noonoo.prjtbackend.file.mapper.AttachFileMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberRoleMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberStreamerProfileMapper;
 import com.noonoo.prjtbackend.member.service.MemberService;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -24,11 +28,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -57,7 +56,8 @@ public class MemberServiceImpl implements MemberService {
         if (m != null) {
             List<String> codes = memberRoleMapper.findRoleCodesByMemberSeq(memberSeq);
             m.setRoleCodes(codes != null ? codes : List.of());
-            MemberStreamerProfileDto profile = memberStreamerProfileMapper.selectByMemberSeq(memberSeq);
+            MemberStreamerProfileDto profile =
+                    memberStreamerProfileMapper.selectByMemberSeq(memberSeq);
             m.setStreamerProfile(profile);
         }
         return m;
@@ -136,10 +136,15 @@ public class MemberServiceImpl implements MemberService {
 
         if (condition.getRoleCodes() != null && condition.getMemberSeq() != null) {
             List<String> roles = normalizeRoleCodes(condition.getRoleCodes());
-            replaceMemberRoles(condition.getMemberSeq(), roles, condition.getModifyId(), condition.getModifyIp());
+            replaceMemberRoles(
+                    condition.getMemberSeq(),
+                    roles,
+                    condition.getModifyId(),
+                    condition.getModifyIp());
         }
 
-        upsertStreamerProfileAfterMemberSave(condition.getMemberSeq(), condition.getStreamerProfile(), false);
+        upsertStreamerProfileAfterMemberSave(
+                condition.getMemberSeq(), condition.getStreamerProfile(), false);
         return n;
     }
 
@@ -150,7 +155,8 @@ public class MemberServiceImpl implements MemberService {
         if (loginMemberSeq == null) {
             throw new RuntimeException("로그인이 필요합니다.");
         }
-        if (!StringUtils.hasText(request.getCurrentPassword()) || !StringUtils.hasText(request.getNewPassword())) {
+        if (!StringUtils.hasText(request.getCurrentPassword())
+                || !StringUtils.hasText(request.getNewPassword())) {
             throw new RuntimeException("현재 비밀번호와 새 비밀번호를 입력해주세요.");
         }
 
@@ -168,8 +174,7 @@ public class MemberServiceImpl implements MemberService {
                 loginMemberSeq,
                 passwordEncoder.encode(request.getNewPassword()),
                 StringUtils.hasText(loginMemberId) ? loginMemberId : "SYSTEM",
-                clientIp
-        );
+                clientIp);
     }
 
     @Override
@@ -180,8 +185,8 @@ public class MemberServiceImpl implements MemberService {
     }
 
     /**
-     * 프로필 이미지는 attach_file 에만 저장(file_seq). base64(data:) 저장은 거부.
-     * file_seq 가 있으면 PROFILE_IMAGE_URL 은 비움(레거시 혼입 방지).
+     * 프로필 이미지는 attach_file 에만 저장(file_seq). base64(data:) 저장은 거부. file_seq 가 있으면 PROFILE_IMAGE_URL
+     * 은 비움(레거시 혼입 방지).
      */
     private void prepareProfileImage(MemberSaveRequest req) {
         Long fileSeq = req.getProfileImageFileSeq();
@@ -213,17 +218,17 @@ public class MemberServiceImpl implements MemberService {
         return new ArrayList<>(set);
     }
 
-    private void replaceMemberRoles(Long memberSeq, List<String> roleCodes, String crtId, String crtIp) {
+    private void replaceMemberRoles(
+            Long memberSeq, List<String> roleCodes, String crtId, String crtIp) {
         memberRoleMapper.deleteByMemberSeq(memberSeq);
         for (String code : roleCodes) {
             memberRoleMapper.insertMemberRole(memberSeq, code, crtId, crtIp);
         }
     }
 
-    /**
-     * 신규: 프로필 있으면 저장. 수정: 요청에 streamerProfile 키가 없으면(null) 기존 유지, 있으면 내용 반영(전부 비우면 행 삭제).
-     */
-    private void upsertStreamerProfileAfterMemberSave(Long memberSeq, MemberStreamerProfileSaveRequest raw, boolean isCreate) {
+    /** 신규: 프로필 있으면 저장. 수정: 요청에 streamerProfile 키가 없으면(null) 기존 유지, 있으면 내용 반영(전부 비우면 행 삭제). */
+    private void upsertStreamerProfileAfterMemberSave(
+            Long memberSeq, MemberStreamerProfileSaveRequest raw, boolean isCreate) {
         if (memberSeq == null) {
             return;
         }
@@ -252,7 +257,8 @@ public class MemberServiceImpl implements MemberService {
         }
     }
 
-    private static MemberStreamerProfileSaveRequest normalizeStreamerProfile(MemberStreamerProfileSaveRequest in) {
+    private static MemberStreamerProfileSaveRequest normalizeStreamerProfile(
+            MemberStreamerProfileSaveRequest in) {
         if (in == null) {
             return null;
         }

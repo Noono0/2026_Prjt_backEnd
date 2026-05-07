@@ -12,11 +12,13 @@ public class BlacklistReportSearchCondition extends PageRequest {
 
     /** 제목·내용 검색 */
     private String keyword;
+
     /** 블랙리스트 아이디 부분 일치 */
     private String blacklistTargetId;
 
     /** 작성일 기간 (포함), 형식 yyyy-MM-dd */
     private String createDtFrom;
+
     /** 작성일 기간 (포함), 형식 yyyy-MM-dd */
     private String createDtTo;
 
@@ -28,6 +30,7 @@ public class BlacklistReportSearchCondition extends PageRequest {
 
     /** MyBatis 목록 블라인드 처리용 */
     private Integer blindReportThreshold;
+
     private String blindListTitle;
 
     public BlacklistReportSearchCondition() {

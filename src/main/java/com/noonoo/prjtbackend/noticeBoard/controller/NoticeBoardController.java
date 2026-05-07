@@ -8,12 +8,11 @@ import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardDto;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSaveRequest;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSearchCondition;
 import com.noonoo.prjtbackend.noticeBoard.service.NoticeBoardService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -30,10 +29,7 @@ public class NoticeBoardController {
         return ApiResponse.ok("공지사항 카테고리 조회 완료", result);
     }
 
-    /**
-     * 자유게시판 상단 고정 공지(공지사항 모듈에서 pin_on_free_board_yn=Y 인 글).
-     * 자유게시판 메뉴 조회 권한으로 호출합니다.
-     */
+    /** 자유게시판 상단 고정 공지(공지사항 모듈에서 pin_on_free_board_yn=Y 인 글). 자유게시판 메뉴 조회 권한으로 호출합니다. */
     @GetMapping("/pin-on-free-board")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BOARD + "')")
     public ApiResponse<List<NoticeBoardDto>> findNoticeBoardsPinnedOnFreeBoard() {
@@ -43,7 +39,8 @@ public class NoticeBoardController {
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.NOTICE_BOARD + "')")
-    public ApiResponse<PageResponse<NoticeBoardDto>> searchNoticeBoards(@RequestBody NoticeBoardSearchCondition request) {
+    public ApiResponse<PageResponse<NoticeBoardDto>> searchNoticeBoards(
+            @RequestBody NoticeBoardSearchCondition request) {
         log.info("=======> /api/notice-boards/search param={}", request);
         PageResponse<NoticeBoardDto> result = noticeBoardService.findNoticeBoards(request);
         return ApiResponse.ok("공지사항 목록 조회 완료", result);

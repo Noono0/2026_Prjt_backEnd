@@ -10,6 +10,5 @@ public interface AttachFileService {
             MultipartFile file,
             String menuUrl,
             String publicBaseUrl,
-            ImageUploadPurpose uploadPurpose
-    );
+            ImageUploadPurpose uploadPurpose);
 }

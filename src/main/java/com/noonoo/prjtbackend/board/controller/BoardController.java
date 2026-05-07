@@ -9,12 +9,11 @@ import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.security.MenuAuthorities;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -40,7 +39,8 @@ public class BoardController {
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BOARD + "')")
-    public ApiResponse<PageResponse<BoardDto>> searchBoards(@RequestBody BoardSearchCondition request) {
+    public ApiResponse<PageResponse<BoardDto>> searchBoards(
+            @RequestBody BoardSearchCondition request) {
         log.info("=======> /api/boards/search param={}", request);
         PageResponse<BoardDto> result = boardService.findBoards(request);
         return ApiResponse.ok("자유게시판 목록 조회 완료", result);
@@ -109,7 +109,10 @@ public class BoardController {
         return ApiResponse.ok(result > 0 ? "자유게시판 삭제 완료" : "자유게시판 삭제 실패", result);
     }
 
-    /** 작성자 본인 소프트 삭제(use_yn = N). Spring 세션 회원은 isAuthenticated()와 무관할 수 있어 상세·목록과 동일 권한 + 서비스에서 작성자 검증 */
+    /**
+     * 작성자 본인 소프트 삭제(use_yn = N). Spring 세션 회원은 isAuthenticated()와 무관할 수 있어 상세·목록과 동일 권한 + 서비스에서 작성자
+     * 검증
+     */
     @DeleteMapping("/mine/{boardSeq}")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BOARD + "')")
     public ApiResponse<Integer> deleteMyBoard(@PathVariable Long boardSeq) {

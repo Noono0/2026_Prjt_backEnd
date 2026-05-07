@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.gamniverseprofile.mapper.GamniverseProfileMapper">
+
+    <sql id="whereClause">
+        WHERE use_yn = 'Y'
+        <if test="profileName != null and profileName != ''">
+            AND profile_name LIKE CONCAT('%', #{profileName}, '%')
+        </if>
+        <if test="affiliationCode != null and affiliationCode != ''">
+            AND affiliation_code = #{affiliationCode}
+        </if>
+    </sql>
+
+    <select id="selectListCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM gamniverse_profile
+        <include refid="whereClause"/>
+    </select>
+
+    <select id="selectList" resultType="com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileDto">
+        SELECT gamniverse_profile_seq AS gamniverseProfileSeq,
+               profile_name AS profileName,
+               sort_order AS sortOrder,
+               rank_code AS rankCode,
+               affiliation_code AS affiliationCode,
+               broadcast_link AS broadcastLink,
+               soop_broadcast_link AS soopBroadcastLink,
+               instagram_url AS instagramUrl,
+               youtube_url AS youtubeUrl,
+               cafe_link AS cafeLink,
+               profile_image_file_seq AS profileImageFileSeq,
+               profile_rows_json AS profileRowsJson,
+               use_yn AS useYn,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM gamniverse_profile
+        <include refid="whereClause"/>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'profileName'">profile_name</when>
+            <when test="sortBy == 'sortOrder'">sort_order</when>
+            <when test="sortBy == 'modifyDt'">modify_dt</when>
+            <otherwise>sort_order</otherwise>
+        </choose>
+        <choose>
+            <when test="safeSortDir == 'desc'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>,
+        gamniverse_profile_seq ASC
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectById" resultType="com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileDto">
+        SELECT gamniverse_profile_seq AS gamniverseProfileSeq,
+               profile_name AS profileName,
+               sort_order AS sortOrder,
+               rank_code AS rankCode,
+               affiliation_code AS affiliationCode,
+               broadcast_link AS broadcastLink,
+               soop_broadcast_link AS soopBroadcastLink,
+               instagram_url AS instagramUrl,
+               youtube_url AS youtubeUrl,
+               cafe_link AS cafeLink,
+               profile_image_file_seq AS profileImageFileSeq,
+               profile_rows_json AS profileRowsJson,
+               use_yn AS useYn,
+               DATE_FORMAT(create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+               DATE_FORMAT(modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt
+        FROM gamniverse_profile
+        WHERE gamniverse_profile_seq = #{gamniverseProfileSeq}
+    </select>
+
+    <insert id="insertProfile" useGeneratedKeys="true" keyProperty="gamniverseProfileSeq" keyColumn="gamniverse_profile_seq">
+        INSERT INTO gamniverse_profile (
+            profile_name,
+            sort_order,
+            rank_code,
+            affiliation_code,
+            broadcast_link,
+            soop_broadcast_link,
+            instagram_url,
+            youtube_url,
+            cafe_link,
+            profile_image_file_seq,
+            profile_rows_json,
+            use_yn,
+            create_dt,
+            modify_dt
+        ) VALUES (
+            #{profileName},
+            #{sortOrder},
+            #{rankCode},
+            #{affiliationCode},
+            #{broadcastLink},
+            #{soopBroadcastLink},
+            #{instagramUrl},
+            #{youtubeUrl},
+            #{cafeLink},
+            #{profileImageFileSeq},
+            #{profileRowsJson},
+            #{useYn},
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <update id="updateProfile">
+        UPDATE gamniverse_profile
+        SET profile_name = #{profileName},
+            sort_order = #{sortOrder},
+            rank_code = #{rankCode},
+            affiliation_code = #{affiliationCode},
+            broadcast_link = #{broadcastLink},
+            soop_broadcast_link = #{soopBroadcastLink},
+            instagram_url = #{instagramUrl},
+            youtube_url = #{youtubeUrl},
+            cafe_link = #{cafeLink},
+            profile_image_file_seq = #{profileImageFileSeq},
+            profile_rows_json = #{profileRowsJson},
+            use_yn = #{useYn},
+            modify_dt = NOW()
+        WHERE gamniverse_profile_seq = #{gamniverseProfileSeq}
+          AND use_yn = 'Y'
+    </update>
+
+    <update id="softDelete">
+        UPDATE gamniverse_profile
+        SET use_yn = 'N',
+            modify_dt = NOW()
+        WHERE gamniverse_profile_seq = #{gamniverseProfileSeq}
+          AND use_yn = 'Y'
+    </update>
+</mapper>

@@ -10,9 +10,7 @@ import lombok.Setter;
 @Setter
 public class OauthEstablishSessionRequest {
 
-    @NotNull
-    private Long memberSeq;
+    @NotNull private Long memberSeq;
 
-    @NotBlank
-    private String memberId;
+    @NotBlank private String memberId;
 }

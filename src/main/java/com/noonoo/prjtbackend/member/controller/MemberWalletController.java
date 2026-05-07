@@ -27,7 +27,8 @@ public class MemberWalletController {
 
     @GetMapping("/ledger")
     @PreAuthorize("@securityExpressions.isAuthenticatedOrPermitAll()")
-    public ApiResponse<PageResponse<MemberWalletLedgerDto>> ledger(WalletLedgerSearchCondition condition) {
+    public ApiResponse<PageResponse<MemberWalletLedgerDto>> ledger(
+            WalletLedgerSearchCondition condition) {
         return ApiResponse.ok("조회 완료", memberWalletService.getMyLedger(condition));
     }
 

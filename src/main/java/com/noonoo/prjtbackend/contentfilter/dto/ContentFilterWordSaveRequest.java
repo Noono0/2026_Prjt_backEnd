@@ -7,8 +7,10 @@ import lombok.Setter;
 @Setter
 public class ContentFilterWordSaveRequest {
     private Long contentFilterWordSeq;
+
     /** PROFANITY | AD */
     private String category;
+
     private String keyword;
     private String useYn;
     private Integer sortOrder;

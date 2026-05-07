@@ -1,8 +1,6 @@
 package com.noonoo.prjtbackend.member.service;
 
-/**
- * 게시판·댓글·가입 등 활동 포인트 지급 (내부 서비스).
- */
+/** 게시판·댓글·가입 등 활동 포인트 지급 (내부 서비스). */
 public interface WalletPointGrantService {
 
     void grantSignup(long memberSeq);

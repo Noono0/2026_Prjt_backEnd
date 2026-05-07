@@ -3,17 +3,17 @@ package com.noonoo.prjtbackend.calendarschedule.mapper;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleDto;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleSaveRequest;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 @Mapper
 public interface CalendarScheduleMapper {
 
     List<OptionDto> findScheduleCategoryOptions();
 
-    List<CalendarScheduleDto> selectGeneralInRange(@Param("from") String from, @Param("to") String to);
+    List<CalendarScheduleDto> selectGeneralInRange(
+            @Param("from") String from, @Param("to") String to);
 
     List<CalendarScheduleDto> selectAllBirthdays();
 

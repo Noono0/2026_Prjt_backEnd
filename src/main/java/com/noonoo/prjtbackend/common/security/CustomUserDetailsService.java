@@ -5,6 +5,7 @@ import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberRoleMapper;
 import com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto;
 import com.noonoo.prjtbackend.role.mapper.RoleMenuMapper;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,8 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +58,6 @@ public class CustomUserDetailsService implements UserDetailsService {
                 member.getGradeCode(),
                 member.getStatusCode(),
                 roleCodes,
-                authorities
-        );
+                authorities);
     }
 }

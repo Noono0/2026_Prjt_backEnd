@@ -31,7 +31,8 @@ public class CodeDetailController {
 
     @PostMapping("/detail")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.CODE_DETAIL + "')")
-    public ApiResponse<CodeDetailDto> findCodeDetail(@RequestBody CodeDetailSearchCondition request) {
+    public ApiResponse<CodeDetailDto> findCodeDetail(
+            @RequestBody CodeDetailSearchCondition request) {
         log.info("=======> /api/code-details/detail param={}", request);
         CodeDetailDto detail = codeDetailService.selectDetail(request);
         return ApiResponse.ok("코드디테일 상세 조회 완료", detail);

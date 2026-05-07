@@ -17,12 +17,11 @@ import com.noonoo.prjtbackend.member.mapper.MemberWalletMapper;
 import com.noonoo.prjtbackend.member.service.MemberWalletService;
 import com.noonoo.prjtbackend.member.wallet.WalletConstants;
 import com.noonoo.prjtbackend.member.wallet.WalletPointRules;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -68,8 +67,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
             int ironDelta,
             int silverDelta,
             int goldDelta,
-            int diamondDelta
-    ) {
+            int diamondDelta) {
         MemberWalletLedgerDto row = new MemberWalletLedgerDto();
         row.setMemberSeq(memberSeq);
         row.setReasonCode(reasonCode);
@@ -136,8 +134,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 qty,
                 0,
                 0,
-                0
-        );
+                0);
     }
 
     @Override
@@ -154,7 +151,13 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         int ironQty = bal != null && bal.getIronQty() != null ? bal.getIronQty() : 0;
         if (ironQty < ironCost) {
             throw new IllegalArgumentException(
-                    "아이언 티켓이 부족합니다. (보유: " + ironQty + "장, 필요: " + ironCost + "장 → 실버 " + times + "장)");
+                    "아이언 티켓이 부족합니다. (보유: "
+                            + ironQty
+                            + "장, 필요: "
+                            + ironCost
+                            + "장 → 실버 "
+                            + times
+                            + "장)");
         }
         int n = memberWalletMapper.exchangeIronToSilver(memberSeq, ironCost, times);
         if (n == 0) {
@@ -169,8 +172,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 -ironCost,
                 times,
                 0,
-                0
-        );
+                0);
     }
 
     @Override
@@ -187,7 +189,13 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         int silverQty = bal != null && bal.getSilverQty() != null ? bal.getSilverQty() : 0;
         if (silverQty < silverCost) {
             throw new IllegalArgumentException(
-                    "실버 티켓이 부족합니다. (보유: " + silverQty + "장, 필요: " + silverCost + "장 → 골드 " + times + "장)");
+                    "실버 티켓이 부족합니다. (보유: "
+                            + silverQty
+                            + "장, 필요: "
+                            + silverCost
+                            + "장 → 골드 "
+                            + times
+                            + "장)");
         }
         int n = memberWalletMapper.exchangeSilverToGold(memberSeq, silverCost, times);
         if (n == 0) {
@@ -202,8 +210,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 0,
                 -silverCost,
                 times,
-                0
-        );
+                0);
     }
 
     @Override
@@ -220,7 +227,13 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         int goldQty = bal != null && bal.getGoldQty() != null ? bal.getGoldQty() : 0;
         if (goldQty < goldCost) {
             throw new IllegalArgumentException(
-                    "골드 티켓이 부족합니다. (보유: " + goldQty + "장, 필요: " + goldCost + "장 → 다이아 " + times + "장)");
+                    "골드 티켓이 부족합니다. (보유: "
+                            + goldQty
+                            + "장, 필요: "
+                            + goldCost
+                            + "장 → 다이아 "
+                            + times
+                            + "장)");
         }
         int n = memberWalletMapper.exchangeGoldToDiamond(memberSeq, goldCost, times);
         if (n == 0) {
@@ -235,8 +248,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 0,
                 0,
                 -goldCost,
-                times
-        );
+                times);
     }
 
     @Override
@@ -274,7 +286,9 @@ public class MemberWalletServiceImpl implements MemberWalletService {
         String toLabel =
                 StringUtils.hasText(toDisplay)
                         ? toDisplay
-                        : (StringUtils.hasText(toMember.getMemberId()) ? toMember.getMemberId() : ("회원" + toSeq));
+                        : (StringUtils.hasText(toMember.getMemberId())
+                                ? toMember.getMemberId()
+                                : ("회원" + toSeq));
         String fromLabel =
                 StringUtils.hasText(fromDisplay)
                         ? fromDisplay
@@ -289,8 +303,7 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 0,
                 0,
                 0,
-                0
-        );
+                0);
         insertLedger(
                 toSeq,
                 WalletPointRules.REASON_POINT_GIFT_RECEIVED,
@@ -299,7 +312,6 @@ public class MemberWalletServiceImpl implements MemberWalletService {
                 0,
                 0,
                 0,
-                0
-        );
+                0);
     }
 }

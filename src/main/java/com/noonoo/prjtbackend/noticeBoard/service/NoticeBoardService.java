@@ -5,7 +5,6 @@ import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardDto;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSaveRequest;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSearchCondition;
-
 import java.util.List;
 
 public interface NoticeBoardService {

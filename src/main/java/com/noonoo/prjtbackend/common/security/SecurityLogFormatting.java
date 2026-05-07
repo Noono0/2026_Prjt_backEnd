@@ -1,17 +1,13 @@
 package com.noonoo.prjtbackend.common.security;
 
+import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
-import java.util.List;
-
-/**
- * 권한 거부·인가 실패 로그를 사람이 읽기 쉽게 출력할 때 사용.
- */
+/** 권한 거부·인가 실패 로그를 사람이 읽기 쉽게 출력할 때 사용. */
 public final class SecurityLogFormatting {
 
-    private SecurityLogFormatting() {
-    }
+    private SecurityLogFormatting() {}
 
     /** principal이 {@link CustomUserDetails}일 때 회원 역할 코드 한 줄. */
     public static String roleCodesLineFromPrincipal(Object principal) {
@@ -32,17 +28,16 @@ public final class SecurityLogFormatting {
         return String.join(", ", codes);
     }
 
-    /**
-     * 현재 Authentication 의 권한을 정렬 후 줄바꿈(항목당 {@code perLine}개)으로 이어 붙인다.
-     */
+    /** 현재 Authentication 의 권한을 정렬 후 줄바꿈(항목당 {@code perLine}개)으로 이어 붙인다. */
     public static String sortedAuthoritiesMultiline(Authentication auth, int perLine) {
         if (auth == null) {
             return "(인증 정보 없음)";
         }
-        List<String> list = auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .sorted()
-                .toList();
+        List<String> list =
+                auth.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .sorted()
+                        .toList();
         return joinWrapping(list, perLine);
     }
 

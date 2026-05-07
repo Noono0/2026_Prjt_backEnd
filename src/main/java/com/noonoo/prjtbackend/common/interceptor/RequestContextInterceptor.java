@@ -19,7 +19,8 @@ public class RequestContextInterceptor implements HandlerInterceptor {
     public static final String LOGIN_MEMBER_ID = "LOGIN_MEMBER_ID";
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public boolean preHandle(
+            HttpServletRequest request, HttpServletResponse response, Object handler) {
         String clientIp = IpUtil.getClientIp(request);
         RequestContext.setClientIp(clientIp);
 
@@ -43,11 +44,12 @@ public class RequestContextInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 세션 속성(LOGIN_MEMBER_*)만으로는 비어 있는 경우가 있음(프록시·세션 복원 차이 등).
-     * Spring Security 가 이미 로그인 사용자를 알고 있으면 RequestContext 를 맞춘다.
+     * 세션 속성(LOGIN_MEMBER_*)만으로는 비어 있는 경우가 있음(프록시·세션 복원 차이 등). Spring Security 가 이미 로그인 사용자를 알고 있으면
+     * RequestContext 를 맞춘다.
      */
     private static void fillFromSecurityIfMissing() {
-        if (RequestContext.getLoginMemberSeq() != null && StringUtils.hasText(RequestContext.getLoginMemberId())) {
+        if (RequestContext.getLoginMemberSeq() != null
+                && StringUtils.hasText(RequestContext.getLoginMemberId())) {
             return;
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -67,7 +69,11 @@ public class RequestContextInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    public void afterCompletion(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler,
+            Exception ex) {
         RequestContext.clear();
     }
 }

@@ -24,14 +24,15 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class PointPolicyServiceImpl implements PointPolicyService {
 
-    private static final List<String> POLICY_ORDER = List.of(
-            PointPolicyKeys.SIGNUP,
-            PointPolicyKeys.FREE_BOARD_POST,
-            PointPolicyKeys.BOARD_COMMENT_FIRST,
-            PointPolicyKeys.BOARD_COMMENT_EXTRA,
-            PointPolicyKeys.NOTICE_COMMENT_FIRST,
-            PointPolicyKeys.NOTICE_COMMENT_EXTRA,
-            PointPolicyKeys.FREE_BOARD_LIKE);
+    private static final List<String> POLICY_ORDER =
+            List.of(
+                    PointPolicyKeys.SIGNUP,
+                    PointPolicyKeys.FREE_BOARD_POST,
+                    PointPolicyKeys.BOARD_COMMENT_FIRST,
+                    PointPolicyKeys.BOARD_COMMENT_EXTRA,
+                    PointPolicyKeys.NOTICE_COMMENT_FIRST,
+                    PointPolicyKeys.NOTICE_COMMENT_EXTRA,
+                    PointPolicyKeys.FREE_BOARD_LIKE);
 
     private final PointPolicyMapper pointPolicyMapper;
     private final PointPolicyResolver pointPolicyResolver;
@@ -41,7 +42,13 @@ public class PointPolicyServiceImpl implements PointPolicyService {
     public List<PointPolicyRowDto> listAllPolicies() {
         List<PointPolicyRowDto> db = pointPolicyMapper.selectAllPolicies();
         Map<String, PointPolicyRowDto> map =
-                db.stream().collect(Collectors.toMap(PointPolicyRowDto::getPolicyKey, r -> r, (a, b) -> a, LinkedHashMap::new));
+                db.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        PointPolicyRowDto::getPolicyKey,
+                                        r -> r,
+                                        (a, b) -> a,
+                                        LinkedHashMap::new));
         List<PointPolicyRowDto> out = new ArrayList<>();
         for (String key : POLICY_ORDER) {
             out.add(map.containsKey(key) ? map.get(key) : defaultRow(key));
@@ -58,17 +65,21 @@ public class PointPolicyServiceImpl implements PointPolicyService {
         d.setCapInt(null);
         switch (key) {
             case PointPolicyKeys.SIGNUP -> d.setRewardPoints(WalletPointRules.SIGNUP_BONUS);
-            case PointPolicyKeys.FREE_BOARD_POST -> d.setRewardPoints(WalletPointRules.FREE_BOARD_POST);
-            case PointPolicyKeys.BOARD_COMMENT_FIRST -> d.setRewardPoints(WalletPointRules.COMMENT_FIRST_ON_POST);
-            case PointPolicyKeys.BOARD_COMMENT_EXTRA -> d.setCapInt((int) WalletPointRules.COMMENT_EXTRA_CAP_PER_POST);
-            case PointPolicyKeys.NOTICE_COMMENT_FIRST -> d.setRewardPoints(WalletPointRules.COMMENT_FIRST_ON_POST);
-            case PointPolicyKeys.NOTICE_COMMENT_EXTRA -> d.setCapInt((int) WalletPointRules.COMMENT_EXTRA_CAP_PER_POST);
+            case PointPolicyKeys.FREE_BOARD_POST ->
+                    d.setRewardPoints(WalletPointRules.FREE_BOARD_POST);
+            case PointPolicyKeys.BOARD_COMMENT_FIRST ->
+                    d.setRewardPoints(WalletPointRules.COMMENT_FIRST_ON_POST);
+            case PointPolicyKeys.BOARD_COMMENT_EXTRA ->
+                    d.setCapInt((int) WalletPointRules.COMMENT_EXTRA_CAP_PER_POST);
+            case PointPolicyKeys.NOTICE_COMMENT_FIRST ->
+                    d.setRewardPoints(WalletPointRules.COMMENT_FIRST_ON_POST);
+            case PointPolicyKeys.NOTICE_COMMENT_EXTRA ->
+                    d.setCapInt((int) WalletPointRules.COMMENT_EXTRA_CAP_PER_POST);
             case PointPolicyKeys.FREE_BOARD_LIKE -> {
                 d.setThresholdInt(50);
                 d.setRewardPoints(100L);
             }
-            default -> {
-            }
+            default -> {}
         }
         return d;
     }
@@ -91,15 +102,19 @@ public class PointPolicyServiceImpl implements PointPolicyService {
                 switch (k) {
                     case PointPolicyKeys.FREE_BOARD_LIKE -> {
                         if (row.getThresholdInt() == null || row.getThresholdInt() < 1) {
-                            throw new IllegalArgumentException("자유게시판 추천 마일스톤: 추천 수 임계값은 1 이상이어야 합니다.");
+                            throw new IllegalArgumentException(
+                                    "자유게시판 추천 마일스톤: 추천 수 임계값은 1 이상이어야 합니다.");
                         }
                         if (row.getRewardPoints() == null || row.getRewardPoints() < 1) {
-                            throw new IllegalArgumentException("자유게시판 추천 마일스톤: 보상 포인트는 1 이상이어야 합니다.");
+                            throw new IllegalArgumentException(
+                                    "자유게시판 추천 마일스톤: 보상 포인트는 1 이상이어야 합니다.");
                         }
                     }
-                    case PointPolicyKeys.BOARD_COMMENT_EXTRA, PointPolicyKeys.NOTICE_COMMENT_EXTRA -> {
+                    case PointPolicyKeys.BOARD_COMMENT_EXTRA,
+                            PointPolicyKeys.NOTICE_COMMENT_EXTRA -> {
                         if (row.getCapInt() == null || row.getCapInt() < 0) {
-                            throw new IllegalArgumentException(k + ": 게시글당 추가 적립 상한(cap)은 0 이상이어야 합니다.");
+                            throw new IllegalArgumentException(
+                                    k + ": 게시글당 추가 적립 상한(cap)은 0 이상이어야 합니다.");
                         }
                     }
                     default -> {
@@ -135,16 +150,20 @@ public class PointPolicyServiceImpl implements PointPolicyService {
         if (likes < th) {
             return;
         }
-        int reserved = pointPolicyMapper.insertMilestoneGrantedIfAbsent(
-                boardAfterLike.getBoardSeq(), author, reward);
+        int reserved =
+                pointPolicyMapper.insertMilestoneGrantedIfAbsent(
+                        boardAfterLike.getBoardSeq(), author, reward);
         if (reserved <= 0) {
             return;
         }
-        boolean ok = walletPointGrantService.creditPoints(
-                author,
-                WalletPointRules.REASON_FREE_BOARD_LIKE_MILESTONE,
-                String.format("자유게시판 글 추천 %d개 달성 보상 (boardSeq=%d)", th, boardAfterLike.getBoardSeq()),
-                reward);
+        boolean ok =
+                walletPointGrantService.creditPoints(
+                        author,
+                        WalletPointRules.REASON_FREE_BOARD_LIKE_MILESTONE,
+                        String.format(
+                                "자유게시판 글 추천 %d개 달성 보상 (boardSeq=%d)",
+                                th, boardAfterLike.getBoardSeq()),
+                        reward);
         if (!ok) {
             pointPolicyMapper.deleteMilestoneGranted(boardAfterLike.getBoardSeq());
             log.warn("추천 마일스톤 포인트 지급 실패 후 예약 행 삭제 boardSeq={}", boardAfterLike.getBoardSeq());

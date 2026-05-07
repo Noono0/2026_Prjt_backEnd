@@ -2,9 +2,9 @@ package com.noonoo.prjtbackend.noticeBoard.serviceImpl;
 
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.config.RequestContext;
-import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
+import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.member.MemberDisplayNames;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
@@ -13,15 +13,14 @@ import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSaveRequest;
 import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardSearchCondition;
 import com.noonoo.prjtbackend.noticeBoard.mapper.NoticeBoardMapper;
 import com.noonoo.prjtbackend.noticeBoard.service.NoticeBoardService;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @Service
@@ -158,42 +157,55 @@ public class NoticeBoardServiceImpl implements NoticeBoardService {
     @Override
     @Transactional
     public int likeNoticeBoard(Long noticeBoardSeq) {
-        return increaseWithActionLog("NOTICE_BOARD", "POST", noticeBoardSeq, "LIKE",
+        return increaseWithActionLog(
+                "NOTICE_BOARD",
+                "POST",
+                noticeBoardSeq,
+                "LIKE",
                 () -> noticeBoardMapper.increaseNoticeBoardLikeCount(noticeBoardSeq));
     }
 
     @Override
     @Transactional
     public int dislikeNoticeBoard(Long noticeBoardSeq) {
-        return increaseWithActionLog("NOTICE_BOARD", "POST", noticeBoardSeq, "DISLIKE",
+        return increaseWithActionLog(
+                "NOTICE_BOARD",
+                "POST",
+                noticeBoardSeq,
+                "DISLIKE",
                 () -> noticeBoardMapper.increaseNoticeBoardDislikeCount(noticeBoardSeq));
     }
 
     @Override
     @Transactional
     public int reportNoticeBoard(Long noticeBoardSeq) {
-        return increaseWithActionLog("NOTICE_BOARD", "POST", noticeBoardSeq, "REPORT",
+        return increaseWithActionLog(
+                "NOTICE_BOARD",
+                "POST",
+                noticeBoardSeq,
+                "REPORT",
                 () -> noticeBoardMapper.increaseNoticeBoardReportCount(noticeBoardSeq));
     }
 
-    private int increaseWithActionLog(String boardKind,
-                                      String targetKind,
-                                      Long targetSeq,
-                                      String actionType,
-                                      CounterUpdater counterUpdater) {
+    private int increaseWithActionLog(
+            String boardKind,
+            String targetKind,
+            Long targetSeq,
+            String actionType,
+            CounterUpdater counterUpdater) {
         Long memberSeq = RequestContext.getLoginMemberSeq();
         String memberId = RequestContext.getLoginMemberId();
         String clientIp = RequestContext.getClientIp();
 
-        int inserted = noticeBoardMapper.insertNoticeBoardActionLog(
-                boardKind,
-                targetKind,
-                targetSeq,
-                actionType,
-                memberSeq,
-                memberId,
-                clientIp
-        );
+        int inserted =
+                noticeBoardMapper.insertNoticeBoardActionLog(
+                        boardKind,
+                        targetKind,
+                        targetSeq,
+                        actionType,
+                        memberSeq,
+                        memberId,
+                        clientIp);
 
         if (inserted <= 0) {
             return 0;

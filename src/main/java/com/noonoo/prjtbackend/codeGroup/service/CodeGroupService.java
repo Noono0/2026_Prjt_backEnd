@@ -5,9 +5,7 @@ import com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSaveRequest;
 import com.noonoo.prjtbackend.codeGroup.dto.CodeGroupSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
-
 import java.util.List;
-import java.util.Map;
 
 public interface CodeGroupService {
     PageResponse<CodeGroupDto> selectList(CodeGroupSearchCondition condition);

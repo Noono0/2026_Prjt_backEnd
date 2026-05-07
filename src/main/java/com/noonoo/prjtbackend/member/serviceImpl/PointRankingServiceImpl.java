@@ -7,9 +7,6 @@ import com.noonoo.prjtbackend.member.dto.PointRankingReasonBreakdownDto;
 import com.noonoo.prjtbackend.member.dto.PointRankingRowDto;
 import com.noonoo.prjtbackend.member.mapper.MemberWalletMapper;
 import com.noonoo.prjtbackend.member.service.PointRankingService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -20,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -53,13 +52,15 @@ public class PointRankingServiceImpl implements PointRankingService {
         String fromInclusive = fromDate.atStartOfDay().format(DT);
         String toExclusive = toExclusiveDate.atStartOfDay().format(DT);
 
-        List<PointRankingRowDto> rows = memberWalletMapper.selectPointRanking(fromInclusive, toExclusive);
+        List<PointRankingRowDto> rows =
+                memberWalletMapper.selectPointRanking(fromInclusive, toExclusive);
         if (rows.isEmpty()) {
             return List.of();
         }
         List<Long> memberSeqs = rows.stream().map(PointRankingRowDto::getMemberSeq).toList();
         List<PointRankingBreakdownRowDto> breakdownRows =
-                memberWalletMapper.selectPointRankingBreakdown(fromInclusive, toExclusive, memberSeqs);
+                memberWalletMapper.selectPointRankingBreakdown(
+                        fromInclusive, toExclusive, memberSeqs);
         Map<Long, List<PointRankingBreakdownRowDto>> byMember = new LinkedHashMap<>();
         for (PointRankingBreakdownRowDto b : breakdownRows) {
             byMember.computeIfAbsent(b.getMemberSeq(), k -> new ArrayList<>()).add(b);
@@ -68,21 +69,27 @@ public class PointRankingServiceImpl implements PointRankingService {
         List<PointRankingEntryDto> out = new ArrayList<>();
         int rank = 1;
         for (PointRankingRowDto r : rows) {
-            List<PointRankingReasonBreakdownDto> breakdown = byMember.getOrDefault(r.getMemberSeq(), List.of()).stream()
-                    .map(br -> PointRankingReasonBreakdownDto.builder()
-                            .reasonCode(br.getReasonCode())
-                            .reasonLabel(PointRankingReasonLabels.label(br.getReasonCode()))
-                            .points(br.getPointsEarned())
-                            .build())
-                    .toList();
-            out.add(PointRankingEntryDto.builder()
-                    .rank(rank++)
-                    .memberSeq(r.getMemberSeq())
-                    .memberId(r.getMemberId())
-                    .displayLabel(r.getDisplayLabel())
-                    .pointsEarned(r.getPointsEarned())
-                    .breakdown(breakdown)
-                    .build());
+            List<PointRankingReasonBreakdownDto> breakdown =
+                    byMember.getOrDefault(r.getMemberSeq(), List.of()).stream()
+                            .map(
+                                    br ->
+                                            PointRankingReasonBreakdownDto.builder()
+                                                    .reasonCode(br.getReasonCode())
+                                                    .reasonLabel(
+                                                            PointRankingReasonLabels.label(
+                                                                    br.getReasonCode()))
+                                                    .points(br.getPointsEarned())
+                                                    .build())
+                            .toList();
+            out.add(
+                    PointRankingEntryDto.builder()
+                            .rank(rank++)
+                            .memberSeq(r.getMemberSeq())
+                            .memberId(r.getMemberId())
+                            .displayLabel(r.getDisplayLabel())
+                            .pointsEarned(r.getPointsEarned())
+                            .breakdown(breakdown)
+                            .build());
         }
         return out;
     }

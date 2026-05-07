@@ -13,8 +13,10 @@ public class BlacklistReportDto {
     private String title;
     private String content;
     private Long writerMemberSeq;
+
     /** 회원 로그인 아이디 (목록·작성자 메뉴) */
     private String writerMemberId;
+
     private String writerProfileImageUrl;
     private String writerName;
     private String categoryCode;

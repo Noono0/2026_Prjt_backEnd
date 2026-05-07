@@ -5,7 +5,6 @@ import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSaveRequest;
 import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
-
 import java.util.List;
 
 public interface BlacklistReportService {
@@ -42,6 +41,6 @@ public interface BlacklistReportService {
             String createDtFrom,
             String createDtTo,
             String categoryCode,
-            String columnsCsv
-    ) throws Exception;
+            String columnsCsv)
+            throws Exception;
 }

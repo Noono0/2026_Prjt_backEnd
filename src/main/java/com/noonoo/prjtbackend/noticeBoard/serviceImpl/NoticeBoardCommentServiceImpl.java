@@ -2,24 +2,18 @@ package com.noonoo.prjtbackend.noticeBoard.serviceImpl;
 
 import com.noonoo.prjtbackend.board.dto.BoardCommentDto;
 import com.noonoo.prjtbackend.board.dto.BoardCommentSaveRequest;
-import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardDto;
 import com.noonoo.prjtbackend.board.dto.BoardCommentUpdateRequest;
+import com.noonoo.prjtbackend.board.support.BoardBlindSupport;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.member.MemberDisplayNames;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
-import com.noonoo.prjtbackend.board.support.BoardBlindSupport;
+import com.noonoo.prjtbackend.noticeBoard.dto.NoticeBoardDto;
 import com.noonoo.prjtbackend.noticeBoard.mapper.NoticeBoardCommentMapper;
 import com.noonoo.prjtbackend.noticeBoard.mapper.NoticeBoardMapper;
 import com.noonoo.prjtbackend.noticeBoard.service.NoticeBoardCommentService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +24,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -37,7 +36,8 @@ import java.util.Set;
 public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService {
 
     private static final Comparator<BoardCommentDto> BY_CREATE_DT =
-            Comparator.comparing(BoardCommentDto::getCreateDt, Comparator.nullsLast(String::compareTo));
+            Comparator.comparing(
+                    BoardCommentDto::getCreateDt, Comparator.nullsLast(String::compareTo));
 
     private static final int MAX_EMOTICONS_PER_COMMENT = 3;
     private static final int MAX_EMOTICON_AND_IMAGES_TOTAL = 3;
@@ -69,7 +69,8 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
             if (c.getParentBoardCommentSeq() == null) {
                 roots.add(c);
             } else {
-                childMap.computeIfAbsent(c.getParentBoardCommentSeq(), k -> new ArrayList<>()).add(c);
+                childMap.computeIfAbsent(c.getParentBoardCommentSeq(), k -> new ArrayList<>())
+                        .add(c);
             }
         }
         for (List<BoardCommentDto> kids : childMap.values()) {
@@ -77,14 +78,20 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
         }
         switch (s) {
             case "oldest" -> roots.sort(BY_CREATE_DT);
-            case "like" -> roots.sort(
-                    Comparator.comparing((BoardCommentDto c) -> c.getLikeCount() != null ? c.getLikeCount() : 0L)
-                            .reversed()
-                            .thenComparing(BY_CREATE_DT.reversed()));
+            case "like" ->
+                    roots.sort(
+                            Comparator.comparing(
+                                            (BoardCommentDto c) ->
+                                                    c.getLikeCount() != null
+                                                            ? c.getLikeCount()
+                                                            : 0L)
+                                    .reversed()
+                                    .thenComparing(BY_CREATE_DT.reversed()));
             default -> roots.sort(BY_CREATE_DT.reversed());
         }
         for (BoardCommentDto r : roots) {
-            List<BoardCommentDto> children = childMap.getOrDefault(r.getBoardCommentSeq(), Collections.emptyList());
+            List<BoardCommentDto> children =
+                    childMap.getOrDefault(r.getBoardCommentSeq(), Collections.emptyList());
             r.setChildren(new ArrayList<>(children));
         }
         return roots;
@@ -103,7 +110,8 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
         if (!isNoticeBoardYnAllowed(post.getCommentAllowedYn())) {
             throw new IllegalArgumentException("이 게시글은 댓글 작성이 허용되지 않았습니다.");
         }
-        if (req.getParentBoardCommentSeq() != null && !isNoticeBoardYnAllowed(post.getReplyAllowedYn())) {
+        if (req.getParentBoardCommentSeq() != null
+                && !isNoticeBoardYnAllowed(post.getReplyAllowedYn())) {
             throw new IllegalArgumentException("이 게시글은 답글 작성이 허용되지 않았습니다.");
         }
 
@@ -122,13 +130,27 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        validateCommentBody(req.getContent(), req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
-        validateEmoticonSlots(loginMemberSeq, req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
-        validateEmoticonAndImageTotal(req.getContent(), req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
+        validateCommentBody(
+                req.getContent(),
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
+        validateEmoticonSlots(
+                loginMemberSeq,
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
+        validateEmoticonAndImageTotal(
+                req.getContent(),
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
         req.setContent(contentFilterApplyService.applyField("댓글", req.getContent()));
 
         if (req.getParentBoardCommentSeq() != null) {
-            BoardCommentDto parent = noticeBoardCommentMapper.findNoticeBoardCommentById(req.getParentBoardCommentSeq());
+            BoardCommentDto parent =
+                    noticeBoardCommentMapper.findNoticeBoardCommentById(
+                            req.getParentBoardCommentSeq());
             if (parent == null || !Objects.equals(parent.getBoardSeq(), req.getBoardSeq())) {
                 throw new IllegalArgumentException("원 댓글을 찾을 수 없습니다.");
             }
@@ -157,7 +179,9 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
         req.setCreateIp(RequestContext.getClientIp());
 
         long noticeBoardSeq = req.getBoardSeq();
-        int priorCount = noticeBoardCommentMapper.countCommentsByNoticeAndMember(noticeBoardSeq, loginMemberSeq);
+        int priorCount =
+                noticeBoardCommentMapper.countCommentsByNoticeAndMember(
+                        noticeBoardSeq, loginMemberSeq);
 
         noticeBoardCommentMapper.insertNoticeBoardComment(req);
         noticeBoardMapper.increaseNoticeBoardCommentCount(req.getBoardSeq());
@@ -246,7 +270,10 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
                         try {
                             walletPointGrantService.deductCommentRewardOnBlind(writer, commentSeq);
                         } catch (Exception e) {
-                            log.warn("블라인드 댓글 포인트 회수 실패 commentSeq={}: {}", commentSeq, e.toString());
+                            log.warn(
+                                    "블라인드 댓글 포인트 회수 실패 commentSeq={}: {}",
+                                    commentSeq,
+                                    e.toString());
                         }
                     }
                 }
@@ -272,11 +299,24 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
         if (!Objects.equals(c.getWriterMemberSeq(), loginMemberSeq)) {
             throw new IllegalArgumentException("본인이 작성한 댓글만 수정할 수 있습니다.");
         }
-        validateCommentBody(body.getContent(), body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
-        validateEmoticonSlots(loginMemberSeq, body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
-        validateEmoticonAndImageTotal(body.getContent(), body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
+        validateCommentBody(
+                body.getContent(),
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
+        validateEmoticonSlots(
+                loginMemberSeq,
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
+        validateEmoticonAndImageTotal(
+                body.getContent(),
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
         body.setContent(contentFilterApplyService.applyField("댓글", body.getContent()));
-        return noticeBoardCommentMapper.updateNoticeBoardComment(noticeBoardSeq, commentSeq, loginMemberSeq, body);
+        return noticeBoardCommentMapper.updateNoticeBoardComment(
+                noticeBoardSeq, commentSeq, loginMemberSeq, body);
     }
 
     @Override
@@ -291,13 +331,17 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
             throw new IllegalArgumentException("본인이 작성한 댓글만 삭제할 수 있습니다.");
         }
         if (c.getParentBoardCommentSeq() == null) {
-            int n = noticeBoardCommentMapper.softDeleteNoticeBoardCommentThread(noticeBoardSeq, commentSeq);
+            int n =
+                    noticeBoardCommentMapper.softDeleteNoticeBoardCommentThread(
+                            noticeBoardSeq, commentSeq);
             if (n > 0) {
                 noticeBoardMapper.adjustNoticeBoardCommentCount(noticeBoardSeq, -n);
             }
             return n;
         }
-        int n = noticeBoardCommentMapper.softDeleteNoticeBoardCommentRow(noticeBoardSeq, commentSeq);
+        int n =
+                noticeBoardCommentMapper.softDeleteNoticeBoardCommentRow(
+                        noticeBoardSeq, commentSeq);
         if (n > 0) {
             noticeBoardMapper.adjustNoticeBoardCommentCount(noticeBoardSeq, -1);
         }
@@ -363,7 +407,8 @@ public class NoticeBoardCommentServiceImpl implements NoticeBoardCommentService 
             throw new IllegalArgumentException("같은 이모티콘을 중복해 넣을 수 없습니다.");
         }
         if (raw.size() > MAX_EMOTICONS_PER_COMMENT) {
-            throw new IllegalArgumentException("이모티콘은 최대 " + MAX_EMOTICONS_PER_COMMENT + "개까지 넣을 수 있습니다.");
+            throw new IllegalArgumentException(
+                    "이모티콘은 최대 " + MAX_EMOTICONS_PER_COMMENT + "개까지 넣을 수 있습니다.");
         }
         if (distinct.isEmpty()) {
             return;

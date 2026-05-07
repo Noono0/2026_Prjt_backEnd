@@ -1,17 +1,13 @@
 package com.noonoo.prjtbackend.member.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotBlank;
 
-import java.time.LocalDateTime;
-
-/**
- * 회원 기본 정보. 시스템 권한(ROLE)은 {@link MemberRole} 참고.
- * 등급/상태는 공통코드 MEMBER_GRADE, MEMBER_STATUS 로 관리.
- */
+/** 회원 기본 정보. 시스템 권한(ROLE)은 {@link MemberRole} 참고. 등급/상태는 공통코드 MEMBER_GRADE, MEMBER_STATUS 로 관리. */
 @Getter
 @Setter
 @Entity

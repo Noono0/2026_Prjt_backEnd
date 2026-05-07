@@ -6,8 +6,7 @@ public class RequestContext {
     private static final ThreadLocal<String> LOGIN_MEMBER_ID = new ThreadLocal<>();
     private static final ThreadLocal<Long> LOGIN_MEMBER_SEQ = new ThreadLocal<>();
 
-    private RequestContext() {
-    }
+    private RequestContext() {}
 
     public static void setClientIp(String clientIp) {
         CLIENT_IP.set(clientIp);

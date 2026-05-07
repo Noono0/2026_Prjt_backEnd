@@ -2,9 +2,7 @@ package com.noonoo.prjtbackend.auth.oauth;
 
 import java.util.Locale;
 
-/**
- * member.oauth_provider 및 NextAuth provider 문자열과의 매핑.
- */
+/** member.oauth_provider 및 NextAuth provider 문자열과의 매핑. */
 public enum MemberOAuthProvider {
     GOOGLE("g_"),
     NAVER("n_"),

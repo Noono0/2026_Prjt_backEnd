@@ -4,7 +4,6 @@ import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSearchCondition;
-
 import java.util.List;
 
 public interface SitePopupService {

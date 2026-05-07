@@ -5,11 +5,10 @@ import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportDto;
 import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSaveRequest;
 import com.noonoo.prjtbackend.blacklistreport.dto.BlacklistReportSearchCondition;
 import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-
-import java.util.List;
 
 @Mapper
 public interface BlacklistReportMapper {
@@ -46,16 +45,19 @@ public interface BlacklistReportMapper {
 
     int increaseBlacklistReportCommentCount(@Param("blacklistReportSeq") Long blacklistReportSeq);
 
-    int adjustBlacklistReportCommentCount(@Param("blacklistReportSeq") Long blacklistReportSeq, @Param("delta") int delta);
+    int adjustBlacklistReportCommentCount(
+            @Param("blacklistReportSeq") Long blacklistReportSeq, @Param("delta") int delta);
 
-    int insertBlacklistReportActionLog(@Param("boardKind") String boardKind,
-                                         @Param("targetKind") String targetKind,
-                                         @Param("targetSeq") Long targetSeq,
-                                         @Param("actionType") String actionType,
-                                         @Param("memberSeq") Long memberSeq,
-                                         @Param("memberId") String memberId,
-                                         @Param("clientIp") String clientIp);
+    int insertBlacklistReportActionLog(
+            @Param("boardKind") String boardKind,
+            @Param("targetKind") String targetKind,
+            @Param("targetSeq") Long targetSeq,
+            @Param("actionType") String actionType,
+            @Param("memberSeq") Long memberSeq,
+            @Param("memberId") String memberId,
+            @Param("clientIp") String clientIp);
 
     /** 엑셀용 (상한) */
-    List<BlacklistReportDto> findBlacklistReportsForExport(BlacklistReportSearchCondition condition);
+    List<BlacklistReportDto> findBlacklistReportsForExport(
+            BlacklistReportSearchCondition condition);
 }

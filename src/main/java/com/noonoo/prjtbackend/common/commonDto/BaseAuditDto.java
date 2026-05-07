@@ -1,7 +1,5 @@
 package com.noonoo.prjtbackend.common.commonDto;
 
-import java.time.LocalDateTime;
-
 import lombok.Getter;
 import lombok.Setter;
 

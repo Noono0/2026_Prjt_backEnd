@@ -3,9 +3,7 @@ package com.noonoo.prjtbackend.role.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * 역할별 메뉴 매핑 화면용: 전체 메뉴 + 해당 역할의 ROLE_MENU 권한
- */
+/** 역할별 메뉴 매핑 화면용: 전체 메뉴 + 해당 역할의 ROLE_MENU 권한 */
 @Getter
 @Setter
 public class RoleMenuAssignmentDto {

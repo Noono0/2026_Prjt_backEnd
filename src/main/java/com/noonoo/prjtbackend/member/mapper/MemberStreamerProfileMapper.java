@@ -11,12 +11,10 @@ public interface MemberStreamerProfileMapper {
     MemberStreamerProfileDto selectByMemberSeq(@Param("memberSeq") long memberSeq);
 
     int insertProfile(
-            @Param("memberSeq") long memberSeq,
-            @Param("p") MemberStreamerProfileSaveRequest p);
+            @Param("memberSeq") long memberSeq, @Param("p") MemberStreamerProfileSaveRequest p);
 
     int updateProfile(
-            @Param("memberSeq") long memberSeq,
-            @Param("p") MemberStreamerProfileSaveRequest p);
+            @Param("memberSeq") long memberSeq, @Param("p") MemberStreamerProfileSaveRequest p);
 
     int deleteByMemberSeq(@Param("memberSeq") long memberSeq);
 

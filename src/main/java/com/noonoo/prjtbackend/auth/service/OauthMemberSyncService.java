@@ -10,18 +10,17 @@ import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.mapper.MemberRoleMapper;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -140,8 +139,8 @@ public class OauthMemberSyncService {
     }
 
     /**
-     * 로그인·화면용 {@code member_id}. OAuth subject 는 {@code oauth_subject} 에만 저장하고,
-     * 여기서는 제공자 접두 + 무작위 문자열로 짧게 발급해 외부 식별자 노출을 피한다.
+     * 로그인·화면용 {@code member_id}. OAuth subject 는 {@code oauth_subject} 에만 저장하고, 여기서는 제공자 접두 + 무작위
+     * 문자열로 짧게 발급해 외부 식별자 노출을 피한다.
      */
     private String resolveUniqueMemberId(MemberOAuthProvider provider, String subject) {
         String prefix = provider.getMemberIdPrefix();
@@ -180,7 +179,8 @@ public class OauthMemberSyncService {
     }
 
     /**
-     * {@link com.noonoo.prjtbackend.member.serviceImpl.MemberServiceImpl#prepareProfileImage} 와 동일 정책.
+     * {@link com.noonoo.prjtbackend.member.serviceImpl.MemberServiceImpl#prepareProfileImage} 와 동일
+     * 정책.
      */
     private void prepareProfileImage(MemberSaveRequest req) {
         Long fileSeq = req.getProfileImageFileSeq();

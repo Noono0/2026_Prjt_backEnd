@@ -3,17 +3,16 @@ package com.noonoo.prjtbackend.analytics.service;
 import com.noonoo.prjtbackend.analytics.dto.VisitorCountPointDto;
 import com.noonoo.prjtbackend.analytics.dto.VisitorOverviewDto;
 import com.noonoo.prjtbackend.common.config.RequestContext;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -55,8 +54,7 @@ public class VisitorAnalyticsService {
                 safeLimit(clientIp, 100),
                 safeLimit(userAgent, 500),
                 ts,
-                ts
-        );
+                ts);
 
         jdbcTemplate.update(
                 """
@@ -64,8 +62,7 @@ public class VisitorAnalyticsService {
                         VALUES (?, ?, NOW())
                         """,
                 LocalDate.now(),
-                key
-        );
+                key);
     }
 
     @Transactional(readOnly = true)
@@ -74,8 +71,9 @@ public class VisitorAnalyticsService {
         int safeWeeks = Math.min(Math.max(weeks, 1), 104);
         int safeMonths = Math.min(Math.max(months, 1), 36);
 
-        Long online = jdbcTemplate.queryForObject(
-                """
+        Long online =
+                jdbcTemplate.queryForObject(
+                        """
                         SELECT COUNT(DISTINCT
                             CASE
                                 WHEN member_seq IS NOT NULL THEN CONCAT('M:', member_seq)
@@ -84,12 +82,12 @@ public class VisitorAnalyticsService {
                         ) FROM visitor_heartbeat
                         WHERE last_seen_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
                         """,
-                Long.class,
-                heartbeatTtlSeconds
-        );
+                        Long.class,
+                        heartbeatTtlSeconds);
 
-        List<VisitorCountPointDto> daily = jdbcTemplate.query(
-                """
+        List<VisitorCountPointDto> daily =
+                jdbcTemplate.query(
+                        """
                         SELECT DATE_FORMAT(visit_date, '%Y-%m-%d') AS label,
                                COUNT(*) AS visitors
                         FROM visitor_daily_unique
@@ -97,15 +95,16 @@ public class VisitorAnalyticsService {
                         GROUP BY visit_date
                         ORDER BY visit_date
                         """,
-                (rs, rowNum) -> VisitorCountPointDto.builder()
-                        .label(rs.getString("label"))
-                        .visitors(rs.getLong("visitors"))
-                        .build(),
-                safeDays - 1
-        );
+                        (rs, rowNum) ->
+                                VisitorCountPointDto.builder()
+                                        .label(rs.getString("label"))
+                                        .visitors(rs.getLong("visitors"))
+                                        .build(),
+                        safeDays - 1);
 
-        List<VisitorCountPointDto> weekly = jdbcTemplate.query(
-                """
+        List<VisitorCountPointDto> weekly =
+                jdbcTemplate.query(
+                        """
                         SELECT DATE_FORMAT(DATE_SUB(visit_date, INTERVAL WEEKDAY(visit_date) DAY), '%Y-%m-%d') AS label,
                                COUNT(DISTINCT visitor_key) AS visitors
                         FROM visitor_daily_unique
@@ -113,15 +112,16 @@ public class VisitorAnalyticsService {
                         GROUP BY YEARWEEK(visit_date, 1)
                         ORDER BY MIN(visit_date)
                         """,
-                (rs, rowNum) -> VisitorCountPointDto.builder()
-                        .label(rs.getString("label"))
-                        .visitors(rs.getLong("visitors"))
-                        .build(),
-                safeWeeks - 1
-        );
+                        (rs, rowNum) ->
+                                VisitorCountPointDto.builder()
+                                        .label(rs.getString("label"))
+                                        .visitors(rs.getLong("visitors"))
+                                        .build(),
+                        safeWeeks - 1);
 
-        List<VisitorCountPointDto> monthly = jdbcTemplate.query(
-                """
+        List<VisitorCountPointDto> monthly =
+                jdbcTemplate.query(
+                        """
                         SELECT DATE_FORMAT(visit_date, '%Y-%m') AS label,
                                COUNT(DISTINCT visitor_key) AS visitors
                         FROM visitor_daily_unique
@@ -129,12 +129,12 @@ public class VisitorAnalyticsService {
                         GROUP BY DATE_FORMAT(visit_date, '%Y-%m')
                         ORDER BY DATE_FORMAT(visit_date, '%Y-%m')
                         """,
-                (rs, rowNum) -> VisitorCountPointDto.builder()
-                        .label(rs.getString("label"))
-                        .visitors(rs.getLong("visitors"))
-                        .build(),
-                safeMonths - 1
-        );
+                        (rs, rowNum) ->
+                                VisitorCountPointDto.builder()
+                                        .label(rs.getString("label"))
+                                        .visitors(rs.getLong("visitors"))
+                                        .build(),
+                        safeMonths - 1);
 
         return VisitorOverviewDto.builder()
                 .onlineCount(online == null ? 0L : online)

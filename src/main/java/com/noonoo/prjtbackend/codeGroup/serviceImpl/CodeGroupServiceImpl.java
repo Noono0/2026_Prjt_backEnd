@@ -9,12 +9,11 @@ import com.noonoo.prjtbackend.codeGroup.service.CodeGroupService;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -82,6 +81,14 @@ public class CodeGroupServiceImpl implements CodeGroupService {
         }
         if (condition.getSortOrder() == null) {
             condition.setSortOrder(0);
+        }
+
+        if (condition.getCodeGroupId() == null || condition.getCodeGroupId().isBlank()) {
+            throw new IllegalArgumentException("코드그룹 ID를 입력하세요.");
+        }
+        CodeGroupDto duplicate = codeGroupsMapper.findIdCheck(condition);
+        if (duplicate != null) {
+            throw new IllegalArgumentException("이미 사용 중인 코드그룹 ID입니다.");
         }
 
         return codeGroupsMapper.updateData(condition);

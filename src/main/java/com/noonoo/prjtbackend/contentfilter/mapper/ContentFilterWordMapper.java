@@ -3,10 +3,9 @@ package com.noonoo.prjtbackend.contentfilter.mapper;
 import com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordDto;
 import com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordSaveRequest;
 import com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordSearchCondition;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 @Mapper
 public interface ContentFilterWordMapper {
@@ -28,6 +27,5 @@ public interface ContentFilterWordMapper {
     long countByCategoryAndKeywordIgnoreCase(
             @Param("category") String category,
             @Param("keyword") String keyword,
-            @Param("excludeSeq") Long excludeSeq
-    );
+            @Param("excludeSeq") Long excludeSeq);
 }

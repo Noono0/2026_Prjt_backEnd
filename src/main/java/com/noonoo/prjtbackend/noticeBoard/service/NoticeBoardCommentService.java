@@ -3,7 +3,6 @@ package com.noonoo.prjtbackend.noticeBoard.service;
 import com.noonoo.prjtbackend.board.dto.BoardCommentDto;
 import com.noonoo.prjtbackend.board.dto.BoardCommentSaveRequest;
 import com.noonoo.prjtbackend.board.dto.BoardCommentUpdateRequest;
-
 import java.util.List;
 
 public interface NoticeBoardCommentService {

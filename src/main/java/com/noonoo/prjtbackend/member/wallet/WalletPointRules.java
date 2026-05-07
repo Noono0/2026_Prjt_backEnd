@@ -1,8 +1,6 @@
 package com.noonoo.prjtbackend.member.wallet;
 
-/**
- * 활동 적립 포인트 규칙 (고정 상수).
- */
+/** 활동 적립 포인트 규칙 (고정 상수). */
 public final class WalletPointRules {
 
     private WalletPointRules() {}

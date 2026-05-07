@@ -30,8 +30,7 @@ public class MemberPointCommentExtraTableMigration implements ApplicationRunner 
                                 PRIMARY KEY (member_seq, post_type, post_seq),
                                 KEY idx_mpce_post (post_type, post_seq)
                             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                            """
-            );
+                            """);
             log.info("DB: member_point_comment_extra 확인·생성");
         } catch (Exception e) {
             log.warn("member_point_comment_extra 테이블 자동 생성 실패: {}", e.toString());

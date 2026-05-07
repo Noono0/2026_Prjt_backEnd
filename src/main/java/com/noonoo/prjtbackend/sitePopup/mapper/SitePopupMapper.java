@@ -3,9 +3,8 @@ package com.noonoo.prjtbackend.sitePopup.mapper;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSearchCondition;
-import org.apache.ibatis.annotations.Mapper;
-
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface SitePopupMapper {

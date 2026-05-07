@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -11,12 +13,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-/**
- * 인증은 되었으나 권한 없음 → JSON 403 (ApiResponse)
- */
+/** 인증은 되었으나 권한 없음 → JSON 403 (ApiResponse) */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,15 +25,14 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(
             HttpServletRequest request,
             HttpServletResponse response,
-            AccessDeniedException accessDeniedException
-    ) throws IOException {
+            AccessDeniedException accessDeniedException)
+            throws IOException {
         log.warn(
                 "접근 거부(403 JSON): method={} uri={} user={} reason={}",
                 request.getMethod(),
                 request.getRequestURI(),
                 request.getRemoteUser(),
-                accessDeniedException != null ? accessDeniedException.getMessage() : null
-        );
+                accessDeniedException != null ? accessDeniedException.getMessage() : null);
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

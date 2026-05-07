@@ -5,9 +5,7 @@ import com.noonoo.prjtbackend.member.mapper.PointPolicyMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/**
- * point_policy_setting 조회 (지급 로직용). 비활성·NULL 시 기본값(fallback) 사용.
- */
+/** point_policy_setting 조회 (지급 로직용). 비활성·NULL 시 기본값(fallback) 사용. */
 @Service
 @RequiredArgsConstructor
 public class PointPolicyResolver {
@@ -27,9 +25,7 @@ public class PointPolicyResolver {
         return "Y".equalsIgnoreCase(r.getUseYn());
     }
 
-    /**
-     * 행이 없으면 코드 기본값(fallback)을 사용합니다. 행이 있으나 비활성이면 0입니다.
-     */
+    /** 행이 없으면 코드 기본값(fallback)을 사용합니다. 행이 있으나 비활성이면 0입니다. */
     public long reward(String policyKey, long fallback) {
         PointPolicyRowDto r = pointPolicyMapper.selectByPolicyKey(policyKey);
         if (r == null) {

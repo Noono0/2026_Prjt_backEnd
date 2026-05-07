@@ -8,14 +8,13 @@ import com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordSearchCondition
 import com.noonoo.prjtbackend.contentfilter.mapper.ContentFilterWordMapper;
 import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.contentfilter.service.ContentFilterWordService;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -84,7 +83,8 @@ public class ContentFilterWordServiceImpl implements ContentFilterWordService {
             throw new IllegalArgumentException("요청이 없습니다.");
         }
         String cat = request.getCategory();
-        if (!StringUtils.hasText(cat) || !CATEGORIES.contains(cat.trim().toUpperCase(Locale.ROOT))) {
+        if (!StringUtils.hasText(cat)
+                || !CATEGORIES.contains(cat.trim().toUpperCase(Locale.ROOT))) {
             throw new IllegalArgumentException("구분은 PROFANITY(비속어) 또는 AD(광고)만 가능합니다.");
         }
         request.setCategory(cat.trim().toUpperCase(Locale.ROOT));
@@ -94,7 +94,8 @@ public class ContentFilterWordServiceImpl implements ContentFilterWordService {
         }
         request.setKeyword(kw.trim());
         if (contentFilterWordMapper.countByCategoryAndKeywordIgnoreCase(
-                request.getCategory(), request.getKeyword(), excludeSeq) > 0) {
+                        request.getCategory(), request.getKeyword(), excludeSeq)
+                > 0) {
             throw new IllegalArgumentException("같은 구분에 동일한 키워드가 이미 있습니다.");
         }
     }

@@ -1,22 +1,20 @@
 package com.noonoo.prjtbackend.role.domain;
 
+import com.noonoo.prjtbackend.menu.domain.Menu;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
-import com.noonoo.prjtbackend.menu.domain.Menu;
 
-import java.time.LocalDateTime;
-
-/**
- * 권한별 메뉴 CRUD 권한 매핑 테이블
- */
+/** 권한별 메뉴 CRUD 권한 매핑 테이블 */
 @Entity
 @Table(
         name = "role_menu",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UK_ROLE_MENU", columnNames = {"ROLE_ID", "MENU_ID"})
-        }
-)
+            @UniqueConstraint(
+                    name = "UK_ROLE_MENU",
+                    columnNames = {"ROLE_ID", "MENU_ID"})
+        })
 @Getter
 @Setter
 public class RoleMenu {
@@ -26,47 +24,33 @@ public class RoleMenu {
     @Column(name = "ROLE_MENU_ID")
     private Long roleMenuId;
 
-    /**
-     * 어떤 권한(Role)에 대한 설정인지
-     */
+    /** 어떤 권한(Role)에 대한 설정인지 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ROLE_ID", nullable = false)
     private Role role;
 
-    /**
-     * 어떤 메뉴(Menu)에 대한 설정인지
-     */
+    /** 어떤 메뉴(Menu)에 대한 설정인지 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MENU_ID", nullable = false)
     private Menu menu;
 
-    /**
-     * 조회 권한
-     */
+    /** 조회 권한 */
     @Column(name = "CAN_READ", nullable = false, length = 1)
     private String canRead = "N";
 
-    /**
-     * 등록 권한
-     */
+    /** 등록 권한 */
     @Column(name = "CAN_CREATE", nullable = false, length = 1)
     private String canCreate = "N";
 
-    /**
-     * 수정 권한
-     */
+    /** 수정 권한 */
     @Column(name = "CAN_UPDATE", nullable = false, length = 1)
     private String canUpdate = "N";
 
-    /**
-     * 삭제 권한
-     */
+    /** 삭제 권한 */
     @Column(name = "CAN_DELETE", nullable = false, length = 1)
     private String canDelete = "N";
 
-    /**
-     * 사용 여부
-     */
+    /** 사용 여부 */
     @Column(name = "USE_YN", nullable = false, length = 1)
     private String useYn = "Y";
 

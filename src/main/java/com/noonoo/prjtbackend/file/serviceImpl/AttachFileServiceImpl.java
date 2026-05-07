@@ -10,6 +10,12 @@ import com.noonoo.prjtbackend.file.model.ImageUploadPurpose;
 import com.noonoo.prjtbackend.file.service.AttachFileService;
 import com.noonoo.prjtbackend.file.service.ImageProcessingService;
 import com.noonoo.prjtbackend.file.storage.FileBinaryStorage;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,30 +25,20 @@ import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AttachFileServiceImpl implements AttachFileService {
 
-    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/gif"
-    );
-    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of(
-            "jpg", "jpeg", "png", "webp", "gif"
-    );
-    private static final Set<String> DANGEROUS_EXTENSIONS = Set.of(
-            "exe", "dll", "bat", "cmd", "com", "scr", "msi",
-            "js", "mjs", "cjs", "vbs", "wsf", "ps1", "sh", "bash",
-            "jar", "war", "class", "apk", "ipa", "reg", "hta", "lnk",
-            "php", "phtml", "jsp", "jspx", "asp", "aspx", "py", "rb", "pl"
-    );
+    private static final Set<String> ALLOWED_IMAGE_TYPES =
+            Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS =
+            Set.of("jpg", "jpeg", "png", "webp", "gif");
+    private static final Set<String> DANGEROUS_EXTENSIONS =
+            Set.of(
+                    "exe", "dll", "bat", "cmd", "com", "scr", "msi", "js", "mjs", "cjs", "vbs",
+                    "wsf", "ps1", "sh", "bash", "jar", "war", "class", "apk", "ipa", "reg", "hta",
+                    "lnk", "php", "phtml", "jsp", "jspx", "asp", "aspx", "py", "rb", "pl");
 
     private final AttachFileMapper attachFileMapper;
     private final ImageProcessingService imageProcessingService;
@@ -53,7 +49,8 @@ public class AttachFileServiceImpl implements AttachFileService {
 
     @Override
     @Transactional
-    public FileUploadResponse store(MultipartFile file, String menuUrl, String publicBaseUrl, ImageUploadPurpose purpose) {
+    public FileUploadResponse store(
+            MultipartFile file, String menuUrl, String publicBaseUrl, ImageUploadPurpose purpose) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어 있습니다.");
         }
@@ -73,7 +70,8 @@ public class AttachFileServiceImpl implements AttachFileService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+        if (contentType == null
+                || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
             throw new NotAnImageFileException("지원하지 않는 이미지 형식입니다.");
         }
         String normalizedType = contentType.toLowerCase(Locale.ROOT);
@@ -95,7 +93,8 @@ public class AttachFileServiceImpl implements AttachFileService {
             original = "image";
         }
 
-        ImageProcessResult processed = imageProcessingService.process(raw, normalizedType, originalExt, purpose);
+        ImageProcessResult processed =
+                imageProcessingService.process(raw, normalizedType, originalExt, purpose);
         byte[] storedBytes = processed.bytes();
         String storedContentType = processed.contentType();
         String ext = processed.extension();
@@ -114,8 +113,7 @@ public class AttachFileServiceImpl implements AttachFileService {
                     storedSize,
                     fileBinaryStorage.getClass().getSimpleName(),
                     e.getMessage(),
-                    e
-            );
+                    e);
             throw new IllegalStateException("파일 저장에 실패했습니다.", e);
         }
 
@@ -123,16 +121,17 @@ public class AttachFileServiceImpl implements AttachFileService {
         String loginId = RequestContext.getLoginMemberId();
         String clientIp = RequestContext.getClientIp();
 
-        AttachFileDto row = AttachFileDto.builder()
-                .originalName(original)
-                .storedPath(relativePath)
-                .contentType(storedContentType)
-                .fileSize(storedSize)
-                .menuUrl(trimMenuUrl(menuUrl))
-                .memberSeq(memberSeq)
-                .createId(StringUtils.hasText(loginId) ? loginId : "SYSTEM")
-                .createIp(StringUtils.hasText(clientIp) ? clientIp : "0.0.0.0")
-                .build();
+        AttachFileDto row =
+                AttachFileDto.builder()
+                        .originalName(original)
+                        .storedPath(relativePath)
+                        .contentType(storedContentType)
+                        .fileSize(storedSize)
+                        .menuUrl(trimMenuUrl(menuUrl))
+                        .memberSeq(memberSeq)
+                        .createId(StringUtils.hasText(loginId) ? loginId : "SYSTEM")
+                        .createIp(StringUtils.hasText(clientIp) ? clientIp : "0.0.0.0")
+                        .build();
 
         attachFileMapper.insertAttachFile(row);
         Long fileSeq = row.getFileSeq();
@@ -140,7 +139,10 @@ public class AttachFileServiceImpl implements AttachFileService {
             throw new IllegalStateException("파일 메타 저장에 실패했습니다.");
         }
 
-        String baseUrl = publicBaseUrl.endsWith("/") ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1) : publicBaseUrl;
+        String baseUrl =
+                publicBaseUrl.endsWith("/")
+                        ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
+                        : publicBaseUrl;
         String fileUrl = baseUrl + "/api/files/view/" + fileSeq;
         String downloadUrl = baseUrl + "/api/files/download/" + fileSeq;
 
@@ -152,8 +154,7 @@ public class AttachFileServiceImpl implements AttachFileService {
                 memberSeq,
                 purpose,
                 publicBaseUrl,
-                fileUrl
-        );
+                fileUrl);
 
         return FileUploadResponse.builder()
                 .fileSeq(fileSeq)
@@ -205,35 +206,39 @@ public class AttachFileServiceImpl implements AttachFileService {
         byte[] header = new byte[n];
         System.arraycopy(raw, 0, header, 0, n);
         return switch (contentType) {
-            case "image/jpeg" -> header.length >= 3
-                    && (header[0] & 0xFF) == 0xFF
-                    && (header[1] & 0xFF) == 0xD8
-                    && (header[2] & 0xFF) == 0xFF;
-            case "image/png" -> header.length >= 8
-                    && (header[0] & 0xFF) == 0x89
-                    && header[1] == 0x50
-                    && header[2] == 0x4E
-                    && header[3] == 0x47
-                    && (header[4] & 0xFF) == 0x0D
-                    && (header[5] & 0xFF) == 0x0A
-                    && (header[6] & 0xFF) == 0x1A
-                    && (header[7] & 0xFF) == 0x0A;
-            case "image/gif" -> header.length >= 6
-                    && header[0] == 0x47
-                    && header[1] == 0x49
-                    && header[2] == 0x46
-                    && header[3] == 0x38
-                    && (header[4] == 0x37 || header[4] == 0x39)
-                    && header[5] == 0x61;
-            case "image/webp" -> header.length >= 12
-                    && header[0] == 0x52
-                    && header[1] == 0x49
-                    && header[2] == 0x46
-                    && header[3] == 0x46
-                    && header[8] == 0x57
-                    && header[9] == 0x45
-                    && header[10] == 0x42
-                    && header[11] == 0x50;
+            case "image/jpeg" ->
+                    header.length >= 3
+                            && (header[0] & 0xFF) == 0xFF
+                            && (header[1] & 0xFF) == 0xD8
+                            && (header[2] & 0xFF) == 0xFF;
+            case "image/png" ->
+                    header.length >= 8
+                            && (header[0] & 0xFF) == 0x89
+                            && header[1] == 0x50
+                            && header[2] == 0x4E
+                            && header[3] == 0x47
+                            && (header[4] & 0xFF) == 0x0D
+                            && (header[5] & 0xFF) == 0x0A
+                            && (header[6] & 0xFF) == 0x1A
+                            && (header[7] & 0xFF) == 0x0A;
+            case "image/gif" ->
+                    header.length >= 6
+                            && header[0] == 0x47
+                            && header[1] == 0x49
+                            && header[2] == 0x46
+                            && header[3] == 0x38
+                            && (header[4] == 0x37 || header[4] == 0x39)
+                            && header[5] == 0x61;
+            case "image/webp" ->
+                    header.length >= 12
+                            && header[0] == 0x52
+                            && header[1] == 0x49
+                            && header[2] == 0x46
+                            && header[3] == 0x46
+                            && header[8] == 0x57
+                            && header[9] == 0x45
+                            && header[10] == 0x42
+                            && header[11] == 0x50;
             default -> false;
         };
     }

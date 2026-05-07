@@ -9,9 +9,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * {@code @PreAuthorize} 에서 사용하는 SpEL 헬퍼.
+ *
  * <ul>
- *     <li>{@code app.security.permit-all=true} (기본): 로컬 개발 시 권한 검사 생략</li>
- *     <li>{@code false}: DB 기반 GrantedAuthority ({@code MENU_READ} 등) 검사</li>
+ *   <li>{@code app.security.permit-all=true} (기본): 로컬 개발 시 권한 검사 생략
+ *   <li>{@code false}: DB 기반 GrantedAuthority ({@code MENU_READ} 등) 검사
  * </ul>
  */
 @Slf4j
@@ -27,14 +28,14 @@ public class SecurityExpressions {
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            log.warn("""
+            log.warn(
+                    """
                     [권한검사] 거부
                       · 필요 권한: {}
                       · 사유: 비인증 또는 SecurityContext 없음
                       · principal(참고): {}""",
                     authority,
-                    auth != null ? auth.getName() : "null"
-            );
+                    auth != null ? auth.getName() : "null");
             return false;
         }
         for (GrantedAuthority ga : auth.getAuthorities()) {
@@ -42,7 +43,8 @@ public class SecurityExpressions {
                 return true;
             }
         }
-        log.warn("""
+        log.warn(
+                """
                 [권한검사] 거부
                   · 필요 권한: {}
                   · 로그인 principal: {}
@@ -52,8 +54,7 @@ public class SecurityExpressions {
                 authority,
                 auth.getName(),
                 SecurityLogFormatting.roleCodesLineFromPrincipal(auth.getPrincipal()),
-                SecurityLogFormatting.sortedAuthoritiesMultiline(auth, 5)
-        );
+                SecurityLogFormatting.sortedAuthoritiesMultiline(auth, 5));
         return false;
     }
 

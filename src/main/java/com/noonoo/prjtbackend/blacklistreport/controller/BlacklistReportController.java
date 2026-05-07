@@ -8,6 +8,9 @@ import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.api.ApiResponse;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.security.MenuAuthorities;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -15,10 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -31,20 +30,24 @@ public class BlacklistReportController {
     @GetMapping("/categories")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BLACKLIST_REPORT + "')")
     public ApiResponse<List<OptionDto>> categories() {
-        return ApiResponse.ok("블랙리스트 카테고리(등록·수정)", blacklistReportService.findBlacklistCategoryOptions());
+        return ApiResponse.ok(
+                "블랙리스트 카테고리(등록·수정)", blacklistReportService.findBlacklistCategoryOptions());
     }
 
     @GetMapping("/list-categories")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BLACKLIST_REPORT + "')")
     public ApiResponse<List<OptionDto>> listCategories() {
-        return ApiResponse.ok("블랙리스트 목록 조회 카테고리", blacklistReportService.findBlacklistListCategoryOptions());
+        return ApiResponse.ok(
+                "블랙리스트 목록 조회 카테고리", blacklistReportService.findBlacklistListCategoryOptions());
     }
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BLACKLIST_REPORT + "')")
-    public ApiResponse<PageResponse<BlacklistReportDto>> search(@RequestBody BlacklistReportSearchCondition request) {
+    public ApiResponse<PageResponse<BlacklistReportDto>> search(
+            @RequestBody BlacklistReportSearchCondition request) {
         log.info("POST /api/blacklist-reports/search param={}", request);
-        PageResponse<BlacklistReportDto> result = blacklistReportService.findBlacklistReports(request);
+        PageResponse<BlacklistReportDto> result =
+                blacklistReportService.findBlacklistReports(request);
         return ApiResponse.ok("블랙리스트 제보 목록 조회 완료", result);
     }
 
@@ -115,16 +118,25 @@ public class BlacklistReportController {
             @RequestParam(required = false) String createDtFrom,
             @RequestParam(required = false) String createDtTo,
             @RequestParam(required = false) String categoryCode,
-            @RequestParam(required = false) String columns) throws Exception {
-        byte[] bytes = blacklistReportService.exportExcel(
-                blacklistTargetId, keyword, createDtFrom, createDtTo, categoryCode, columns);
+            @RequestParam(required = false) String columns)
+            throws Exception {
+        byte[] bytes =
+                blacklistReportService.exportExcel(
+                        blacklistTargetId,
+                        keyword,
+                        createDtFrom,
+                        createDtTo,
+                        categoryCode,
+                        columns);
         String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
         // ASCII 파일명만 사용 (UTF-8 filename* 는 프록시/브라우저에서 깨지는 경우가 있음)
         String filename = "blacklist-report-" + ts + ".xlsx";
         String cd = "attachment; filename=\"" + filename + "\"";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, cd)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType(
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(bytes);
     }
 }

@@ -3,17 +3,16 @@ package com.noonoo.prjtbackend.contentfilter.serviceImpl;
 import com.noonoo.prjtbackend.contentfilter.dto.ContentFilterWordDto;
 import com.noonoo.prjtbackend.contentfilter.mapper.ContentFilterWordMapper;
 import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +41,8 @@ public class ContentFilterApplyServiceImpl implements ContentFilterApplyService 
         }
         synchronized (cacheLock) {
             if (cache == null) {
-                List<ContentFilterWordDto> loaded = contentFilterWordMapper.selectAllActiveForFilter();
+                List<ContentFilterWordDto> loaded =
+                        contentFilterWordMapper.selectAllActiveForFilter();
                 cache = loaded != null ? List.copyOf(loaded) : List.of();
             }
             return cache;
@@ -53,16 +53,16 @@ public class ContentFilterApplyServiceImpl implements ContentFilterApplyService 
         return contentFilterMode != null && "reject".equalsIgnoreCase(contentFilterMode.trim());
     }
 
-    /**
-     * 긴 키워드 우선(치환 로직과 동일 순서).
-     */
+    /** 긴 키워드 우선(치환 로직과 동일 순서). */
     private Optional<ContentFilterWordDto> findFirstMatchingWord(String text) {
         if (!StringUtils.hasText(text)) {
             return Optional.empty();
         }
         List<ContentFilterWordDto> words = new ArrayList<>(getWords());
-        words.sort(Comparator.comparingInt((ContentFilterWordDto w) ->
-                w.getKeyword() != null ? -w.getKeyword().length() : 0));
+        words.sort(
+                Comparator.comparingInt(
+                        (ContentFilterWordDto w) ->
+                                w.getKeyword() != null ? -w.getKeyword().length() : 0));
         for (ContentFilterWordDto w : words) {
             String k = w.getKeyword();
             if (!StringUtils.hasText(k)) {
@@ -72,7 +72,9 @@ public class ContentFilterApplyServiceImpl implements ContentFilterApplyService 
             if (safe.isEmpty()) {
                 continue;
             }
-            Pattern p = Pattern.compile(Pattern.quote(safe), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+            Pattern p =
+                    Pattern.compile(
+                            Pattern.quote(safe), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
             if (p.matcher(text).find()) {
                 return Optional.of(w);
             }
@@ -100,8 +102,10 @@ public class ContentFilterApplyServiceImpl implements ContentFilterApplyService 
             return text;
         }
         List<ContentFilterWordDto> words = new ArrayList<>(getWords());
-        words.sort(Comparator.comparingInt((ContentFilterWordDto w) ->
-                w.getKeyword() != null ? -w.getKeyword().length() : 0));
+        words.sort(
+                Comparator.comparingInt(
+                        (ContentFilterWordDto w) ->
+                                w.getKeyword() != null ? -w.getKeyword().length() : 0));
         String result = text;
         for (ContentFilterWordDto w : words) {
             String k = w.getKeyword();
@@ -114,7 +118,9 @@ public class ContentFilterApplyServiceImpl implements ContentFilterApplyService 
             }
             int len = Math.min(safe.length(), 40);
             String replacement = "*".repeat(len);
-            Pattern p = Pattern.compile(Pattern.quote(safe), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+            Pattern p =
+                    Pattern.compile(
+                            Pattern.quote(safe), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
             result = p.matcher(result).replaceAll(Matcher.quoteReplacement(replacement));
         }
         return result;

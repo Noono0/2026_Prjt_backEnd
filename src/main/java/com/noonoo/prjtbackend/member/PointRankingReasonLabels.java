@@ -3,9 +3,7 @@ package com.noonoo.prjtbackend.member;
 import com.noonoo.prjtbackend.member.wallet.WalletPointRules;
 import org.springframework.util.StringUtils;
 
-/**
- * 포인트 원장 reason_code → 화면용 한글 라벨 (랭킹 사유 표시).
- */
+/** 포인트 원장 reason_code → 화면용 한글 라벨 (랭킹 사유 표시). */
 public final class PointRankingReasonLabels {
 
     private PointRankingReasonLabels() {}

@@ -5,5 +5,4 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @MapperScan("com.noonoo.prjtbackend.*.mapper")
-public class MybatisConfig {
-}
+public class MybatisConfig {}

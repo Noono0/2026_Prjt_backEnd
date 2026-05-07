@@ -1,13 +1,11 @@
 package com.noonoo.prjtbackend.role.mapper;
 
-import java.util.List;
-
 import com.noonoo.prjtbackend.role.dto.RoleDto;
 import com.noonoo.prjtbackend.role.dto.RoleSaveRequest;
 import com.noonoo.prjtbackend.role.dto.RoleSearchCondition;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 
 @Mapper
 public interface RoleMapper {
@@ -19,7 +17,8 @@ public interface RoleMapper {
 
     RoleDto selectDetail(RoleSearchCondition condition);
 
-    long countByRoleCode(@Param("roleCode") String roleCode, @Param("excludeRoleId") Long excludeRoleId);
+    long countByRoleCode(
+            @Param("roleCode") String roleCode, @Param("excludeRoleId") Long excludeRoleId);
 
     int insertData(RoleSaveRequest request);
 

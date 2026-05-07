@@ -13,8 +13,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ContentFilterWordDto {
     private Long contentFilterWordSeq;
+
     /** PROFANITY | AD */
     private String category;
+
     private String keyword;
     private String useYn;
     private Integer sortOrder;

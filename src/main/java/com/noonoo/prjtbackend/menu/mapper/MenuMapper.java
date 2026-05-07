@@ -4,10 +4,9 @@ import com.noonoo.prjtbackend.menu.dto.MenuDto;
 import com.noonoo.prjtbackend.menu.dto.MenuReorderItem;
 import com.noonoo.prjtbackend.menu.dto.MenuSaveRequest;
 import com.noonoo.prjtbackend.menu.dto.MenuSearchCondition;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 @Mapper
 public interface MenuMapper {
@@ -25,7 +24,8 @@ public interface MenuMapper {
 
     MenuDto selectDetail(MenuSearchCondition condition);
 
-    long countByMenuCode(@Param("menuCode") String menuCode, @Param("excludeMenuId") Long excludeMenuId);
+    long countByMenuCode(
+            @Param("menuCode") String menuCode, @Param("excludeMenuId") Long excludeMenuId);
 
     int insertData(MenuSaveRequest request);
 

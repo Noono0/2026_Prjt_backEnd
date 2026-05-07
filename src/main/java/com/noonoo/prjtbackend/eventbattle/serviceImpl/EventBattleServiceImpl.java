@@ -6,18 +6,18 @@ import com.noonoo.prjtbackend.common.paging.PagingUtils;
 import com.noonoo.prjtbackend.common.security.MenuAuthorities;
 import com.noonoo.prjtbackend.common.security.SecurityExpressions;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleActivityDto;
-import com.noonoo.prjtbackend.eventbattle.dto.EventBattleBettorRankDto;
-import com.noonoo.prjtbackend.eventbattle.dto.EventBattleStakeMemberRow;
-import com.noonoo.prjtbackend.eventbattle.dto.EventBattleWinnerPayoutRowDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleBetRequest;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleBetRowDto;
+import com.noonoo.prjtbackend.eventbattle.dto.EventBattleBettorRankDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleMyBetDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleOptionDto;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSaveRequest;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSearchCondition;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleSettleRequest;
+import com.noonoo.prjtbackend.eventbattle.dto.EventBattleStakeMemberRow;
 import com.noonoo.prjtbackend.eventbattle.dto.EventBattleVoteRequest;
+import com.noonoo.prjtbackend.eventbattle.dto.EventBattleWinnerPayoutRowDto;
 import com.noonoo.prjtbackend.eventbattle.dto.MemberStakeRow;
 import com.noonoo.prjtbackend.eventbattle.mapper.EventBattleMapper;
 import com.noonoo.prjtbackend.eventbattle.service.EventBattleService;
@@ -25,16 +25,15 @@ import com.noonoo.prjtbackend.eventbattle.sse.EventBattleActivitySseBroadcaster;
 import com.noonoo.prjtbackend.member.dto.MemberWalletLedgerDto;
 import com.noonoo.prjtbackend.member.mapper.MemberWalletMapper;
 import com.noonoo.prjtbackend.member.wallet.WalletPointRules;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +63,10 @@ public class EventBattleServiceImpl implements EventBattleService {
         String loginId = RequestContext.getLoginMemberId();
         String ip = RequestContext.getClientIp();
         request.setTitle(request.getTitle().trim());
-        request.setVoteLimitPerMember(request.getVoteLimitPerMember() == null || request.getVoteLimitPerMember() < 1 ? 1 : request.getVoteLimitPerMember());
+        request.setVoteLimitPerMember(
+                request.getVoteLimitPerMember() == null || request.getVoteLimitPerMember() < 1
+                        ? 1
+                        : request.getVoteLimitPerMember());
         request.setVoteOnlyYn(Boolean.TRUE.equals(request.getVoteOnly()) ? "Y" : "N");
         request.setCreatorMemberSeq(creator);
         request.setCreateId(StringUtils.hasText(loginId) ? loginId : "SYSTEM");
@@ -123,16 +125,14 @@ public class EventBattleServiceImpl implements EventBattleService {
     }
 
     private EventBattleActivityDto buildActivity(
-            long eventBattleSeq,
-            Long sinceBetSeq,
-            int recentLimit,
-            boolean includeViewerBets
-    ) {
+            long eventBattleSeq, Long sinceBetSeq, int recentLimit, boolean includeViewerBets) {
         EventBattleDto e = get(eventBattleSeq);
         int lim = recentLimit > 0 && recentLimit <= 200 ? recentLimit : ACTIVITY_RECENT_DEFAULT;
-        List<EventBattleBetRowDto> rows = eventBattleMapper.selectRecentBets(eventBattleSeq, sinceBetSeq, lim);
+        List<EventBattleBetRowDto> rows =
+                eventBattleMapper.selectRecentBets(eventBattleSeq, sinceBetSeq, lim);
         /* SQL: bet_seq DESC → 최신이 위로 */
-        List<EventBattleBettorRankDto> ranking = eventBattleMapper.selectBettorRanking(eventBattleSeq, BETTOR_RANKING_TOP);
+        List<EventBattleBettorRankDto> ranking =
+                eventBattleMapper.selectBettorRanking(eventBattleSeq, BETTOR_RANKING_TOP);
         if (ranking != null) {
             for (int i = 0; i < ranking.size(); i++) {
                 ranking.get(i).setRank(i + 1);
@@ -142,7 +142,10 @@ public class EventBattleServiceImpl implements EventBattleService {
         long participantCount = eventBattleMapper.countDistinctBetMembers(eventBattleSeq);
         Long lastSeq = eventBattleMapper.maxBetSeq(eventBattleSeq);
         List<EventBattleOptionDto> opts = e.getOptions() != null ? e.getOptions() : List.of();
-        long totalPool = opts.stream().mapToLong(o -> o.getPointsTotal() != null ? o.getPointsTotal() : 0L).sum();
+        long totalPool =
+                opts.stream()
+                        .mapToLong(o -> o.getPointsTotal() != null ? o.getPointsTotal() : 0L)
+                        .sum();
 
         EventBattleMyBetDto myBet = null;
         List<EventBattleBetRowDto> myBetHistory = new ArrayList<>();
@@ -152,8 +155,9 @@ public class EventBattleServiceImpl implements EventBattleService {
             if (login != null) {
                 myBet = eventBattleMapper.selectMyBet(eventBattleSeq, login);
                 myVoteOptionSeqs = eventBattleMapper.selectMyVoteOptionSeqs(eventBattleSeq, login);
-                List<EventBattleBetRowDto> mine = eventBattleMapper.selectMyBetsForEvent(
-                        eventBattleSeq, login, MY_BET_HISTORY_LIMIT);
+                List<EventBattleBetRowDto> mine =
+                        eventBattleMapper.selectMyBetsForEvent(
+                                eventBattleSeq, login, MY_BET_HISTORY_LIMIT);
                 if (mine != null) {
                     myBetHistory = mine;
                 }
@@ -164,7 +168,9 @@ public class EventBattleServiceImpl implements EventBattleService {
         if ("SETTLED".equals(e.getStatus())
                 && e.getWinnerOptionSeq() != null
                 && e.getWinnerOptionSeq() > 0) {
-            winnerSplit = computeWinnerPayoutCelebrationSplit(eventBattleSeq, e.getWinnerOptionSeq(), totalPool);
+            winnerSplit =
+                    computeWinnerPayoutCelebrationSplit(
+                            eventBattleSeq, e.getWinnerOptionSeq(), totalPool);
         }
 
         return EventBattleActivityDto.builder()
@@ -186,22 +192,21 @@ public class EventBattleServiceImpl implements EventBattleService {
                 .build();
     }
 
-    /**
-     * 정산(settle)과 동일한 비례 배분 + 잔액 round-robin으로 승리측 지급액을 계산한다 (조회 전용).
-     */
+    /** 정산(settle)과 동일한 비례 배분 + 잔액 round-robin으로 승리측 지급액을 계산한다 (조회 전용). */
     private WinnerPayoutCelebrationSplit computeWinnerPayoutCelebrationSplit(
             long eventBattleSeq, long winnerOptionSeq, long totalPool) {
         if (totalPool <= 0) {
             return WinnerPayoutCelebrationSplit.empty();
         }
-        List<EventBattleStakeMemberRow> rows = eventBattleMapper.selectStakesByOptionWithMember(
-                eventBattleSeq, winnerOptionSeq);
+        List<EventBattleStakeMemberRow> rows =
+                eventBattleMapper.selectStakesByOptionWithMember(eventBattleSeq, winnerOptionSeq);
         if (rows == null || rows.isEmpty()) {
             return WinnerPayoutCelebrationSplit.empty();
         }
-        long winSum = rows.stream()
-                .mapToLong(r -> r.getStakeAmount() != null ? r.getStakeAmount() : 0L)
-                .sum();
+        long winSum =
+                rows.stream()
+                        .mapToLong(r -> r.getStakeAmount() != null ? r.getStakeAmount() : 0L)
+                        .sum();
         if (winSum <= 0) {
             return WinnerPayoutCelebrationSplit.empty();
         }
@@ -213,7 +218,8 @@ public class EventBattleServiceImpl implements EventBattleService {
         long[] payouts = new long[n];
         long distributed = 0;
         for (int i = 0; i < n; i++) {
-            long stake = sorted.get(i).getStakeAmount() != null ? sorted.get(i).getStakeAmount() : 0L;
+            long stake =
+                    sorted.get(i).getStakeAmount() != null ? sorted.get(i).getStakeAmount() : 0L;
             long share = (totalPool * stake) / winSum;
             payouts[i] = share;
             distributed += share;
@@ -229,22 +235,26 @@ public class EventBattleServiceImpl implements EventBattleService {
         List<EventBattleWinnerPayoutRowDto> enriched = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             EventBattleStakeMemberRow sr = sorted.get(i);
-            enriched.add(EventBattleWinnerPayoutRowDto.builder()
-                    .memberDisplayName(sr.getMemberDisplayName())
-                    .stakePoints(sr.getStakeAmount())
-                    .payoutPoints(payouts[i])
-                    .build());
+            enriched.add(
+                    EventBattleWinnerPayoutRowDto.builder()
+                            .memberDisplayName(sr.getMemberDisplayName())
+                            .stakePoints(sr.getStakeAmount())
+                            .payoutPoints(payouts[i])
+                            .build());
         }
-        enriched.sort(Comparator.comparingLong(
-                (EventBattleWinnerPayoutRowDto x) -> x.getPayoutPoints() != null ? x.getPayoutPoints() : 0L
-        ).reversed());
+        enriched.sort(
+                Comparator.comparingLong(
+                                (EventBattleWinnerPayoutRowDto x) ->
+                                        x.getPayoutPoints() != null ? x.getPayoutPoints() : 0L)
+                        .reversed());
         for (int i = 0; i < enriched.size(); i++) {
             enriched.get(i).setRank(i + 1);
         }
 
-        List<EventBattleWinnerPayoutRowDto> top5 = enriched.size() <= 5
-                ? new ArrayList<>(enriched)
-                : new ArrayList<>(enriched.subList(0, 5));
+        List<EventBattleWinnerPayoutRowDto> top5 =
+                enriched.size() <= 5
+                        ? new ArrayList<>(enriched)
+                        : new ArrayList<>(enriched.subList(0, 5));
         long otherTotal = 0L;
         for (int i = 5; i < enriched.size(); i++) {
             Long p = enriched.get(i).getPayoutPoints();
@@ -255,23 +265,22 @@ public class EventBattleServiceImpl implements EventBattleService {
     }
 
     private record WinnerPayoutCelebrationSplit(
-            List<EventBattleWinnerPayoutRowDto> top5,
-            int otherMemberCount,
-            long otherPayoutTotal
-    ) {
+            List<EventBattleWinnerPayoutRowDto> top5, int otherMemberCount, long otherPayoutTotal) {
         private static WinnerPayoutCelebrationSplit empty() {
             return new WinnerPayoutCelebrationSplit(new ArrayList<>(), 0, 0L);
         }
     }
 
     @Override
-    public List<EventBattleBetRowDto> recentBetsOlder(long eventBattleSeq, long beforeBetSeq, int limit) {
+    public List<EventBattleBetRowDto> recentBetsOlder(
+            long eventBattleSeq, long beforeBetSeq, int limit) {
         get(eventBattleSeq);
         int lim = limit > 0 && limit <= 200 ? limit : ACTIVITY_RECENT_DEFAULT;
         if (beforeBetSeq < 1) {
             throw new IllegalArgumentException("beforeBetSeq 가 올바르지 않습니다.");
         }
-        List<EventBattleBetRowDto> rows = eventBattleMapper.selectRecentBetsBefore(eventBattleSeq, beforeBetSeq, lim);
+        List<EventBattleBetRowDto> rows =
+                eventBattleMapper.selectRecentBetsBefore(eventBattleSeq, beforeBetSeq, lim);
         return rows != null ? rows : new ArrayList<>();
     }
 
@@ -296,12 +305,15 @@ public class EventBattleServiceImpl implements EventBattleService {
             throw new IllegalStateException("베팅이 마감된 이벤트입니다.");
         }
         EventBattleOptionDto opt = eventBattleMapper.selectOptionById(optionSeq);
-        if (opt == null || opt.getEventBattleSeq() == null || opt.getEventBattleSeq() != eventBattleSeq) {
+        if (opt == null
+                || opt.getEventBattleSeq() == null
+                || opt.getEventBattleSeq() != eventBattleSeq) {
             throw new IllegalArgumentException("유효하지 않은 주제입니다.");
         }
 
         EventBattleMyBetDto existing = eventBattleMapper.selectMyBet(eventBattleSeq, memberSeq);
-        if (existing != null && existing.getEventBattleOptionSeq() != null
+        if (existing != null
+                && existing.getEventBattleOptionSeq() != null
                 && !existing.getEventBattleOptionSeq().equals(optionSeq)) {
             throw new IllegalStateException("이미 다른 주제에 베팅했습니다. 같은 주제에만 추가 베팅할 수 있습니다.");
         }
@@ -315,8 +327,7 @@ public class EventBattleServiceImpl implements EventBattleService {
                 memberSeq,
                 WalletPointRules.REASON_EVENT_BATTLE_BET,
                 String.format("이벤트 대결 베팅 #%d (%s %dP)", eventBattleSeq, opt.getLabel(), pts),
-                -pts
-        );
+                -pts);
 
         eventBattleMapper.insertBet(eventBattleSeq, optionSeq, memberSeq, pts);
         int n = eventBattleMapper.incrementOptionPoints(optionSeq, pts);
@@ -339,9 +350,17 @@ public class EventBattleServiceImpl implements EventBattleService {
         if (!"OPEN".equals(e.getStatus())) {
             throw new IllegalStateException("투표가 마감된 이벤트입니다.");
         }
-        int limit = e.getVoteLimitPerMember() == null || e.getVoteLimitPerMember() < 1 ? 1 : e.getVoteLimitPerMember();
-        List<Long> raw = request != null && request.getOptionSeqs() != null ? request.getOptionSeqs() : List.of();
-        List<Long> picks = new ArrayList<>(new LinkedHashSet<>(raw.stream().filter(v -> v != null && v > 0).toList()));
+        int limit =
+                e.getVoteLimitPerMember() == null || e.getVoteLimitPerMember() < 1
+                        ? 1
+                        : e.getVoteLimitPerMember();
+        List<Long> raw =
+                request != null && request.getOptionSeqs() != null
+                        ? request.getOptionSeqs()
+                        : List.of();
+        List<Long> picks =
+                new ArrayList<>(
+                        new LinkedHashSet<>(raw.stream().filter(v -> v != null && v > 0).toList()));
         if (picks.isEmpty()) {
             throw new IllegalArgumentException("최소 1개 주제를 선택해 주세요.");
         }
@@ -350,7 +369,9 @@ public class EventBattleServiceImpl implements EventBattleService {
         }
         for (Long optionSeq : picks) {
             EventBattleOptionDto opt = eventBattleMapper.selectOptionById(optionSeq);
-            if (opt == null || opt.getEventBattleSeq() == null || opt.getEventBattleSeq() != eventBattleSeq) {
+            if (opt == null
+                    || opt.getEventBattleSeq() == null
+                    || opt.getEventBattleSeq() != eventBattleSeq) {
                 throw new IllegalArgumentException("이벤트에 속한 유효한 주제를 선택해 주세요.");
             }
         }
@@ -378,20 +399,34 @@ public class EventBattleServiceImpl implements EventBattleService {
         }
 
         EventBattleOptionDto winOpt = eventBattleMapper.selectOptionById(winnerOptionSeq);
-        if (winOpt == null || winOpt.getEventBattleSeq() == null || winOpt.getEventBattleSeq() != eventBattleSeq) {
+        if (winOpt == null
+                || winOpt.getEventBattleSeq() == null
+                || winOpt.getEventBattleSeq() != eventBattleSeq) {
             throw new IllegalArgumentException("이벤트에 속한 주제가 아닙니다.");
         }
 
         List<EventBattleOptionDto> opts = eventBattleMapper.selectOptionsByEventSeq(eventBattleSeq);
-        long totalPool = opts.stream().mapToLong(o -> o.getPointsTotal() != null ? o.getPointsTotal() : 0L).sum();
+        long totalPool =
+                opts.stream()
+                        .mapToLong(o -> o.getPointsTotal() != null ? o.getPointsTotal() : 0L)
+                        .sum();
 
-        List<MemberStakeRow> winStakes = eventBattleMapper.sumStakesByOption(eventBattleSeq, winnerOptionSeq);
-        long winSum = winStakes.stream().mapToLong(s -> s.getStakeAmount() != null ? s.getStakeAmount() : 0L).sum();
+        List<MemberStakeRow> winStakes =
+                eventBattleMapper.sumStakesByOption(eventBattleSeq, winnerOptionSeq);
+        long winSum =
+                winStakes.stream()
+                        .mapToLong(s -> s.getStakeAmount() != null ? s.getStakeAmount() : 0L)
+                        .sum();
 
         if (totalPool == 0) {
             String modId = loginIdOrSystem();
             String modIp = RequestContext.getClientIp();
-            int u = eventBattleMapper.updateSettled(eventBattleSeq, winnerOptionSeq, modId, StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
+            int u =
+                    eventBattleMapper.updateSettled(
+                            eventBattleSeq,
+                            winnerOptionSeq,
+                            modId,
+                            StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
             if (u == 0) {
                 throw new IllegalStateException("정산 처리에 실패했습니다.");
             }
@@ -404,7 +439,12 @@ public class EventBattleServiceImpl implements EventBattleService {
             refundAll(eventBattleSeq);
             String modId = loginIdOrSystem();
             String modIp = RequestContext.getClientIp();
-            int u = eventBattleMapper.updateSettled(eventBattleSeq, winnerOptionSeq, modId, StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
+            int u =
+                    eventBattleMapper.updateSettled(
+                            eventBattleSeq,
+                            winnerOptionSeq,
+                            modId,
+                            StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
             if (u == 0) {
                 throw new IllegalStateException("정산 상태 반영에 실패했습니다.");
             }
@@ -419,7 +459,8 @@ public class EventBattleServiceImpl implements EventBattleService {
         long[] payouts = new long[sorted.size()];
         long distributed = 0;
         for (int i = 0; i < sorted.size(); i++) {
-            long stake = sorted.get(i).getStakeAmount() != null ? sorted.get(i).getStakeAmount() : 0L;
+            long stake =
+                    sorted.get(i).getStakeAmount() != null ? sorted.get(i).getStakeAmount() : 0L;
             long share = (totalPool * stake) / winSum;
             payouts[i] = share;
             distributed += share;
@@ -443,14 +484,19 @@ public class EventBattleServiceImpl implements EventBattleService {
             insertLedger(
                     m,
                     WalletPointRules.REASON_EVENT_BATTLE_WIN,
-                    String.format("이벤트 대결 정산 #%d 승리 (%s, %dP)", eventBattleSeq, winOpt.getLabel(), pay),
-                    pay
-            );
+                    String.format(
+                            "이벤트 대결 정산 #%d 승리 (%s, %dP)", eventBattleSeq, winOpt.getLabel(), pay),
+                    pay);
         }
 
         String modId = loginIdOrSystem();
         String modIp = RequestContext.getClientIp();
-        int u = eventBattleMapper.updateSettled(eventBattleSeq, winnerOptionSeq, modId, StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
+        int u =
+                eventBattleMapper.updateSettled(
+                        eventBattleSeq,
+                        winnerOptionSeq,
+                        modId,
+                        StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
         if (u == 0) {
             throw new IllegalStateException("정산 처리에 실패했습니다.");
         }
@@ -475,12 +521,12 @@ public class EventBattleServiceImpl implements EventBattleService {
         }
         String modId = loginIdOrSystem();
         String modIp = RequestContext.getClientIp();
-        int u = eventBattleMapper.updateSettled(
-                eventBattleSeq,
-                null,
-                modId,
-                StringUtils.hasText(modIp) ? modIp : "0.0.0.0"
-        );
+        int u =
+                eventBattleMapper.updateSettled(
+                        eventBattleSeq,
+                        null,
+                        modId,
+                        StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
         if (u == 0) {
             throw new IllegalStateException("투표 마감 처리에 실패했습니다.");
         }
@@ -501,11 +547,9 @@ public class EventBattleServiceImpl implements EventBattleService {
 
         String modId = loginIdOrSystem();
         String modIp = RequestContext.getClientIp();
-        int u = eventBattleMapper.updateCancelled(
-                eventBattleSeq,
-                modId,
-                StringUtils.hasText(modIp) ? modIp : "0.0.0.0"
-        );
+        int u =
+                eventBattleMapper.updateCancelled(
+                        eventBattleSeq, modId, StringUtils.hasText(modIp) ? modIp : "0.0.0.0");
         if (u == 0) {
             throw new IllegalStateException("이벤트 취소 처리에 실패했습니다.");
         }
@@ -531,8 +575,7 @@ public class EventBattleServiceImpl implements EventBattleService {
                     m,
                     WalletPointRules.REASON_EVENT_BATTLE_REFUND,
                     String.format("이벤트 대결 환급 #%d (승리 주제 베팅 없음)", eventBattleSeq),
-                    amt
-            );
+                    amt);
         }
     }
 

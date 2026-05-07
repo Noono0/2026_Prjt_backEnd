@@ -1,13 +1,12 @@
 package com.noonoo.prjtbackend.common.security;
 
 import com.noonoo.prjtbackend.role.dto.RoleMenuPermissionDto;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Component;
 
 @Component
 public class AuthorityBuilder {
@@ -36,7 +35,8 @@ public class AuthorityBuilder {
     }
 
     /** 동일 메뉴 권한이 여러 ROLE에서 오면 중복 제거 */
-    public List<SimpleGrantedAuthority> buildAuthoritiesDeduped(List<RoleMenuPermissionDto> permissions) {
+    public List<SimpleGrantedAuthority> buildAuthoritiesDeduped(
+            List<RoleMenuPermissionDto> permissions) {
         List<SimpleGrantedAuthority> raw = buildAuthorities(permissions);
         Set<String> seen = new LinkedHashSet<>();
         List<SimpleGrantedAuthority> out = new ArrayList<>();
@@ -48,10 +48,7 @@ public class AuthorityBuilder {
         return out;
     }
 
-    /**
-     * Spring Security hasRole() 등에서 사용할 시스템 역할.
-     * 예: ROLE_ADMIN, ROLE_USER
-     */
+    /** Spring Security hasRole() 등에서 사용할 시스템 역할. 예: ROLE_ADMIN, ROLE_USER */
     public List<SimpleGrantedAuthority> buildSystemRoleAuthorities(List<String> roleCodes) {
         List<SimpleGrantedAuthority> list = new ArrayList<>();
         if (roleCodes == null) {
@@ -67,8 +64,7 @@ public class AuthorityBuilder {
 
     public List<SimpleGrantedAuthority> mergeAuthorities(
             List<SimpleGrantedAuthority> menuAuthorities,
-            List<SimpleGrantedAuthority> roleAuthorities
-    ) {
+            List<SimpleGrantedAuthority> roleAuthorities) {
         Set<String> seen = new LinkedHashSet<>();
         List<SimpleGrantedAuthority> out = new ArrayList<>();
         for (SimpleGrantedAuthority a : menuAuthorities) {

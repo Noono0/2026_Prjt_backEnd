@@ -1,12 +1,10 @@
 package com.noonoo.prjtbackend.role.service;
 
+import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.role.dto.RoleDto;
 import com.noonoo.prjtbackend.role.dto.RoleSaveRequest;
 import com.noonoo.prjtbackend.role.dto.RoleSearchCondition;
-import com.noonoo.prjtbackend.common.paging.PageResponse;
-
 import java.util.List;
-
 
 public interface RoleService {
     List<RoleDto> findAllActiveRoles();

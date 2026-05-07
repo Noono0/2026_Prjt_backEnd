@@ -9,8 +9,10 @@ public class MemberWalletLedgerDto {
     private Long ledgerSeq;
     private Long memberSeq;
     private String reasonCode;
+
     /** 표시용 요약 (한글) */
     private String summary;
+
     private long pointDelta;
     private int ironDelta;
     private int silverDelta;

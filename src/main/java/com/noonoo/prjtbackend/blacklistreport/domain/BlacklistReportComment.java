@@ -6,14 +6,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-/**
- * 블랙리스트 제보 댓글 (DDL용, 조회·변경은 MyBatis)
- */
+/** 블랙리스트 제보 댓글 (DDL용, 조회·변경은 MyBatis) */
 @Getter
 @Setter
 @Entity

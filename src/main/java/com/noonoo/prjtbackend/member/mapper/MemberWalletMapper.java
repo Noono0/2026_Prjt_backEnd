@@ -5,10 +5,9 @@ import com.noonoo.prjtbackend.member.dto.MemberWalletLedgerDto;
 import com.noonoo.prjtbackend.member.dto.PointRankingBreakdownRowDto;
 import com.noonoo.prjtbackend.member.dto.PointRankingRowDto;
 import com.noonoo.prjtbackend.member.dto.WalletLedgerSearchCondition;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 @Mapper
 public interface MemberWalletMapper {
@@ -23,9 +22,7 @@ public interface MemberWalletMapper {
     int subtractPointsIfEnough(@Param("memberSeq") long memberSeq, @Param("delta") long delta);
 
     int purchaseIron(
-            @Param("memberSeq") long memberSeq,
-            @Param("cost") long cost,
-            @Param("qty") int qty);
+            @Param("memberSeq") long memberSeq, @Param("cost") long cost, @Param("qty") int qty);
 
     int exchangeIronToSilver(
             @Param("memberSeq") long memberSeq,
@@ -49,8 +46,7 @@ public interface MemberWalletMapper {
     List<MemberWalletLedgerDto> selectLedgerPage(WalletLedgerSearchCondition condition);
 
     List<PointRankingRowDto> selectPointRanking(
-            @Param("fromInclusive") String fromInclusive,
-            @Param("toExclusive") String toExclusive);
+            @Param("fromInclusive") String fromInclusive, @Param("toExclusive") String toExclusive);
 
     List<PointRankingBreakdownRowDto> selectPointRankingBreakdown(
             @Param("fromInclusive") String fromInclusive,

@@ -11,6 +11,7 @@ import lombok.ToString;
 public class ContentFilterWordSearchCondition extends PageRequest {
     /** 검색어(키워드 부분일치) */
     private String keyword;
+
     /** PROFANITY | AD | 전체 */
     private String category;
 

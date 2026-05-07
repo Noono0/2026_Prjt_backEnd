@@ -1,31 +1,30 @@
 package com.noonoo.prjtbackend.calendarschedule.serviceImpl;
 
-import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarEventView;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarRangeRequest;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleDto;
 import com.noonoo.prjtbackend.calendarschedule.dto.CalendarScheduleSaveRequest;
 import com.noonoo.prjtbackend.calendarschedule.mapper.CalendarScheduleMapper;
 import com.noonoo.prjtbackend.calendarschedule.service.CalendarScheduleService;
+import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +51,9 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
 
     @Override
     public List<CalendarEventView> findEventsForRange(CalendarRangeRequest request) {
-        if (request == null || !StringUtils.hasText(request.getFrom()) || !StringUtils.hasText(request.getTo())) {
+        if (request == null
+                || !StringUtils.hasText(request.getFrom())
+                || !StringUtils.hasText(request.getTo())) {
             throw new IllegalArgumentException("조회 시작일·종료일이 필요합니다.");
         }
         LocalDate from = LocalDate.parse(request.getFrom().trim());
@@ -64,7 +65,8 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
         String toStr = to.toString();
 
         List<CalendarEventView> out = new ArrayList<>();
-        for (CalendarScheduleDto row : calendarScheduleMapper.selectGeneralInRange(fromStr, toStr)) {
+        for (CalendarScheduleDto row :
+                calendarScheduleMapper.selectGeneralInRange(fromStr, toStr)) {
             out.add(toGeneralEvent(row));
         }
         for (CalendarScheduleDto row : calendarScheduleMapper.selectAllBirthdays()) {
@@ -125,10 +127,9 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
         return EVENT_COLOR_PALETTE[ThreadLocalRandom.current().nextInt(EVENT_COLOR_PALETTE.length)];
     }
 
-    /**
-     * 시간이 하나도 없으면 null(종일). 있으면 [시작, 종료] 로컬 시각(종료는 FC 배타 규칙에 맞게 그대로 사용).
-     */
-    private LocalDateTime[] resolveGeneralBounds(LocalDate s, LocalDate e, String startTimeStr, String endTimeStr) {
+    /** 시간이 하나도 없으면 null(종일). 있으면 [시작, 종료] 로컬 시각(종료는 FC 배타 규칙에 맞게 그대로 사용). */
+    private LocalDateTime[] resolveGeneralBounds(
+            LocalDate s, LocalDate e, String startTimeStr, String endTimeStr) {
         LocalTime st = parseToLocalTime(startTimeStr);
         LocalTime et = parseToLocalTime(endTimeStr);
         boolean hasAny = st != null || et != null;
@@ -156,7 +157,7 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
                 throw new IllegalArgumentException("종료 시각이 시작 시각보다 이후여야 합니다.");
             }
         }
-        return new LocalDateTime[] { LocalDateTime.of(s, st), LocalDateTime.of(e, et) };
+        return new LocalDateTime[] {LocalDateTime.of(s, st), LocalDateTime.of(e, et)};
     }
 
     private LocalTime parseToLocalTime(String raw) {
@@ -179,10 +180,12 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
     }
 
     private boolean hasAnyTime(CalendarScheduleSaveRequest request) {
-        return StringUtils.hasText(request.getStartTime()) || StringUtils.hasText(request.getEndTime());
+        return StringUtils.hasText(request.getStartTime())
+                || StringUtils.hasText(request.getEndTime());
     }
 
-    private List<CalendarEventView> expandBirthday(CalendarScheduleDto row, LocalDate from, LocalDate to) {
+    private List<CalendarEventView> expandBirthday(
+            CalendarScheduleDto row, LocalDate from, LocalDate to) {
         List<CalendarEventView> list = new ArrayList<>();
         Integer bm = row.getBirthMonth();
         Integer bd = row.getBirthDay();
@@ -204,18 +207,20 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
                 continue;
             }
             String dayStr = occ.toString();
-            list.add(CalendarEventView.builder()
-                    .id(row.getCalendarScheduleSeq() + "-" + dayStr)
-                    .calendarScheduleSeq(row.getCalendarScheduleSeq())
-                    .title(baseTitle + " 생일")
-                    .categoryName(row.getCategoryName())
-                    .start(dayStr)
-                    .end(occ.plusDays(1).toString())
-                    .allDay(true)
-                    .eventKind("BIRTHDAY")
-                    .backgroundColor(resolveDisplayColor(row.getEventColor(), COLOR_BIRTHDAY))
-                    .createId(row.getCreateId())
-                    .build());
+            list.add(
+                    CalendarEventView.builder()
+                            .id(row.getCalendarScheduleSeq() + "-" + dayStr)
+                            .calendarScheduleSeq(row.getCalendarScheduleSeq())
+                            .title(baseTitle + " 생일")
+                            .categoryName(row.getCategoryName())
+                            .start(dayStr)
+                            .end(occ.plusDays(1).toString())
+                            .allDay(true)
+                            .eventKind("BIRTHDAY")
+                            .backgroundColor(
+                                    resolveDisplayColor(row.getEventColor(), COLOR_BIRTHDAY))
+                            .createId(row.getCreateId())
+                            .build());
         }
         return list;
     }
@@ -246,7 +251,8 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
         }
         validateAndNormalize(request);
         if (!StringUtils.hasText(request.getEventColor())) {
-            CalendarScheduleDto prev = calendarScheduleMapper.selectById(request.getCalendarScheduleSeq());
+            CalendarScheduleDto prev =
+                    calendarScheduleMapper.selectById(request.getCalendarScheduleSeq());
             if (prev != null && StringUtils.hasText(prev.getEventColor())) {
                 request.setEventColor(prev.getEventColor().trim());
             } else {
@@ -302,7 +308,8 @@ public class CalendarScheduleServiceImpl implements CalendarScheduleService {
         normalizeEventColorField(request);
 
         if ("GENERAL".equals(kind)) {
-            if (!StringUtils.hasText(request.getStartDate()) || !StringUtils.hasText(request.getEndDate())) {
+            if (!StringUtils.hasText(request.getStartDate())
+                    || !StringUtils.hasText(request.getEndDate())) {
                 throw new IllegalArgumentException("일정의 시작일·종료일을 입력해주세요.");
             }
             LocalDate s = LocalDate.parse(request.getStartDate().trim());

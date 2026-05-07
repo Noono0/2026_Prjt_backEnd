@@ -8,18 +8,22 @@ import com.noonoo.prjtbackend.board.dto.BoardSearchCondition;
 import com.noonoo.prjtbackend.board.mapper.BoardMapper;
 import com.noonoo.prjtbackend.board.service.BoardService;
 import com.noonoo.prjtbackend.board.support.BoardBlindSupport;
+import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
 import com.noonoo.prjtbackend.common.config.RequestContext;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
-import com.noonoo.prjtbackend.codeGroup.dto.OptionDto;
-import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.common.security.AuthenticatedMember;
 import com.noonoo.prjtbackend.common.security.CurrentMemberService;
+import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.member.MemberDisplayNames;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.PointPolicyService;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -28,11 +32,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -71,8 +70,8 @@ public class BoardServiceImpl implements BoardService {
     }
 
     /**
-     * 인기글 탭: 요청 categoryCode가 공통코드(A0001·code_id A00017)의 code_value 또는 code_name과 같으면
-     * 카테고리 필터 대신 추천 수 임계 이상만 조회한다.
+     * 인기글 탭: 요청 categoryCode가 공통코드(A0001·code_id A00017)의 code_value 또는 code_name과 같으면 카테고리 필터 대신
+     * 추천 수 임계 이상만 조회한다.
      */
     private void applyPopularCategoryAsMinLikes(BoardSearchCondition c) {
         if (c == null || !StringUtils.hasText(c.getCategoryCode())) {
@@ -83,8 +82,10 @@ public class BoardServiceImpl implements BoardService {
             return;
         }
         String req = c.getCategoryCode().trim();
-        boolean matchValue = StringUtils.hasText(row.getCodeValue()) && req.equals(row.getCodeValue().trim());
-        boolean matchName = StringUtils.hasText(row.getCodeName()) && req.equals(row.getCodeName().trim());
+        boolean matchValue =
+                StringUtils.hasText(row.getCodeValue()) && req.equals(row.getCodeValue().trim());
+        boolean matchName =
+                StringUtils.hasText(row.getCodeName()) && req.equals(row.getCodeName().trim());
         if (!matchValue && !matchName) {
             return;
         }
@@ -226,7 +227,9 @@ public class BoardServiceImpl implements BoardService {
         }
         String req = categoryCode.trim();
         for (OptionDto option : findInquiryCategoryOptions()) {
-            if (option != null && StringUtils.hasText(option.getValue()) && req.equals(option.getValue().trim())) {
+            if (option != null
+                    && StringUtils.hasText(option.getValue())
+                    && req.equals(option.getValue().trim())) {
                 return true;
             }
         }
@@ -293,7 +296,8 @@ public class BoardServiceImpl implements BoardService {
             Long boardSeq = condition.getBoardSeq();
             if (writerSeq != null && writerSeq > 0 && boardSeq != null && boardSeq > 0) {
                 try {
-                    walletPointGrantService.grantFreeBoardPost(writerSeq, boardSeq, condition.getCategoryCode());
+                    walletPointGrantService.grantFreeBoardPost(
+                            writerSeq, boardSeq, condition.getCategoryCode());
                 } catch (Exception e) {
                     log.warn("자유게시판 글 작성 포인트 지급 실패 boardSeq={}: {}", boardSeq, e.toString());
                 }
@@ -385,11 +389,14 @@ public class BoardServiceImpl implements BoardService {
             return false;
         }
         Optional<AuthenticatedMember> auth = currentMemberService.resolve();
-        if (auth.isPresent() && Objects.equals(auth.get().memberSeq(), board.getWriterMemberSeq())) {
+        if (auth.isPresent()
+                && Objects.equals(auth.get().memberSeq(), board.getWriterMemberSeq())) {
             return true;
         }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof com.noonoo.prjtbackend.common.security.CustomUserDetails u) {
+        if (authentication != null
+                && authentication.getPrincipal()
+                        instanceof com.noonoo.prjtbackend.common.security.CustomUserDetails u) {
             for (String code : u.getRoleCodes()) {
                 if (ADMIN_ROLE_CODE.equalsIgnoreCase(code) || "ADMIN".equalsIgnoreCase(code)) {
                     return true;
@@ -444,7 +451,13 @@ public class BoardServiceImpl implements BoardService {
         if (b == null || boardBlindSupport.isBlind(b)) {
             return 0;
         }
-        int n = increaseWithActionLog("BOARD", "POST", boardSeq, "LIKE", () -> boardMapper.increaseBoardLikeCount(boardSeq));
+        int n =
+                increaseWithActionLog(
+                        "BOARD",
+                        "POST",
+                        boardSeq,
+                        "LIKE",
+                        () -> boardMapper.increaseBoardLikeCount(boardSeq));
         if (n > 0) {
             BoardDto board = boardMapper.findBoardById(boardSeq);
             pointPolicyService.tryGrantFreeBoardLikeMilestone(board);
@@ -459,7 +472,12 @@ public class BoardServiceImpl implements BoardService {
         if (b == null || boardBlindSupport.isBlind(b)) {
             return 0;
         }
-        return increaseWithActionLog("BOARD", "POST", boardSeq, "DISLIKE", () -> boardMapper.increaseBoardDislikeCount(boardSeq));
+        return increaseWithActionLog(
+                "BOARD",
+                "POST",
+                boardSeq,
+                "DISLIKE",
+                () -> boardMapper.increaseBoardDislikeCount(boardSeq));
     }
 
     @Override
@@ -473,12 +491,19 @@ public class BoardServiceImpl implements BoardService {
             return 0;
         }
         long rcBefore = before.getReportCount() != null ? before.getReportCount() : 0L;
-        int n = increaseWithActionLog("BOARD", "POST", boardSeq, "REPORT", () -> boardMapper.increaseBoardReportCount(boardSeq));
+        int n =
+                increaseWithActionLog(
+                        "BOARD",
+                        "POST",
+                        boardSeq,
+                        "REPORT",
+                        () -> boardMapper.increaseBoardReportCount(boardSeq));
         if (n > 0) {
             BoardDto after = boardMapper.findBoardById(boardSeq);
             if (after != null) {
                 long rcAfter = after.getReportCount() != null ? after.getReportCount() : 0L;
-                if (rcBefore < boardBlindSupport.getBlindReportThreshold() && rcAfter >= boardBlindSupport.getBlindReportThreshold()) {
+                if (rcBefore < boardBlindSupport.getBlindReportThreshold()
+                        && rcAfter >= boardBlindSupport.getBlindReportThreshold()) {
                     Long writer = after.getWriterMemberSeq();
                     if (writer != null && writer > 0) {
                         try {
@@ -493,24 +518,25 @@ public class BoardServiceImpl implements BoardService {
         return n;
     }
 
-    private int increaseWithActionLog(String boardKind,
-                                      String targetKind,
-                                      Long targetSeq,
-                                      String actionType,
-                                      CounterUpdater counterUpdater) {
+    private int increaseWithActionLog(
+            String boardKind,
+            String targetKind,
+            Long targetSeq,
+            String actionType,
+            CounterUpdater counterUpdater) {
         Long memberSeq = RequestContext.getLoginMemberSeq();
         String memberId = RequestContext.getLoginMemberId();
         String clientIp = RequestContext.getClientIp();
 
-        int inserted = boardMapper.insertBoardActionLog(
-                boardKind,
-                targetKind,
-                targetSeq,
-                actionType,
-                memberSeq,
-                memberId,
-                clientIp
-        );
+        int inserted =
+                boardMapper.insertBoardActionLog(
+                        boardKind,
+                        targetKind,
+                        targetSeq,
+                        actionType,
+                        memberSeq,
+                        memberId,
+                        clientIp);
 
         if (inserted <= 0) {
             return 0;

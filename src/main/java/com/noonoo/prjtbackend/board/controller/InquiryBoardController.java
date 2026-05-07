@@ -24,7 +24,6 @@ public class InquiryBoardController {
         return ApiResponse.ok("문의게시판 카테고리 조회 완료", boardService.findInquiryCategoryOptions());
     }
 
-
     private final BoardServiceImpl boardService;
 
     @PostMapping("/search")
@@ -35,8 +34,8 @@ public class InquiryBoardController {
 
     @GetMapping("/detail/{boardSeq}")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.BOARD + "')")
-    public ApiResponse<BoardDto> detail(@PathVariable Long boardSeq,
-                                        @RequestParam(required = false) String password) {
+    public ApiResponse<BoardDto> detail(
+            @PathVariable Long boardSeq, @RequestParam(required = false) String password) {
         BoardDto detail = boardService.findInquiryBoardDetail(boardSeq, password);
         if (detail == null) {
             return ApiResponse.fail("NOT_FOUND", "게시글을 찾을 수 없습니다.");
@@ -93,4 +92,3 @@ public class InquiryBoardController {
         return ApiResponse.ok(n > 0 ? "신고 처리 완료" : "이미 처리된 신고입니다.", n);
     }
 }
-

@@ -7,11 +7,10 @@ import com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSearchCondition;
 import com.noonoo.prjtbackend.sitePopup.service.SitePopupService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/site-popups")
@@ -39,7 +38,8 @@ public class SitePopupController {
 
     @PostMapping("/search")
     @PreAuthorize("@securityExpressions.canRead('" + MenuAuthorities.SITE_POPUP + "')")
-    public ApiResponse<PageResponse<SitePopupDto>> search(@RequestBody SitePopupSearchCondition request) {
+    public ApiResponse<PageResponse<SitePopupDto>> search(
+            @RequestBody SitePopupSearchCondition request) {
         PageResponse<SitePopupDto> result = sitePopupService.findSitePopups(request);
         return ApiResponse.ok("팝업 목록 조회 완료", result);
     }

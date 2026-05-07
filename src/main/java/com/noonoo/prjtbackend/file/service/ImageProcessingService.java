@@ -3,15 +3,6 @@ package com.noonoo.prjtbackend.file.service;
 import com.noonoo.prjtbackend.file.dto.ImageProcessResult;
 import com.noonoo.prjtbackend.file.exception.ImageDecodeException;
 import com.noonoo.prjtbackend.file.model.ImageUploadPurpose;
-import net.coobird.thumbnailator.Thumbnails;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -21,16 +12,20 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import net.coobird.thumbnailator.Thumbnails;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-/**
- * multipart 한도 안에서 받은 원본 바이트를 웹용으로 리사이즈·압축한다.
- * GIF 는 첫 프레임만 디코드되면 정지 이미지로 변환된다.
- */
+/** multipart 한도 안에서 받은 원본 바이트를 웹용으로 리사이즈·압축한다. GIF 는 첫 프레임만 디코드되면 정지 이미지로 변환된다. */
 @Service
 public class ImageProcessingService {
 
-    private static final String NOTICE =
-            "이미지가 커서 서버에서 웹에 맞게 크기·용량을 줄여 저장했습니다.";
+    private static final String NOTICE = "이미지가 커서 서버에서 웹에 맞게 크기·용량을 줄여 저장했습니다.";
 
     @Value("${app.file.image.optimize-enabled:true}")
     private boolean optimizeEnabled;
@@ -63,20 +58,13 @@ public class ImageProcessingService {
             byte[] raw,
             String normalizedContentType,
             String originalExt,
-            ImageUploadPurpose purpose
-    ) {
+            ImageUploadPurpose purpose) {
         Objects.requireNonNull(raw, "raw");
         String nct = normalizedContentType.toLowerCase(Locale.ROOT);
         String oext = originalExt == null ? "" : originalExt.toLowerCase(Locale.ROOT);
 
         if (!optimizeEnabled) {
-            return new ImageProcessResult(
-                    raw,
-                    nct,
-                    extensionFromMime(nct),
-                    false,
-                    null
-            );
+            return new ImageProcessResult(raw, nct, extensionFromMime(nct), false, null);
         }
 
         BufferedImage src;
@@ -98,39 +86,36 @@ public class ImageProcessingService {
         boolean geometryReduced = geometry.getWidth() != origW || geometry.getHeight() != origH;
 
         if (alpha && pngKeepAlphaAsPng && declaredPng) {
-            int maxB = purpose == ImageUploadPurpose.PROFILE ? profileTargetMaxBytes : boardTargetMaxBytes;
+            int maxB =
+                    purpose == ImageUploadPurpose.PROFILE
+                            ? profileTargetMaxBytes
+                            : boardTargetMaxBytes;
             byte[] pngBytes = encodePngUnderMaxBytes(geometry, maxB);
             boolean down = geometryReduced || pngBytes.length < raw.length * 0.85;
-            return new ImageProcessResult(
-                    pngBytes,
-                    "image/png",
-                    "png",
-                    down,
-                    down ? NOTICE : null
-            );
+            return new ImageProcessResult(pngBytes, "image/png", "png", down, down ? NOTICE : null);
         }
 
         BufferedImage rgb = flattenToRgb(geometry);
-        int minB = purpose == ImageUploadPurpose.PROFILE ? profileTargetMinBytes : boardTargetMinBytes;
-        int maxB = purpose == ImageUploadPurpose.PROFILE ? profileTargetMaxBytes : boardTargetMaxBytes;
+        int minB =
+                purpose == ImageUploadPurpose.PROFILE ? profileTargetMinBytes : boardTargetMinBytes;
+        int maxB =
+                purpose == ImageUploadPurpose.PROFILE ? profileTargetMaxBytes : boardTargetMaxBytes;
 
         boolean wantWebp = "webp".equalsIgnoreCase(preferredRasterFormat.trim());
         RasterPack pack = encodeRasterInRange(rgb, minB, maxB, wantWebp);
 
-        boolean formatToJpeg = "jpg".equals(pack.extension) && (declaredPng || "image/webp".equals(nct) || "webp".equals(oext));
-        boolean down = geometryReduced
-                || pack.bytes.length < raw.length * 0.85
-                || formatToJpeg
-                || "gif".equals(oext)
-                || "image/gif".equals(nct);
+        boolean formatToJpeg =
+                "jpg".equals(pack.extension)
+                        && (declaredPng || "image/webp".equals(nct) || "webp".equals(oext));
+        boolean down =
+                geometryReduced
+                        || pack.bytes.length < raw.length * 0.85
+                        || formatToJpeg
+                        || "gif".equals(oext)
+                        || "image/gif".equals(nct);
 
         return new ImageProcessResult(
-                pack.bytes,
-                pack.contentType,
-                pack.extension,
-                down,
-                down ? NOTICE : null
-        );
+                pack.bytes, pack.contentType, pack.extension, down, down ? NOTICE : null);
     }
 
     private BufferedImage resizeForPurpose(BufferedImage src, ImageUploadPurpose purpose) {
@@ -144,10 +129,11 @@ public class ImageProcessingService {
                 if (Math.max(w, h) <= profileMaxEdgePx) {
                     return src;
                 }
-                BufferedImage out = Thumbnails.of(src)
-                        .size(profileMaxEdgePx, profileMaxEdgePx)
-                        .keepAspectRatio(true)
-                        .asBufferedImage();
+                BufferedImage out =
+                        Thumbnails.of(src)
+                                .size(profileMaxEdgePx, profileMaxEdgePx)
+                                .keepAspectRatio(true)
+                                .asBufferedImage();
                 return out != null ? out : src;
             }
             if (boardMaxWidthPx <= 0) {
@@ -156,10 +142,11 @@ public class ImageProcessingService {
             if (src.getWidth() <= boardMaxWidthPx) {
                 return src;
             }
-            BufferedImage out = Thumbnails.of(src)
-                    .width(boardMaxWidthPx)
-                    .keepAspectRatio(true)
-                    .asBufferedImage();
+            BufferedImage out =
+                    Thumbnails.of(src)
+                            .width(boardMaxWidthPx)
+                            .keepAspectRatio(true)
+                            .asBufferedImage();
             return out != null ? out : src;
         } catch (IOException e) {
             throw new ImageDecodeException("이미지 리사이즈에 실패했습니다.", e);
@@ -170,15 +157,18 @@ public class ImageProcessingService {
         if (src.getType() == BufferedImage.TYPE_INT_RGB) {
             return src;
         }
-        BufferedImage rgb = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage rgb =
+                new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D g = rgb.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.setRenderingHint(
+                RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.drawImage(src, 0, 0, null);
         g.dispose();
         return rgb;
     }
 
-    private byte[] encodePngUnderMaxBytes(BufferedImage img, int maxBytes) throws ImageDecodeException {
+    private byte[] encodePngUnderMaxBytes(BufferedImage img, int maxBytes)
+            throws ImageDecodeException {
         try {
             BufferedImage current = img;
             for (int i = 0; i < 12; i++) {
@@ -191,7 +181,8 @@ public class ImageProcessingService {
                     return data;
                 }
                 BufferedImage smaller = scaleImage(current, 0.88);
-                if (smaller.getWidth() == current.getWidth() && smaller.getHeight() == current.getHeight()) {
+                if (smaller.getWidth() == current.getWidth()
+                        && smaller.getHeight() == current.getHeight()) {
                     return data;
                 }
                 current = smaller;
@@ -204,7 +195,8 @@ public class ImageProcessingService {
         }
     }
 
-    private RasterPack encodeRasterInRange(BufferedImage rgb, int minBytes, int maxBytes, boolean preferWebp) {
+    private RasterPack encodeRasterInRange(
+            BufferedImage rgb, int minBytes, int maxBytes, boolean preferWebp) {
         try {
             if (preferWebp && hasWebpWriter()) {
                 RasterPack w = tryFitWebp(rgb, minBytes, maxBytes);
@@ -222,7 +214,8 @@ public class ImageProcessingService {
         return ImageIO.getImageWritersByFormatName("webp").hasNext();
     }
 
-    private RasterPack tryFitWebp(BufferedImage rgb, int minBytes, int maxBytes) throws IOException {
+    private RasterPack tryFitWebp(BufferedImage rgb, int minBytes, int maxBytes)
+            throws IOException {
         if (!hasWebpWriter()) {
             return null;
         }

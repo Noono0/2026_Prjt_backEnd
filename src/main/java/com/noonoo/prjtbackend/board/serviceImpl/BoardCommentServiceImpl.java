@@ -16,12 +16,6 @@ import com.noonoo.prjtbackend.member.MemberDisplayNames;
 import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +27,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -40,9 +39,11 @@ import java.util.Set;
 public class BoardCommentServiceImpl implements BoardCommentService {
 
     private static final Comparator<BoardCommentDto> BY_CREATE_DT =
-            Comparator.comparing(BoardCommentDto::getCreateDt, Comparator.nullsLast(String::compareTo));
+            Comparator.comparing(
+                    BoardCommentDto::getCreateDt, Comparator.nullsLast(String::compareTo));
 
     private static final int MAX_EMOTICONS_PER_COMMENT = 3;
+
     /** 이모티콘(슬롯) + 본문 내 이미지 태그 합산 상한 */
     private static final int MAX_EMOTICON_AND_IMAGES_TOTAL = 3;
 
@@ -78,7 +79,8 @@ public class BoardCommentServiceImpl implements BoardCommentService {
             if (c.getParentBoardCommentSeq() == null) {
                 roots.add(c);
             } else {
-                childMap.computeIfAbsent(c.getParentBoardCommentSeq(), k -> new ArrayList<>()).add(c);
+                childMap.computeIfAbsent(c.getParentBoardCommentSeq(), k -> new ArrayList<>())
+                        .add(c);
             }
         }
         for (List<BoardCommentDto> kids : childMap.values()) {
@@ -86,14 +88,20 @@ public class BoardCommentServiceImpl implements BoardCommentService {
         }
         switch (s) {
             case "oldest" -> roots.sort(BY_CREATE_DT);
-            case "like" -> roots.sort(
-                    Comparator.comparing((BoardCommentDto c) -> c.getLikeCount() != null ? c.getLikeCount() : 0L)
-                            .reversed()
-                            .thenComparing(BY_CREATE_DT.reversed()));
+            case "like" ->
+                    roots.sort(
+                            Comparator.comparing(
+                                            (BoardCommentDto c) ->
+                                                    c.getLikeCount() != null
+                                                            ? c.getLikeCount()
+                                                            : 0L)
+                                    .reversed()
+                                    .thenComparing(BY_CREATE_DT.reversed()));
             default -> roots.sort(BY_CREATE_DT.reversed());
         }
         for (BoardCommentDto r : roots) {
-            List<BoardCommentDto> children = childMap.getOrDefault(r.getBoardCommentSeq(), Collections.emptyList());
+            List<BoardCommentDto> children =
+                    childMap.getOrDefault(r.getBoardCommentSeq(), Collections.emptyList());
             r.setChildren(new ArrayList<>(children));
         }
         return roots;
@@ -115,7 +123,8 @@ public class BoardCommentServiceImpl implements BoardCommentService {
         if (!isBoardYnAllowed(board.getCommentAllowedYn())) {
             throw new IllegalArgumentException("이 게시글은 댓글 작성이 허용되지 않았습니다.");
         }
-        if (req.getParentBoardCommentSeq() != null && !isBoardYnAllowed(board.getReplyAllowedYn())) {
+        if (req.getParentBoardCommentSeq() != null
+                && !isBoardYnAllowed(board.getReplyAllowedYn())) {
             throw new IllegalArgumentException("이 게시글은 답글 작성이 허용되지 않았습니다.");
         }
 
@@ -126,13 +135,26 @@ public class BoardCommentServiceImpl implements BoardCommentService {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        validateCommentBody(req.getContent(), req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
-        validateEmoticonSlots(loginMemberSeq, req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
-        validateEmoticonAndImageTotal(req.getContent(), req.getEmoticonSeq1(), req.getEmoticonSeq2(), req.getEmoticonSeq3());
+        validateCommentBody(
+                req.getContent(),
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
+        validateEmoticonSlots(
+                loginMemberSeq,
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
+        validateEmoticonAndImageTotal(
+                req.getContent(),
+                req.getEmoticonSeq1(),
+                req.getEmoticonSeq2(),
+                req.getEmoticonSeq3());
         req.setContent(contentFilterApplyService.applyField("댓글", req.getContent()));
 
         if (req.getParentBoardCommentSeq() != null) {
-            BoardCommentDto parent = boardCommentMapper.findBoardCommentById(req.getParentBoardCommentSeq());
+            BoardCommentDto parent =
+                    boardCommentMapper.findBoardCommentById(req.getParentBoardCommentSeq());
             if (parent == null || !Objects.equals(parent.getBoardSeq(), req.getBoardSeq())) {
                 throw new IllegalArgumentException("원 댓글을 찾을 수 없습니다.");
             }
@@ -160,13 +182,15 @@ public class BoardCommentServiceImpl implements BoardCommentService {
         req.setCreateId(StringUtils.hasText(loginMemberId) ? loginMemberId : "SYSTEM");
         req.setCreateIp(RequestContext.getClientIp());
 
-        int priorCount = boardCommentMapper.countCommentsByBoardAndMember(req.getBoardSeq(), loginMemberSeq);
+        int priorCount =
+                boardCommentMapper.countCommentsByBoardAndMember(req.getBoardSeq(), loginMemberSeq);
 
         boardCommentMapper.insertBoardComment(req);
         boardMapper.increaseBoardCommentCount(req.getBoardSeq());
 
         try {
-            walletPointGrantService.grantBoardComment(loginMemberSeq, req.getBoardSeq(), priorCount);
+            walletPointGrantService.grantBoardComment(
+                    loginMemberSeq, req.getBoardSeq(), priorCount);
         } catch (Exception e) {
             log.warn("자유게시판 댓글 포인트 지급 실패 boardSeq={}: {}", req.getBoardSeq(), e.toString());
         }
@@ -258,7 +282,10 @@ public class BoardCommentServiceImpl implements BoardCommentService {
                         try {
                             walletPointGrantService.deductCommentRewardOnBlind(writer, commentSeq);
                         } catch (Exception e) {
-                            log.warn("블라인드 댓글 포인트 회수 실패 commentSeq={}: {}", commentSeq, e.toString());
+                            log.warn(
+                                    "블라인드 댓글 포인트 회수 실패 commentSeq={}: {}",
+                                    commentSeq,
+                                    e.toString());
                         }
                     }
                 }
@@ -287,9 +314,21 @@ public class BoardCommentServiceImpl implements BoardCommentService {
         if (!Objects.equals(c.getWriterMemberSeq(), loginMemberSeq)) {
             throw new IllegalArgumentException("본인이 작성한 댓글만 수정할 수 있습니다.");
         }
-        validateCommentBody(body.getContent(), body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
-        validateEmoticonSlots(loginMemberSeq, body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
-        validateEmoticonAndImageTotal(body.getContent(), body.getEmoticonSeq1(), body.getEmoticonSeq2(), body.getEmoticonSeq3());
+        validateCommentBody(
+                body.getContent(),
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
+        validateEmoticonSlots(
+                loginMemberSeq,
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
+        validateEmoticonAndImageTotal(
+                body.getContent(),
+                body.getEmoticonSeq1(),
+                body.getEmoticonSeq2(),
+                body.getEmoticonSeq3());
         body.setContent(contentFilterApplyService.applyField("댓글", body.getContent()));
         return boardCommentMapper.updateBoardComment(boardSeq, commentSeq, loginMemberSeq, body);
     }
@@ -389,7 +428,8 @@ public class BoardCommentServiceImpl implements BoardCommentService {
             throw new IllegalArgumentException("같은 이모티콘을 중복해 넣을 수 없습니다.");
         }
         if (raw.size() > MAX_EMOTICONS_PER_COMMENT) {
-            throw new IllegalArgumentException("이모티콘은 최대 " + MAX_EMOTICONS_PER_COMMENT + "개까지 넣을 수 있습니다.");
+            throw new IllegalArgumentException(
+                    "이모티콘은 최대 " + MAX_EMOTICONS_PER_COMMENT + "개까지 넣을 수 있습니다.");
         }
         if (distinct.isEmpty()) {
             return;

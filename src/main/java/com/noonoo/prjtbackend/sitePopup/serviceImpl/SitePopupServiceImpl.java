@@ -1,22 +1,21 @@
 package com.noonoo.prjtbackend.sitePopup.serviceImpl;
 
 import com.noonoo.prjtbackend.common.config.RequestContext;
-import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.common.paging.PageResponse;
 import com.noonoo.prjtbackend.common.paging.PagingUtils;
+import com.noonoo.prjtbackend.contentfilter.service.ContentFilterApplyService;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupDto;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSaveRequest;
 import com.noonoo.prjtbackend.sitePopup.dto.SitePopupSearchCondition;
 import com.noonoo.prjtbackend.sitePopup.mapper.SitePopupMapper;
 import com.noonoo.prjtbackend.sitePopup.service.SitePopupService;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor

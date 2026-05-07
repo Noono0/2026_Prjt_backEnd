@@ -1,0 +1,20 @@
+# Spotless + Google Java Format (AOSP, 4-space) 과 맞추기 위한 IDE 기본값
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{java,gradle}]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,properties}]
+indent_style = space
+indent_size = 2
+
+[*.xml]
+indent_style = space
+indent_size = 4
