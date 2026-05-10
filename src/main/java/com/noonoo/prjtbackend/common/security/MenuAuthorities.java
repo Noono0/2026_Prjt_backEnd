@@ -17,6 +17,9 @@ public final class MenuAuthorities {
     public static final String NOTICE_BOARD = "NOTICE_BOARD";
     public static final String SITE_POPUP = "SITE_POPUP";
 
+    /** 서포트(광고·협찬·도움) 콘텐츠 */
+    public static final String SITE_SUPPORT = "SITE_SUPPORT";
+
     /** 비속어·광고 필터 단어 관리 */
     public static final String CONTENT_FILTER = "CONTENT_FILTER";
 

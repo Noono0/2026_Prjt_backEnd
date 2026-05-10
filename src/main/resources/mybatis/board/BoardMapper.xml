@@ -65,6 +65,9 @@
         <if test="keyword != null and keyword != ''">
             AND (b.title LIKE CONCAT('%', #{keyword}, '%') OR b.content LIKE CONCAT('%', #{keyword}, '%'))
         </if>
+        <if test="tag != null and tag != ''">
+            AND IFNULL(b.tag_list, '') LIKE CONCAT('%', #{tag}, '%')
+        </if>
         <if test="showYn != null and showYn != ''">
             AND b.show_yn = #{showYn}
         </if>
@@ -107,6 +110,10 @@
                    WHEN IFNULL(b.report_count, 0) &gt;= #{blindReportThreshold} THEN #{blindListTitle}
                    ELSE b.title
                END AS title,
+               CASE
+                   WHEN IFNULL(b.report_count, 0) &gt;= #{blindReportThreshold} THEN ''
+                   ELSE b.tag_list
+               END AS tagList,
                CASE
                    WHEN IFNULL(b.report_count, 0) &gt;= #{blindReportThreshold} THEN ''
                    ELSE b.content
@@ -229,6 +236,7 @@
                b.category_code,
                CASE WHEN cg.code_group_seq IS NOT NULL THEN cd.code_name END AS category_name,
                b.title,
+               b.tag_list AS tagList,
                b.content,
                b.writer_member_seq,
                wm.member_id AS writerMemberId,
@@ -315,14 +323,14 @@
 
     <insert id="insertBoard" parameterType="com.noonoo.prjtbackend.board.dto.BoardSaveRequest" useGeneratedKeys="true" keyProperty="boardSeq" keyColumn="board_seq">
         INSERT INTO board (
-            category_code, title, content, writer_member_seq, writer_name,
+            category_code, title, tag_list, content, writer_member_seq, writer_name,
             secret_yn, secret_password_hash, anonymous_yn,
             view_count, like_count, dislike_count, comment_count, comment_like_count, comment_report_count, report_count,
             show_yn, highlight_yn, comment_allowed_yn, reply_allowed_yn,
             use_yn,
             create_dt, create_id, create_ip, modify_dt, modify_id, modify_ip
         ) VALUES (
-            #{categoryCode}, #{title}, #{content}, #{writerMemberSeq}, #{writerName},
+            #{categoryCode}, #{title}, #{tagList}, #{content}, #{writerMemberSeq}, #{writerName},
             #{secretYn}, #{secretPassword}, #{anonymousYn},
             #{viewCount}, #{likeCount}, #{dislikeCount}, #{commentCount}, #{commentLikeCount}, #{commentReportCount}, #{reportCount},
             #{showYn}, #{highlightYn}, #{commentAllowedYn}, #{replyAllowedYn},
@@ -335,6 +343,9 @@
         UPDATE board
            SET category_code = #{categoryCode},
                title = #{title},
+               <if test="tags != null">
+               tag_list = #{tagList},
+               </if>
                content = #{content},
                secret_yn = #{secretYn},
                secret_password_hash = #{secretPassword},

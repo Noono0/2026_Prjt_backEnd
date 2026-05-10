@@ -1,5 +1,6 @@
 package com.noonoo.prjtbackend.board.dto;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,6 +12,10 @@ public class BoardSaveRequest {
     private Long boardSeq;
     private String categoryCode;
     private String title;
+    /** 등록·수정 시 태그 배열(JSON). 수정 시 null 이면 tag_list 유지. */
+    private List<String> tags;
+    /** MyBatis INSERT/UPDATE용 — service에서 tags로부터 설정 */
+    private String tagList;
     private String content;
 
     private Long writerMemberSeq;

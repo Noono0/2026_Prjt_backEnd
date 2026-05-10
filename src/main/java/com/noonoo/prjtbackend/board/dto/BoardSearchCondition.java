@@ -13,6 +13,8 @@ public class BoardSearchCondition extends PageRequest {
     private String title;
     private String writerName;
     private String keyword;
+    /** 태그 목록(tag_list) 부분 일치 검색 */
+    private String tag;
     private String showYn;
     private String highlightYn;
 

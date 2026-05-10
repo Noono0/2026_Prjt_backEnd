@@ -13,6 +13,8 @@ public class BoardDto {
     private String categoryCode;
     private String categoryName;
     private String title;
+    /** 쉼표 구분 저장 태그 (목록·상세 표시용) */
+    private String tagList;
     private String content;
     private Long writerMemberSeq;
 

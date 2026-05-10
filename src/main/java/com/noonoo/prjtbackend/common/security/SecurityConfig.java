@@ -76,6 +76,8 @@ public class SecurityConfig {
                                     .permitAll()
                                     .requestMatchers(HttpMethod.GET, "/api/site-popups/active")
                                     .permitAll()
+                                    .requestMatchers(HttpMethod.GET, "/api/site-support/active")
+                                    .permitAll()
                                     .requestMatchers(HttpMethod.GET, "/api/site-popups/public/*")
                                     .permitAll()
                                     .requestMatchers(HttpMethod.GET, "/api/files/view/**")

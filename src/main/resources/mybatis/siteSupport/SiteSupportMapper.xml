@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.noonoo.prjtbackend.sitesupport.mapper.SiteSupportMapper">
+
+    <sql id="adminColumns">
+        s.support_seq AS supportSeq,
+        s.category_code AS categoryCode,
+        s.title,
+        s.content,
+        s.link_url AS linkUrl,
+        s.sort_order AS sortOrder,
+        s.show_yn AS showYn,
+        DATE_FORMAT(s.create_dt, '%Y-%m-%d %H:%i:%s') AS createDt,
+        DATE_FORMAT(s.modify_dt, '%Y-%m-%d %H:%i:%s') AS modifyDt,
+        s.create_id AS createId,
+        s.modify_id AS modifyId,
+        s.create_ip AS createIp,
+        s.modify_ip AS modifyIp
+    </sql>
+
+    <sql id="publicColumns">
+        s.support_seq AS supportSeq,
+        s.category_code AS categoryCode,
+        s.title,
+        s.content,
+        s.link_url AS linkUrl,
+        s.sort_order AS sortOrder,
+        s.show_yn AS showYn
+    </sql>
+
+    <sql id="searchWhere">
+        WHERE s.use_yn = 'Y'
+        <if test="keyword != null and keyword != ''">
+            AND (s.title LIKE CONCAT('%', #{keyword}, '%') OR s.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="categoryCode != null and categoryCode != ''">
+            AND s.category_code = #{categoryCode}
+        </if>
+        <if test="showYn != null and showYn != ''">
+            AND s.show_yn = #{showYn}
+        </if>
+    </sql>
+
+    <sql id="orderBy">
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'categoryCode'">s.category_code</when>
+            <when test="sortBy == 'sortOrder'">s.sort_order</when>
+            <when test="sortBy == 'createDt'">s.create_dt</when>
+            <when test="sortBy == 'modifyDt'">s.modify_dt</when>
+            <when test="sortBy == 'title'">s.title</when>
+            <otherwise>s.support_seq</otherwise>
+        </choose>
+        <choose>
+            <when test="sortDir == 'asc' or sortDir == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        , s.support_seq DESC
+    </sql>
+
+    <select id="searchList" resultType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportDto">
+        SELECT
+        <include refid="adminColumns"/>
+        FROM site_support s
+        <include refid="searchWhere"/>
+        <include refid="orderBy"/>
+        LIMIT #{safeSize} OFFSET #{offset}
+    </select>
+
+    <select id="searchListCnt" resultType="long">
+        SELECT COUNT(1)
+        FROM site_support s
+        <include refid="searchWhere"/>
+    </select>
+
+    <select id="findDetail" resultType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportDto">
+        SELECT
+        <include refid="adminColumns"/>
+        FROM site_support s
+        WHERE s.support_seq = #{supportSeq}
+          AND s.use_yn = 'Y'
+    </select>
+
+    <select id="findActiveForSite" resultType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportDto">
+        SELECT
+        <include refid="publicColumns"/>
+        FROM site_support s
+        WHERE s.use_yn = 'Y'
+          AND s.show_yn = 'Y'
+        ORDER BY FIELD(s.category_code, 'AD', 'SPONSOR', 'HELPER'),
+                 s.sort_order ASC,
+                 s.support_seq DESC
+    </select>
+
+    <insert id="insert" parameterType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportSaveRequest"
+            useGeneratedKeys="true" keyProperty="supportSeq">
+        INSERT INTO site_support (
+            category_code, title, content, link_url, sort_order, show_yn, use_yn,
+            create_dt, create_id, create_ip, modify_dt, modify_id, modify_ip
+        ) VALUES (
+            #{categoryCode}, #{title}, #{content}, #{linkUrl}, #{sortOrder}, #{showYn}, 'Y',
+            NOW(), #{createId}, #{createIp}, NOW(), #{modifyId}, #{modifyIp}
+        )
+    </insert>
+
+    <update id="update" parameterType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportSaveRequest">
+        UPDATE site_support
+        SET category_code = #{categoryCode},
+            title = #{title},
+            content = #{content},
+            link_url = #{linkUrl},
+            sort_order = #{sortOrder},
+            show_yn = #{showYn},
+            modify_dt = NOW(),
+            modify_id = #{modifyId},
+            modify_ip = #{modifyIp}
+        WHERE support_seq = #{supportSeq}
+          AND use_yn = 'Y'
+    </update>
+
+    <update id="softDelete" parameterType="com.noonoo.prjtbackend.sitesupport.dto.SiteSupportSaveRequest">
+        UPDATE site_support
+        SET use_yn = 'N',
+            modify_dt = NOW(),
+            modify_id = #{modifyId},
+            modify_ip = #{modifyIp}
+        WHERE support_seq = #{supportSeq}
+          AND use_yn = 'Y'
+    </update>
+</mapper>

@@ -20,6 +20,7 @@ import com.noonoo.prjtbackend.member.dto.MemberDto;
 import com.noonoo.prjtbackend.member.mapper.MemberMapper;
 import com.noonoo.prjtbackend.member.service.PointPolicyService;
 import com.noonoo.prjtbackend.member.service.WalletPointGrantService;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -281,6 +282,7 @@ public class BoardServiceImpl implements BoardService {
         normalizeInquiryFlagsAndPassword(condition, true);
         condition.setTitle(contentFilterApplyService.applyField("제목", condition.getTitle()));
         condition.setContent(contentFilterApplyService.applyField("내용", condition.getContent()));
+        condition.setTagList(normalizeTagListFromTags(condition.getTags()));
 
         int inserted = boardMapper.insertBoard(condition);
         if (inserted > 0) {
@@ -325,6 +327,9 @@ public class BoardServiceImpl implements BoardService {
         normalizeInquiryFlagsAndPassword(condition, false);
         condition.setTitle(contentFilterApplyService.applyField("제목", condition.getTitle()));
         condition.setContent(contentFilterApplyService.applyField("내용", condition.getContent()));
+        if (condition.getTags() != null) {
+            condition.setTagList(normalizeTagListFromTags(condition.getTags()));
+        }
 
         BoardDto existing = boardMapper.findBoardById(condition.getBoardSeq());
         if (existing == null) {
@@ -335,6 +340,40 @@ public class BoardServiceImpl implements BoardService {
         }
 
         return boardMapper.updateBoard(condition);
+    }
+
+    /**
+     * 태그 배열을 DB 저장용 쉼표 문자열로 정규화(최대 10개·각 40자·전체 500자). 빈 배열·공백만 있으면 null.
+     */
+    private String normalizeTagListFromTags(List<String> tags) {
+        if (tags == null) {
+            return null;
+        }
+        LinkedHashSet<String> out = new LinkedHashSet<>();
+        for (String raw : tags) {
+            if (!StringUtils.hasText(raw)) {
+                continue;
+            }
+            String s = raw.trim();
+            if (s.startsWith("#")) {
+                s = s.substring(1).trim();
+            }
+            if (!StringUtils.hasText(s)) {
+                continue;
+            }
+            if (s.length() > 40) {
+                s = s.substring(0, 40);
+            }
+            out.add(s);
+            if (out.size() >= 10) {
+                break;
+            }
+        }
+        if (out.isEmpty()) {
+            return null;
+        }
+        String joined = String.join(",", out);
+        return joined.length() > 500 ? joined.substring(0, 500) : joined;
     }
 
     /** 댓글 비허용이면 답글도 N으로 맞춤. 값은 Y/N만 사용. */
