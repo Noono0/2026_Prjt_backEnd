@@ -67,6 +67,14 @@ app:
     extra-allowed-origins: ${APP_CORS_EXTRA_ORIGINS:}
   oauth-sync:
     secret: ${OAUTH_SYNC_SECRET:prjt-dev-oauth-sync-7f3a9b2c1d4e8e0f}
+  # 숲 LIVE 판별(Playwright): 짧은 주기·전원 갱신은 CPU·메모리·외부 사이트 부담이 큽니다.
+  # TTL은 (스케줄 주기 × 링크 수 ÷ 틱당 갱신 건수)보다 크게 두는 것을 권장합니다.
+  soop-live:
+    cache-ttl-ms: 240000
+    scheduler-enabled: true
+    scheduler-initial-delay-ms: 15000
+    scheduler-fixed-delay-ms: 12000
+    max-resolve-per-tick: 8
   rate-limit:
     enabled: true
     login-per-minute: 30

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.noonoo.prjtbackend.gamniverseprofile.config.SoopLiveStatusProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.microsoft.playwright.Browser;
@@ -22,11 +23,11 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class SoopLiveStatusResolver implements DisposableBean {
 
-    private static final long CACHE_TTL_MILLIS = 5_000L;
     private static final Pattern ROOM_PATH_PATTERN = Pattern.compile("^/([^/]+)/([^/]+)$");
     private static final double NAVIGATE_TIMEOUT_MS = 8_000;
     private static final double JS_SETTLE_WAIT_MS = 1_200;
 
+    private final SoopLiveStatusProperties soopLiveStatusProperties;
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
     private final Object browserLock = new Object();
     private Playwright playwright;
@@ -41,26 +42,38 @@ public class SoopLiveStatusResolver implements DisposableBean {
         long now = System.currentTimeMillis();
         CacheEntry cached = cache.get(normalized);
         if (cached != null && cached.expiresAt > now) {
-            log.info(
-                    "[LIVE-CHECK] 캐시결과={} link={} -> isLive={}, roomId={}, ttlMsLeft={}",
-                    toKoreanStatus(cached.status),
-                    normalized,
-                    cached.status.isLive(),
-                    cached.status.liveRoomId(),
-                    cached.expiresAt - now);
+            if (log.isDebugEnabled()) {
+                log.debug(
+                        "[LIVE-CHECK] 캐시결과={} link={} -> isLive={}, roomId={}, ttlMsLeft={}",
+                        toKoreanStatus(cached.status),
+                        normalized,
+                        cached.status.isLive(),
+                        cached.status.liveRoomId(),
+                        cached.expiresAt - now);
+            }
             return cached.status;
         }
 
+        long ttlMs = soopLiveStatusProperties.getCacheTtlMs();
         LiveStatus resolved = fetchLiveStatus(normalized);
-        cache.put(normalized, new CacheEntry(resolved, now + CACHE_TTL_MILLIS));
+        cache.put(normalized, new CacheEntry(resolved, now + ttlMs));
         log.info(
                 "[LIVE-CHECK] 최종판정={} link={} -> isLive={}, roomId={}, cacheTtlMs={}",
                 toKoreanStatus(resolved),
                 normalized,
                 resolved.isLive(),
                 resolved.liveRoomId(),
-                CACHE_TTL_MILLIS);
+                ttlMs);
         return resolved;
+    }
+
+    /** 캐시가 유효하면 {@code true} — 스케줄러가 이번 틱에서 Playwright를 돌릴 필요 없음 */
+    public boolean isCacheFresh(String broadcastLink) {
+        if (!StringUtils.hasText(broadcastLink)) {
+            return true;
+        }
+        CacheEntry cached = cache.get(normalizeLink(broadcastLink));
+        return cached != null && cached.expiresAt > System.currentTimeMillis();
     }
 
     public LiveStatus getCachedStatus(String broadcastLink) {

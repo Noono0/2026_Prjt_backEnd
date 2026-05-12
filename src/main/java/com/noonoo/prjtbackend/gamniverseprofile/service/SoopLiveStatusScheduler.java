@@ -1,5 +1,6 @@
 package com.noonoo.prjtbackend.gamniverseprofile.service;
 
+import com.noonoo.prjtbackend.gamniverseprofile.config.SoopLiveStatusProperties;
 import com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileDto;
 import com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileSearchCondition;
 import com.noonoo.prjtbackend.gamniverseprofile.mapper.GamniverseProfileMapper;
@@ -17,10 +18,19 @@ public class SoopLiveStatusScheduler {
 
     private final GamniverseProfileMapper gamniverseProfileMapper;
     private final SoopLiveStatusResolver soopLiveStatusResolver;
+    private final SoopLiveStatusProperties soopLiveStatusProperties;
 
-    // 로컬 테스트 기준: 5초마다 숲 방송링크 상태 캐시 갱신
-    @Scheduled(initialDelay = 3000L, fixedDelay = 5000L)
+    /**
+     * 캐시 만료분만 {@link SoopLiveStatusProperties#getMaxResolvePerTick()}건까지 Playwright로 갱신합니다.
+     * 주기·TTL은 application.yml 의 {@code app.soop-live.*} 로 조정하세요.
+     */
+    @Scheduled(
+            initialDelayString = "${app.soop-live.scheduler-initial-delay-ms:15000}",
+            fixedDelayString = "${app.soop-live.scheduler-fixed-delay-ms:12000}")
     public void refreshSoopLiveStatusCache() {
+        if (!soopLiveStatusProperties.isSchedulerEnabled()) {
+            return;
+        }
         try {
             GamniverseProfileSearchCondition condition = new GamniverseProfileSearchCondition();
             condition.setPage(1);
@@ -31,15 +41,29 @@ public class SoopLiveStatusScheduler {
                 return;
             }
 
-            int checked = 0;
+            int withLink = 0;
+            int refreshed = 0;
+            int budget = Math.max(1, soopLiveStatusProperties.getMaxResolvePerTick());
             for (GamniverseProfileDto profile : profiles) {
                 if (!StringUtils.hasText(profile.getSoopBroadcastLink())) {
                     continue;
                 }
+                withLink++;
+                if (budget <= 0) {
+                    continue;
+                }
+                if (soopLiveStatusResolver.isCacheFresh(profile.getSoopBroadcastLink())) {
+                    continue;
+                }
                 soopLiveStatusResolver.resolve(profile.getSoopBroadcastLink());
-                checked++;
+                refreshed++;
+                budget--;
             }
-            log.info("[LIVE-SCHEDULER] refreshed {} / {} profiles", checked, profiles.size());
+            log.info(
+                    "[LIVE-SCHEDULER] playwrightRefreshed={} soopLinks={} profiles={}",
+                    refreshed,
+                    withLink,
+                    profiles.size());
         } catch (Exception e) {
             log.warn("[LIVE-SCHEDULER] refresh failed: {}", e.toString());
         }
