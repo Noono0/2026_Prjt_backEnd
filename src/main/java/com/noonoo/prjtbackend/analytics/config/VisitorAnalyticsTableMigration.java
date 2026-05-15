@@ -16,7 +16,7 @@ public class VisitorAnalyticsTableMigration implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @Override
+    @Override 
     public void run(ApplicationArguments args) {
         try {
             jdbcTemplate.execute(
