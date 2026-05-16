@@ -32,4 +32,7 @@ public class RateLimitProperties {
 
     /** 1분당 IP당 방문 하트비트 */
     private int heartbeatPerMinute = 180;
+
+    /** 1분당 IP당 숲 LIVE 배치 조회 ({@code POST /api/soop-live/status}) */
+    private int soopLiveStatusPerMinute = 40;
 }

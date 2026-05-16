@@ -86,6 +86,8 @@ public class SecurityConfig {
                                     .permitAll()
                                     .requestMatchers("/api/analytics/**")
                                     .permitAll()
+                                    .requestMatchers(HttpMethod.POST, "/api/soop-live/status")
+                                    .permitAll()
                                     // Actuator health(및 하위 프로브) — 경로 문자열보다 EndpointRequest 가 서블릿
                                     // 매칭과 맞는 경우가 많음
                                     .requestMatchers(EndpointRequest.to("health"))

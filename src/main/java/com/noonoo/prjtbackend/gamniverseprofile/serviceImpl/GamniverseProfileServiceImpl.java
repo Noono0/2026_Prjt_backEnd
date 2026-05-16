@@ -7,7 +7,6 @@ import com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileSaveRequest
 import com.noonoo.prjtbackend.gamniverseprofile.dto.GamniverseProfileSearchCondition;
 import com.noonoo.prjtbackend.gamniverseprofile.mapper.GamniverseProfileMapper;
 import com.noonoo.prjtbackend.gamniverseprofile.service.GamniverseProfileService;
-import com.noonoo.prjtbackend.gamniverseprofile.service.SoopLiveStatusResolver;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,21 +18,16 @@ import org.springframework.util.StringUtils;
 public class GamniverseProfileServiceImpl implements GamniverseProfileService {
 
     private final GamniverseProfileMapper gamniverseProfileMapper;
-    private final SoopLiveStatusResolver soopLiveStatusResolver;
-
     @Override
     public PageResponse<GamniverseProfileDto> search(GamniverseProfileSearchCondition condition) {
         long total = gamniverseProfileMapper.selectListCnt(condition);
         List<GamniverseProfileDto> items = gamniverseProfileMapper.selectList(condition);
-        enrichLiveStatus(items);
         return PagingUtils.toPageResponse(condition, total, items);
     }
 
     @Override
     public GamniverseProfileDto detail(Long seq) {
-        GamniverseProfileDto dto = gamniverseProfileMapper.selectById(seq);
-        enrichLiveStatus(dto);
-        return dto;
+        return gamniverseProfileMapper.selectById(seq);
     }
 
     @Override
@@ -92,25 +86,4 @@ public class GamniverseProfileServiceImpl implements GamniverseProfileService {
         return value.trim();
     }
 
-    private void enrichLiveStatus(List<GamniverseProfileDto> items) {
-        if (items == null || items.isEmpty()) {
-            return;
-        }
-        items.forEach(this::enrichLiveStatus);
-    }
-
-    private void enrichLiveStatus(GamniverseProfileDto dto) {
-        if (dto == null) {
-            return;
-        }
-        // LIVE 판별은 "숲 방송링크"만 사용한다. 값이 없으면 오프라인으로 본다.
-        if (!StringUtils.hasText(dto.getSoopBroadcastLink())) {
-            dto.setIsLive(false);
-            dto.setLiveRoomId(null);
-            return;
-        }
-        SoopLiveStatusResolver.LiveStatus status = soopLiveStatusResolver.getCachedStatus(dto.getSoopBroadcastLink());
-        dto.setIsLive(status.isLive());
-        dto.setLiveRoomId(status.liveRoomId());
-    }
 }

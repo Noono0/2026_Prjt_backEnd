@@ -8,5 +8,6 @@ public enum RateLimitRule {
     PASSWORD_RESET_COMPLETE,
     OAUTH_SYNC,
     OAUTH_ESTABLISH,
-    HEARTBEAT
+    HEARTBEAT,
+    SOOP_LIVE_STATUS
 }

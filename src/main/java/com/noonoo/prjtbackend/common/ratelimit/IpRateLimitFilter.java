@@ -67,6 +67,7 @@ public class IpRateLimitFilter extends OncePerRequestFilter {
             case "/api/auth/oauth/sync" -> RateLimitRule.OAUTH_SYNC;
             case "/api/auth/oauth/establish-session" -> RateLimitRule.OAUTH_ESTABLISH;
             case "/api/analytics/heartbeat" -> RateLimitRule.HEARTBEAT;
+            case "/api/soop-live/status" -> RateLimitRule.SOOP_LIVE_STATUS;
             default -> null;
         };
     }

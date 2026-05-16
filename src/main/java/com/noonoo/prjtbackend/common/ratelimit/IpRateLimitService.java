@@ -111,6 +111,14 @@ public class IpRateLimitService {
                                             properties.getHeartbeatPerMinute(),
                                             Duration.ofMinutes(1))
                                     .build();
+            case SOOP_LIVE_STATUS ->
+                    () ->
+                            Bandwidth.builder()
+                                    .capacity(properties.getSoopLiveStatusPerMinute())
+                                    .refillGreedy(
+                                            properties.getSoopLiveStatusPerMinute(),
+                                            Duration.ofMinutes(1))
+                                    .build();
         };
     }
 

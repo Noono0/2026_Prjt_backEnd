@@ -1,143 +1,164 @@
 package com.noonoo.prjtbackend.gamniverseprofile.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.noonoo.prjtbackend.gamniverseprofile.config.SoopLiveStatusProperties;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Map;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.noonoo.prjtbackend.gamniverseprofile.config.SoopLiveStatusProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.microsoft.playwright.Browser;
-import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Playwright;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class SoopLiveStatusResolver implements DisposableBean {
+public class SoopLiveStatusResolver {
 
     private static final Pattern ROOM_PATH_PATTERN = Pattern.compile("^/([^/]+)/([^/]+)$");
-    private static final double NAVIGATE_TIMEOUT_MS = 8_000;
-    private static final double JS_SETTLE_WAIT_MS = 1_200;
+    private static final String USER_AGENT = "GamniverseLiveCheck/1.0 (+https://gamniverse.local)";
 
     private final SoopLiveStatusProperties soopLiveStatusProperties;
-    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
-    private final Object browserLock = new Object();
-    private Playwright playwright;
-    private Browser browser;
+    private final HttpClient httpClient =
+            HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
 
+    private Cache<String, LiveStatus> cache;
+    private final ConcurrentHashMap<String, CompletableFuture<LiveStatus>> inflight = new ConcurrentHashMap<>();
+
+    private Cache<String, LiveStatus> cache() {
+        Cache<String, LiveStatus> c = cache;
+        if (c == null) {
+            synchronized (this) {
+                c = cache;
+                if (c == null) {
+                    long ttlMs = Math.max(5_000L, soopLiveStatusProperties.getCacheTtlMs());
+                    c =
+                            Caffeine.newBuilder()
+                                    .maximumSize(500)
+                                    .expireAfterWrite(Duration.ofMillis(ttlMs))
+                                    .build();
+                    cache = c;
+                }
+            }
+        }
+        return c;
+    }
+
+    /**
+     * 요청 시에만 SOOP를 조회합니다. TTL({@link SoopLiveStatusProperties#getCacheTtlMs()}) 동안 캐시를
+     * 반환하며, 이후 요청이 없으면 추가 조회는 없습니다.
+     */
     public LiveStatus resolve(String broadcastLink) {
         if (!StringUtils.hasText(broadcastLink)) {
-            log.info("[LIVE-CHECK] skip: empty soop link -> offline");
             return LiveStatus.offline();
         }
         String normalized = normalizeLink(broadcastLink);
-        long now = System.currentTimeMillis();
-        CacheEntry cached = cache.get(normalized);
-        if (cached != null && cached.expiresAt > now) {
-            if (log.isDebugEnabled()) {
-                log.debug(
-                        "[LIVE-CHECK] 캐시결과={} link={} -> isLive={}, roomId={}, ttlMsLeft={}",
-                        toKoreanStatus(cached.status),
-                        normalized,
-                        cached.status.isLive(),
-                        cached.status.liveRoomId(),
-                        cached.expiresAt - now);
-            }
-            return cached.status;
+        if (!isAllowedSoopLink(normalized)) {
+            log.warn("[LIVE-CHECK] blocked link host link={}", normalized);
+            return LiveStatus.offline();
         }
 
-        long ttlMs = soopLiveStatusProperties.getCacheTtlMs();
-        LiveStatus resolved = fetchLiveStatus(normalized);
-        cache.put(normalized, new CacheEntry(resolved, now + ttlMs));
-        log.info(
-                "[LIVE-CHECK] 최종판정={} link={} -> isLive={}, roomId={}, cacheTtlMs={}",
-                toKoreanStatus(resolved),
-                normalized,
-                resolved.isLive(),
-                resolved.liveRoomId(),
-                ttlMs);
-        return resolved;
+        LiveStatus cached = cache().getIfPresent(normalized);
+        if (cached != null) {
+            return cached;
+        }
+
+        CompletableFuture<LiveStatus> pending = new CompletableFuture<>();
+        CompletableFuture<LiveStatus> existing = inflight.putIfAbsent(normalized, pending);
+        if (existing != null) {
+            return joinQuietly(existing);
+        }
+
+        try {
+            LiveStatus resolved = fetchLiveStatusHttp(normalized);
+            cache().put(normalized, resolved);
+            pending.complete(resolved);
+            log.info(
+                    "[LIVE-CHECK] resolved link={} isLive={} roomId={} cacheTtlMs={}",
+                    normalized,
+                    resolved.isLive(),
+                    resolved.liveRoomId(),
+                    soopLiveStatusProperties.getCacheTtlMs());
+            return resolved;
+        } catch (Exception e) {
+            pending.completeExceptionally(e);
+            log.warn("[LIVE-CHECK] failed link={} reason={}", normalized, e.toString());
+            LiveStatus offline = LiveStatus.offline();
+            cache().put(normalized, offline);
+            return offline;
+        } finally {
+            inflight.remove(normalized);
+        }
     }
 
-    /** 캐시가 유효하면 {@code true} — 스케줄러가 이번 틱에서 Playwright를 돌릴 필요 없음 */
     public boolean isCacheFresh(String broadcastLink) {
         if (!StringUtils.hasText(broadcastLink)) {
             return true;
         }
-        CacheEntry cached = cache.get(normalizeLink(broadcastLink));
-        return cached != null && cached.expiresAt > System.currentTimeMillis();
+        return cache().getIfPresent(normalizeLink(broadcastLink)) != null;
     }
 
     public LiveStatus getCachedStatus(String broadcastLink) {
         if (!StringUtils.hasText(broadcastLink)) {
             return LiveStatus.offline();
         }
-        CacheEntry cached = cache.get(normalizeLink(broadcastLink));
-        return cached == null ? LiveStatus.offline() : cached.status();
+        LiveStatus cached = cache().getIfPresent(normalizeLink(broadcastLink));
+        return cached == null ? LiveStatus.offline() : cached;
     }
 
-    private LiveStatus fetchLiveStatus(String link) {
-        synchronized (browserLock) {
-            URI sourceUri = URI.create(link);
-            if (!isSoopHost(sourceUri)) {
-                log.info("[LIVE-CHECK] non-soop host link={} -> offline", link);
-                return LiveStatus.offline();
-            }
+    private LiveStatus fetchLiveStatusHttp(String link) throws Exception {
+        URI sourceUri = URI.create(link);
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(sourceUri)
+                        .timeout(Duration.ofSeconds(8))
+                        .header("User-Agent", USER_AGENT)
+                        .header("Accept", "text/html,application/xhtml+xml")
+                        .GET()
+                        .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        URI finalUri = response.uri();
+        String html = response.body() == null ? "" : response.body();
+        return toLiveStatus(sourceUri, finalUri, html);
+    }
 
-            BrowserContext context = null;
-            Page page = null;
-            try {
-                context = getBrowser().newContext();
-                page = context.newPage();
-                page.navigate(link, new Page.NavigateOptions().setTimeout(NAVIGATE_TIMEOUT_MS));
-                page.waitForTimeout(JS_SETTLE_WAIT_MS);
-
-                String finalUrl = page.url();
-                String html = page.content();
-                LiveStatus status = toLiveStatus(sourceUri, URI.create(finalUrl), html);
-                log.info(
-                        "[LIVE-CHECK] 판정={} source={} final={} status={} roomId={}",
-                        toKoreanStatus(status),
-                        sourceUri,
-                        finalUrl,
-                        status.isLive(),
-                        status.liveRoomId());
-                return status;
-            } catch (Exception e) {
-                log.warn("[LIVE-CHECK] 판정실패=방송종료 link={} reason={}", link, e.toString());
-                return LiveStatus.offline();
-            } finally {
-                closeQuietly(page);
-                closeQuietly(context);
+    static boolean isAllowedSoopLink(String link) {
+        try {
+            URI uri = URI.create(link);
+            String host = uri.getHost();
+            if (!StringUtils.hasText(host)) {
+                return false;
             }
+            String lower = host.toLowerCase();
+            return lower.endsWith("sooplive.com") || lower.endsWith("sooplive.co.kr");
+        } catch (Exception e) {
+            return false;
         }
     }
 
-    private Browser getBrowser() {
-        synchronized (browserLock) {
-            if (browser != null && browser.isConnected()) {
-                return browser;
-            }
-            if (playwright == null) {
-                playwright = Playwright.create();
-            }
-            browser =
-                    playwright
-                            .chromium()
-                            .launch(
-                                    new BrowserType.LaunchOptions()
-                                            .setHeadless(true)
-                                            .setArgs(Arrays.asList("--disable-dev-shm-usage", "--no-sandbox")));
-            log.info("[LIVE-CHECK] headless chromium launched");
-            return browser;
+    public static String normalizeLink(String link) {
+        String trimmed = link.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        return "https://" + trimmed;
+    }
+
+    private static LiveStatus joinQuietly(CompletableFuture<LiveStatus> future) {
+        try {
+            return future.join();
+        } catch (Exception e) {
+            return LiveStatus.offline();
         }
     }
 
@@ -188,7 +209,6 @@ public class SoopLiveStatusResolver implements DisposableBean {
         if (!StringUtils.hasText(html)) {
             return null;
         }
-        // 오프라인 안내 문구가 보이면 우선 오프라인으로 확정한다.
         if (html.contains("스트리머가 오프라인입니다.")) {
             return LiveStatus.offline();
         }
@@ -221,70 +241,12 @@ public class SoopLiveStatusResolver implements DisposableBean {
 
     private static boolean isSoopHost(URI uri) {
         String host = uri.getHost();
-        return StringUtils.hasText(host) && host.toLowerCase().contains("sooplive.com");
-    }
-
-    private static String normalizeLink(String link) {
-        String trimmed = link.trim();
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-            return trimmed;
-        }
-        return "https://" + trimmed;
-    }
-
-    private static void closeQuietly(Page page) {
-        try {
-            if (page != null) {
-                page.close();
-            }
-        } catch (Exception ignored) {
-            // ignore close errors from already-disposed Playwright objects
-        }
-    }
-
-    private static void closeQuietly(BrowserContext context) {
-        try {
-            if (context != null) {
-                context.close();
-            }
-        } catch (Exception ignored) {
-            // ignore close errors from already-disposed Playwright objects
-        }
+        return StringUtils.hasText(host) && host.toLowerCase().contains("sooplive");
     }
 
     public record LiveStatus(boolean isLive, String liveRoomId) {
         public static LiveStatus offline() {
             return new LiveStatus(false, null);
-        }
-    }
-
-    private static String toKoreanStatus(LiveStatus status) {
-        return status != null && status.isLive() ? "방송중" : "방송종료";
-    }
-
-    private record CacheEntry(LiveStatus status, long expiresAt) {}
-
-    @Override
-    public void destroy() {
-        synchronized (browserLock) {
-            try {
-                if (browser != null) {
-                    browser.close();
-                }
-            } catch (Exception ignored) {
-                // ignore
-            } finally {
-                browser = null;
-            }
-            try {
-                if (playwright != null) {
-                    playwright.close();
-                }
-            } catch (Exception ignored) {
-                // ignore
-            } finally {
-                playwright = null;
-            }
         }
     }
 }
